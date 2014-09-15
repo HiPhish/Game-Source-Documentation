@@ -21,17 +21,18 @@ Table of contents
 	| |- Maps
 	|    |- MAPHEAD
 	|    |- GAMEMAPS
+	|    |- Extracting the maps
 	|
 	- Known bugs and limitations
 
 
 Conventions and nomenclature
 ----------------------------
-Decimal integer numbers are given as regular numbers or rarely suffixed with "d", binary numbers are suffixed with "b", octal numbers with "o" and hexadecimal numbers are either suffixed with "h" or prefixed with "0x" or "#". Example:
+Decimal integer numbers are given as regular numbers or rarely suffixed with "d", binary numbers are suffixed with "b" or prefixed with "0b", octal numbers with "o" and hexadecimal numbers are either suffixed with "h" or prefixed with "0x" or "#". Example:
 
 	13 = 13d = 1011b = 15o = Dh = 0xD
 
-All numbers are written in the standard big-endian notation used in the English language. This means the left-most digit is the most significant one and a number like 1011b is computed as (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0). If the endianness needs to be explicitly stated it will be given as (BE) for big-endian and as (LE) for little-endian.
+All continuous numbers are written in the standard big-endian notation used in the English language. This means the left-most digit is the most significant one and a number like 1011b is computed as (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0). Multibyte numbers are given in little-endian notation and the bytes are seperated by whitesopace charakters, thus the multibyte number 0x1A 0x3C corresponds to the hexadecimal number 0x3C1A or decimal 15386. If the endianness needs to be explicitly stated it will be given as (BE) for big-endian and as (LE) for little-endian.
 
 Notes are written as "//NOTE", tasks are written as "//TODO" and bugs in the original implementation are written as "//BUG", all without the quotation marks. This allows using the editor's search function to quickly jump to these points. An optional colon (:) can be suffixed, so make sure the editor ignores these.
 
@@ -43,14 +44,110 @@ Despite its name Wolfenstein 3D is not a true 3D game; the game's data and simul
 
 Compression algorithms
 ----------------------
+The compression algorithms all assume little-endian multibyte numbers, a byte size of 8 bits and a word size of two bytes.
 
 ###RLEW compression###
-A variant of RLE (Run length Encoding) that uses words instead of bytes as the underlying unit.
+A variant of RLE (Run Length Encoding) that uses words instead of bytes as the underlying unit.
+
+###Huffman compression###
 
 ###Carmack compression###
+The underlying idea of this compression method is that certain information patterns are going to be repeated several times. Instead of repeating the pattern each time a reference to previous instances of the pattern is stored; the already uncompressed data is referenced by the still compressed data.
 
-###Carmack compression###
+The compressed data consists of uncompressed words, one of two types of pointers, near pointers and far pointers, and exceptions where all four can appear in the same file depending on which is necessary. Near pointers are byte triplets and far pointers are byte quadruples. On top of this ther are special exceptions for words that might be confused for pointers. Remember that all offsets are given in *words* and that a word on the original target architecture was two bytes in size. To get the *byte* offset multiply the word offset by two.
 
+####Near pointers####
+Near pointers are a sequence of three bytes (count, tag, offset). The first byte tells us how many words to copy, it is an usingned 8-bit integer. The second byte is the tag and always 0xA7, it is used to identify a near pointer. The third byte is the unsigned 8-bit integer offset relative from the last written word to the word to copy. Take the following example:
+
+	// near pointer
+	04 A7 04
+	// already decompresssed data so far
+	76 0C 00 20 CD AB 9C 01 01 00 CD AB 0F 00 0C 00 CD AB 31 00 01 00 0C 00 0C 00 0C 00 0A 00 CD AB 05 00 ??
+
+The `??` is the current position of the destination pointer; it points at memory that has been allocated but not yet been written to, its content is at this point undefined. The near pointer tells us to copy four words (eight bytes) from four words ago. The resulting output would then be:
+
+	76 0C 00 20 CD AB 9C 01 01 00 CD AB 0F 00 0C 00 CD AB 31 00 01 00 0C 00 0C 00 0C 00 0A 00 CD AB 05 00 0C 00 0A 00 CD AB 05 00 ??
+
+First a copy of the destination pointer (called *copy pointer*) is moved four words back, pointing at the byte `0C`. The byte pointed at by the copy pointer is copied to the value pointed at by the destination pointer and both pointers are incremented. This is repeated eight times, at which point the copy pointer has reached the original position of the destination pointer.
+
+####Far pointers####
+The disadvantage of near pointers is that the offset is an 8-bit integer, so it can only reach 255 words back. Far pointers (count tag low_offset high_offset) use a 16-bit offset, so they take up one more byte in memory. The offset is given relative to the start of the decompressed sequence, i.e. the first destination pointer. Aside from the offset they work the same as near pointers, their tag is 0xA8.
+
+####Exception####
+Words with a high byte (second byte) of `0xA7` or `0xA8` can be confused for pointers. In compressed form the low byte is replaced by the byte `0x00` and the low bytes value is appened after the high byte. A count of 0 would make no sense for a pointer, so the algoruthm can tell when an exception has occured. Since the low byte comes after the high byte the word is actually stores in big-endian notation and needs to be swapped around when written to the destination.
+
+####Extraction####
+To decompress the data we need to know the length of the decompressed data because there is no indication when the end of the compressed sequence is reached; the compressed data is often stored adjacent to other compressed data in the same file. On top of that there is also uncompressed data between near- and far pointers which must be copied verbatim.
+
+Keep count of the bytes or words already written. When using words instead of bytes to keep track make sure you divide the byte count by two. At first the count is 0 and it is incremented every time we write a word or byte. Once the count reaches the size of the decompressed data the extraction is done. After each write increment the count and advance the pointers appropriately. This means the destination pointer is advanced by one byte for every byte written and the source pointer is advanced by three bytes for near pointers and exceptions, four for far pointers, and two for regular words.
+
+During each iteration step read a word. If the word's high byte (second byte) is neither the near- nor the far flag copy the word to the destination. If it's the near flag and the count is not 0x00 step `offset` words back through the decompressed data and copy `count` words from there to the decompressed data. If it's a far pointer and the count is not 0x00 copy `count` words `offset` words from the start of the decompressed data. If the count is zero advance the pointer by one byte and copy the reversed word.
+
+####Pseudocode####
+This pseudocode is similar to the original implementation by Id but independent of language or architecture. It operates on words, but that's just one way to do it.
+
+	define ZERO      0x00
+	define NEAR_FLAG 0xA7
+	define FAR_FLAG  0xA8
+	
+	// The following values must be given
+	pointer_word source      // pointer to the start of the compressed input stream
+	pointer_word destination // pointer to the start of the decompressed output stream
+	integer length           // length of the decompressed data sequence in words
+	
+	pointer_word read  = source      // reading head of the algorithm
+	pointer_word write = destination // writing head of the algorithm
+	
+	while (length > 0) {
+		word current_word = value_of(read)
+		if (high_byte(current_word) == NEAR_FLAG) { // near pointer or exception
+			integer count = integer_from_byte(low_byte(current_word))
+			if (count != ZERO) {                    // near pointer
+				advance_pointer_by_one_byte(read)
+				integer offset = integer_from_byte(high_byte(value_of(read)))
+
+				pointer_word copy = write - offset  // retreat a copy of the write pointer by `count` times the size of a word
+				while (count > 0) {
+					copy_word_at_to(copy, write)
+					copy  += 1 // advance the pointers by one word
+					write += 1
+					count -= 1 // decrement count
+					lenth -= 1
+				}
+			} else {                                // exception
+				advance_pointer_by_one_byte(read)
+				copy_word_at_to(read, write)
+				swap_bytes(write)
+				write += 1
+				read  += 1
+				lenth -= 1
+			}
+		} else if (high_byte(current_word) == FAR_FLAG) {
+			integer count = integer_from_byte(low_byte(current_word))
+			if (count != ZERO) {                    // far pointer
+				read += 1                           // advance read pointer by one word
+				integer offset = integer_from_word(value_of(read))
+				
+				pointer_word copy = destination + offset
+				while (count > 0) {
+					copy_word_at_to(copy, write)
+					copy  += 1 // advance the pointers by one word
+					write += 1
+					count -= 1 // decrement count
+					lenth -= 1
+				}
+			} else {
+				// see above for exception
+			}
+		} else {                                    // uncompressed word
+			copy_word_at_to(read, write)
+			copy  += 1 // advance the pointers by one word
+			write += 1
+			lenth -= 1
+		}
+	}
+
+Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
 Data files
 ----------
@@ -73,9 +170,9 @@ The header files contain information about the structure of the actual asset fil
 ### Levels & Maps ###
 Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the levels's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
 
-- The first map contains information about the level's architecture, i.e. walls, doors and floors.
-- The second map contains the level's objects, i.e. enemies, decorations and pick-ups.
-- The third map contains the level's logic data, such as waypoints.
+- **Architecture:** The first map contains information about the level's architecture, i.e. walls, doors and floors.
+- **Objects:** The second map contains the level's objects, i.e. enemies, decorations and pick-ups.
+- **Logic:** The third map contains the level's logic data, such as waypoints.
 
 These three individual maps together form the level the player will be playing. Usually when speaking about maps one means the entire level, but here we will maintain this distinction to avoid confusion or ambiguity.
 
@@ -84,16 +181,16 @@ Each of the tiles in a level describes a three-dimensional cube in the game worl
 #### MAPHEAD ####
 The file starts with the signature 16-bit integer 0xABCD (represented as 0xCD 0xAB bytes in the file). This signature appears always to be the same, but we should not make any assumptions; it is used as the signature for the RLEW compression algorithm. The file is described by the structure `mapfiletype` in the original source code.
 
-Next are exactly 100 32-bit (4 Byte) values containing the header offsets of the actual levels. Not all of these 32-bit numbers have meaningful values, only the first n do, where n is the total amount of levels in the game, i.e. 10 in the shareware version and 30 or 60 in the full version. The remaining numbers are all 0x00000000.
+Next are exactly 100 32-bit (4 Byte) values containing the header offsets of the actual levels. Not all of these 32-bit numbers have meaningful values, only the first n do, where n is the total amount of levels in the game, i.e. 10 in the shareware version and 30 or 60 in the full version. The remaining numbers are all padding with 0x00000000 as their value. This means the level offsets are stored in a 0-terminated 4-byte array with a fixed length of 100.
 
-The last remaining byte always appears to be be 0x00 and it's called the `tileinfo` in the original source code and is declared as an array of unspecified size of type `byte`. The type `byte`is a typedef for `unsigned char` and equal to an 8-bit integer on the target architecture of Wolfenstein 3D's original code. This value is not used anywhere in the original code, so I assume it is simply ignored.
+The last remaining byte always appears to be be 0x00 and it's called the `tileinfo` in the original source code and is declared as an array of unspecified size of type `byte`. The type `byte`is a typedef for `unsigned char` and equal to an 8-bit integer on the target architecture of Wolfenstein 3D's original code. It appears to be a leftover from the map format of previous Id Software games that did use it.
 
-Note that there is no information in this file as to how many levels there are in the game. This information would have to be calculated from the file's size itself. To compute that number one would have to step through the list of header offsets until reaching the first offset that's 0x00000000 (start of the padding). The number of steps is the number of levels.
+Note that there is no information in this file as to how many levels there are in the game. This information would have to be calculated from the file's size itself. To compute that number one would have to step through the list of header offsets until reaching the first offset that's 0x00000000 (start of the padding). The number of steps is equal to the number of levels.
 
 #### GAMEMAPS ####
 This file contains the actual information about the levels and their individual maps. A level is made from a *level header*, which describes where to find the level's maps, their sizes, the size of the level and finally the name of the level.
 
-The header can be found using the offset from the MAPHEAD file as an absolute value. From there on the header is stored as an uncompressed sequence of raw information.
+The header can be found using the offset from the MAPHEAD file as an absolute value, i.e. relative to the start of the file. From there on the header is stored as an uncompressed sequence of raw information.
 
 The first three values are 32-bit unsigned integer values each. The first one is holding the offset to the level's architecture map, the next value is the offset to the level's object map and the third value is the offset to the level's logic map. All values are absolute offsets from the beginning of the file, not relative offsets from the header or relative to each other.
 
@@ -103,8 +200,8 @@ Next are two unsigned 16-bit integers describing the width and height of the lev
 
 Finally 16 characters, 8-bit ASCII each, form the level's named. In the original implementation the characters are stored in an array of type `char` with unspecified size. This is the standard way of storing ASCII strings in C, but the string needs to be terminated with `\0` (null character). In the file any remaining bytes are filled with `\0`, but in the code there is nothing to ensure that the string is indeed properly terminated, leaving a possibility for an error to happen.
 
-#### Extracting the maps ####
-Maps are compressed using the RLEW compression and then possibly compressed on top of that using Carmack compression.
+#### Extracting the maps ###
+Maps are compressed using the RLEW compression and then possibly compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it.
 
 
 Known bugs and limitations
