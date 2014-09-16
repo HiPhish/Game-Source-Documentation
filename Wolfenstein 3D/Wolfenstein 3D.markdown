@@ -49,7 +49,35 @@ Compression algorithms
 The compression algorithms all assume little-endian multibyte numbers, a byte size of 8 bits and a word size of two bytes.
 
 ###RLEW compression###
-A variant of RLE (Run Length Encoding) that uses words instead of bytes as the underlying unit.
+A variant of RLE (Run Length Encoding) that uses words instead of bytes as the underlying unit. Repeating words are stored as a word triplet `(tag, count, word)` where `tag` is a constant word used to identify the triplet, `count` is how many times to copy the word and `word` is the word to copy. Aside from these triplets there are also uncompressed words that are copied verbatim. Here is the pseudocode:
+
+	Prerequisites: source      = pointer to the start of the compressed input stream
+	               destination = pointer to the start of the decompressed output stream
+	               tag         = a word used to identify a triplet
+	               length      = integer length of the decompressed data
+	               Must allocete enough memory to hold the decompressed sequence
+	
+	Side effects: The pre-allocated memory will be filled with decompressed data
+	
+	1) Make new pointers: `read` = `start`, `write` = `desination`
+	   These pointers will be moved forward while the original pointers remain fixed
+	2) While `length` > 0
+		2.1) Read `word` pointed at by `read`
+		2.2) If `word` is `tag`
+			2.2.1) Advance `read` by one word
+			2.2.2) Make new integer `count` from word pointed at by `read`
+			2.2.3) Advance `read` by one word
+			2.2.4) while `count` > 0
+				2.2.4.1) Copy word under `read` to `write`
+				2.2.4.2) Advance `write` by one word
+				2.2.4.3) Decrement `count` and `length` by one
+			2.2.5) Advance `read` by one word
+		2.3) Else
+			2.3.1) Copy word under `read` to `write`
+			2.3.2) Advance `read` and `write` by one word
+			2.3.3) Decrement `length` by one
+
+What about the word that's identical to `tag`? It will be compressed as `(tag, 0x01 0x00, tag)`, i.e. copy the word `tag` one time. This is actually a threefold increase in data compared to the uncompressed version, but in practice this is a better solution than having special cases.
 
 ###Huffman compression###
 
@@ -99,9 +127,9 @@ This pseudocode is similar to the original implementation by Id but independent 
 	
 	Side effects: The pre-allocated memory will be filled with decompressed data
 	
-	1) Make new pointers: read = start, write = desination
+	1) Make new pointers: `read` = `start`, `write` = `desination`
 	   These pointers will be moved forward while the original pointers remain fixed
-	2) While length > 0
+	2) While `length` > 0
 		2.1) Read the word pointed at by `read`
 		2.2) Make new integer `count` the numeric value of its low byte
 		2.3) Make new integer `flag` the numeric value of its high byte
@@ -110,7 +138,7 @@ This pseudocode is similar to the original implementation by Id but independent 
 			2.4.2) Read the word under `read`
 			2.4.3) Make the new integer `offset` the numeric value of the word's high byte
 			2.4.4) Make the new pointer `copy` = `write` - `offset`
-			2.4.5) While count > 0
+			2.4.5) While `count` > 0
 				2.4.5.1) Copy word under `copy` to `write`
 				2.4.5.2) Advance `copy` and `write` by one word each
 				2.4.5.3) Decrement `count` and `length` by one each
@@ -119,7 +147,7 @@ This pseudocode is similar to the original implementation by Id but independent 
 			2.5.2) Read the word under `read`
 			2.5.3) Make the new integer `offset` the numeric value of the word
 			2.5.4) Make the new pointer `copy` = `destination` + `offset`
-			2.5.5) While count > 0
+			2.5.5) While `count` > 0
 				2.5.5.1) Copy word under `copy` to `write`
 				2.5.5.2) Advance `copy` and `write` by one word each
 				2.5.5.3) Decrement `count` and `length` by one each
