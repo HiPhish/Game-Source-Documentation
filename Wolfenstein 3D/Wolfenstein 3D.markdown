@@ -36,6 +36,8 @@ All continuous numbers are written in the standard big-endian notation used in t
 
 Notes are written as "//NOTE", tasks are written as "//TODO" and bugs in the original implementation are written as "//BUG", all without the quotation marks. This allows using the editor's search function to quickly jump to these points. An optional colon (:) can be suffixed, so make sure the editor ignores these.
 
+Pseudocode is based on how C works, so if an integer is added to or subtracted from a pointer it means the pointer is advanced by the amount of bytes its value takes up. For instance, if `p` is a pointer to a word and a word is two bytes in size, then `p + 2` is a pointer that points four bytes (two words) further away from `p`. Variables in pseudocode are considered immutable, every arithmetic operation returns a copy. In the above example the pointer `p` would not advance, instead `p + 2` would be a new pointer. To mutate a variable use a verb such as "increment" or "advance".
+
 
 2D or 3D
 --------
@@ -86,66 +88,51 @@ During each iteration step read a word. If the word's high byte (second byte) is
 ####Pseudocode####
 This pseudocode is similar to the original implementation by Id but independent of language or architecture. It operates on words, but that's just one way to do it.
 
-	define ZERO      0x00
-	define NEAR_FLAG 0xA7
-	define FAR_FLAG  0xA8
+	Constants: zero = 0x00
+	           near = 0xA7
+	           far  = 0xA8
 	
-	// The following values must be given
-	pointer_word source      // pointer to the start of the compressed input stream
-	pointer_word destination // pointer to the start of the decompressed output stream
-	integer length           // length of the decompressed data sequence in words
+	Prerequisites: source      = pointer to the start of the compressed input stream
+	               destination = pointer to the start of the decompressed output stream
+	               length      = length of the decompressed data sequence in words
+	               Must allocete enough memory to hold the decompressed sequence
 	
-	pointer_word read  = source      // reading head of the algorithm
-	pointer_word write = destination // writing head of the algorithm
+	Side effects: The pre-allocated memory will be filled with decompressed data
 	
-	while (length > 0) {
-		word current_word = value_of(read)
-		if (high_byte(current_word) == NEAR_FLAG) { // near pointer or exception
-			integer count = integer_from_byte(low_byte(current_word))
-			if (count != ZERO) {                    // near pointer
-				advance_pointer_by_one_byte(read)
-				integer offset = integer_from_byte(high_byte(value_of(read)))
-
-				pointer_word copy = write - offset  // retreat a copy of the write pointer by `count` times the size of a word
-				while (count > 0) {
-					copy_word_at_to(copy, write)
-					copy  += 1 // advance the pointers by one word
-					write += 1
-					count -= 1 // decrement count
-					lenth -= 1
-				}
-			} else {                                // exception
-				advance_pointer_by_one_byte(read)
-				copy_word_at_to(read, write)
-				swap_bytes(write)
-				write += 1
-				read  += 1
-				lenth -= 1
-			}
-		} else if (high_byte(current_word) == FAR_FLAG) {
-			integer count = integer_from_byte(low_byte(current_word))
-			if (count != ZERO) {                    // far pointer
-				read += 1                           // advance read pointer by one word
-				integer offset = integer_from_word(value_of(read))
-				
-				pointer_word copy = destination + offset
-				while (count > 0) {
-					copy_word_at_to(copy, write)
-					copy  += 1 // advance the pointers by one word
-					write += 1
-					count -= 1 // decrement count
-					lenth -= 1
-				}
-			} else {
-				// see above for exception
-			}
-		} else {                                    // uncompressed word
-			copy_word_at_to(read, write)
-			copy  += 1 // advance the pointers by one word
-			write += 1
-			lenth -= 1
-		}
-	}
+	1) Make new pointers: read = start, write = desination
+	   These pointers will be moved forward while the original pointers remain fixed
+	2) While length > 0
+		2.1) Read the word pointed at by `read`
+		2.2) Make new integer `count` the numeric value of its low byte
+		2.3) Make new integer `flag` the numeric value of its high byte
+		2.4) If `flag` is `near` and `count` is not `zero`
+			2.4.1) Advance `read` by one byte
+			2.4.2) Read the word under `read`
+			2.4.3) Make the new integer `offset` the numeric value of the word's high byte
+			2.4.4) Make the new pointer `copy` = `write` - `offset`
+			2.4.5) While count > 0
+				2.4.5.1) Copy word under `copy` to `write`
+				2.4.5.2) Advance `copy` and `write` by one word each
+				2.4.5.3) Decrement `count` and `length` by one each
+		2.5) Else if `flag` is `far` and `count` is not `zero`
+			2.5.1) Advance read by one word
+			2.5.2) Read the word under `read`
+			2.5.3) Make the new integer `offset` the numeric value of the word
+			2.5.4) Make the new pointer `copy` = `destination` + `offset`
+			2.5.5) While count > 0
+				2.5.5.1) Copy word under `copy` to `write`
+				2.5.5.2) Advance `copy` and `write` by one word each
+				2.5.5.3) Decrement `count` and `length` by one each
+		2.6) Else if `flag` is `near` or `far` and `count` is `zero`
+			2.6.1) Advance `read` by one byte
+			2.6.2) Copy word under `read` to `write`
+			2.6.3) Swap bytes of word under `write`
+			2.6.4) Advance `read` and `write` by one word each
+			2.6.5) Decrement `length` by one
+		2.7) Else
+			2.7.1) Copy word under `read` to `write`
+			2.7.2) Advance `read` and `write` by one word each
+			2.7.3) Decrement `length` by one
 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
