@@ -196,7 +196,7 @@ Each of the tiles in a level describes a three-dimensional cube in the game worl
 #### MAPHEAD ####
 The file starts with the signature 16-bit integer 0xABCD (represented as 0xCD 0xAB bytes in the file). This signature appears always to be the same, but we should not make any assumptions; it is used as the signature for the RLEW compression algorithm. The file is described by the structure `mapfiletype` in the original source code.
 
-Next are exactly 100 32-bit (4 Byte) values containing the header offsets of the actual levels. Not all of these 32-bit numbers have meaningful values, only the first n do, where n is the total amount of levels in the game, i.e. 10 in the shareware version and 30 or 60 in the full version. The remaining numbers are all padding with 0x00000000 as their value. This means the level offsets are stored in a 0-terminated 4-byte array with a fixed length of 100.
+Next are exactly 100 32-bit (4 Byte) values containing the header offsets of the actual levels, that number is hardcoded into the source. Not all of these 32-bit numbers have meaningful values, only the first n do, where n is the total amount of levels in the game, i.e. 10 in the shareware version and 30 or 60 in the full version. The remaining numbers are all padding with 0x00000000 as their value. This means the level offsets are stored in a 0-terminated 4-byte array with a fixed length of 100.
 
 The last remaining byte always appears to be be 0x00 and it's called the `tileinfo` in the original source code and is declared as an array of unspecified size of type `byte`. The type `byte`is a typedef for `unsigned char` and equal to an 8-bit integer on the target architecture of Wolfenstein 3D's original code. It appears to be a leftover from the map format of previous Id Software games that did use it.
 
@@ -209,14 +209,14 @@ The header can be found using the offset from the MAPHEAD file as an absolute va
 
 The first three values are 32-bit unsigned integer values each. The first one is holding the offset to the level's architecture map, the next value is the offset to the level's object map and the third value is the offset to the level's logic map. All values are absolute offsets from the beginning of the file, not relative offsets from the header or relative to each other.
 
-The next three values are unsigned 16-bit integer values describing the length of each map; this is important because the maps themselves are compressed, so the length of a given map is not the same as its size. Their order is again first architecture, then objects and then logic.
+The next three values are unsigned 16-bit integer values describing the Carmack-uncompressed length in bytes of each map; this is important because the maps themselves are compressed, so the length of a given map is not the same as its size. Their order is again first architecture, then objects and then logic.
 
 Next are two unsigned 16-bit integers describing the width and height of the level, in that order. The size appears to always be 64 x 64, but since it's not hardcoded it should not be assumed.
 
 Finally 16 characters, 8-bit ASCII each, form the level's named. In the original implementation the characters are stored in an array of type `char` with unspecified size. This is the standard way of storing ASCII strings in C, but the string needs to be terminated with `\0` (null character). In the file any remaining bytes are filled with `\0`, but in the code there is nothing to ensure that the string is indeed properly terminated, leaving a possibility for an error to happen.
 
 #### Extracting the maps ###
-Maps are compressed using the RLEW compression and then possibly compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it.
+Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression use the length encoded into the map as the decompressed size, it is given in bytes. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
 
 
 Known bugs and limitations
