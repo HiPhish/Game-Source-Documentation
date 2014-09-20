@@ -16,6 +16,7 @@ Table of contents
 	| |- Huffman compression
 	|
 	- Data files
+	| |- File extensions
 	| |- Graphics
 	| |- Audio
 	| |- Maps
@@ -168,7 +169,7 @@ Data files
 ----------
 endianness: little-endian, byte-size: 1 byte = 8 bits, word-size: 1 word = 2 bytes = 16 bits
 
-The game assets for WS3D are stored in various files with the extension WLn, where n is either 1, 3 or 6 depending on the version of the game and stands for the number of episodes (1 = shareware, 3 = early three-episode full version, 6 = newer full version). For simplicity the file extension will be omitted form here on unless a specific file extension is needed. The assets are distributed as follows:
+The game assets for WS3D are stored in various files with the same extension, which is depending on the version of the game. For simplicity the file extension will be omitted form here on unless a specific file extension is needed. The assets are distributed as follows:
 
 	Graphics -> VGADICT, VGAHEAD, VGAGRAPH
 	Audio    -> AUDIOHED, AUDIOT
@@ -177,6 +178,20 @@ The game assets for WS3D are stored in various files with the extension WLn, whe
 (//TODO: all of this needs to be properly confirmed)
 
 The header files contain information about the structure of the actual asset files
+
+### File extensions ###
+
+The file extension of the data files depends on the version of the game. They are as follows:
+- WL1 Shareware
+- WL3 Early three-episode full version
+- WL6 Six-episode full version
+- WJ1 Japanese shareware?
+- WJ6 Japanese full version?
+- SOD Spear of Destiny?
+- SDM ???
+- SD1 ???
+- SD2 ???
+- SD3 ???
 
 ### Graphics ###
 
