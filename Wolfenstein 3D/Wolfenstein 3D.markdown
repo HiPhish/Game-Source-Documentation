@@ -13,7 +13,7 @@ Table of contents
 	- Compression algorithms
 	| |- RLEW compression
 	| |- Carmack compression
-	| |- Carmack compression
+	| |- Huffman compression
 	|
 	- Data files
 	| |- Graphics
@@ -78,8 +78,6 @@ A variant of RLE (Run Length Encoding) that uses words instead of bytes as the u
 			2.3.3) Decrement `length` by one
 
 What about the word that's identical to `tag`? It will be compressed as `(tag, 0x01 0x00, tag)`, i.e. copy the word `tag` one time. This is actually a threefold increase in data compared to the uncompressed version, but in practice this is a better solution than having special cases.
-
-###Huffman compression###
 
 ###Carmack compression###
 The underlying idea of this compression method is that certain information patterns are going to be repeated several times. Instead of repeating the pattern each time a reference to previous instances of the pattern is stored; the already uncompressed data is referenced by the still compressed data.
@@ -164,6 +162,8 @@ This pseudocode is similar to the original implementation by Id but independent 
 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
+###Huffman compression###
+
 Data files
 ----------
 endianness: little-endian, byte-size: 1 byte = 8 bits, word-size: 1 word = 2 bytes = 16 bits
@@ -203,20 +203,20 @@ The last remaining byte always appears to be be 0x00 and it's called the `tilein
 Note that there is no information in this file as to how many levels there are in the game. This information would have to be calculated from the file's size itself. To compute that number one would have to step through the list of header offsets until reaching the first offset that's 0x00000000 (start of the padding). The number of steps is equal to the number of levels.
 
 #### GAMEMAPS ####
-This file contains the actual information about the levels and their individual maps. A level is made from a *level header*, which describes where to find the level's maps, their sizes, the size of the level and finally the name of the level.
+This file contains the actual information about the levels and their individual maps. A level is made from a *level header*, which describes where to find the level's maps, their compressed sizes, the size of the level and finally the name of the level.
 
 The header can be found using the offset from the MAPHEAD file as an absolute value, i.e. relative to the start of the file. From there on the header is stored as an uncompressed sequence of raw information.
 
-The first three values are 32-bit unsigned integer values each. The first one is holding the offset to the level's architecture map, the next value is the offset to the level's object map and the third value is the offset to the level's logic map. All values are absolute offsets from the beginning of the file, not relative offsets from the header or relative to each other.
+The first three values are 32-bit signed integer values each. The first one is holding the offset to the level's architecture map, the next value is the offset to the level's object map and the third value is the offset to the level's logic map. All values are absolute offsets from the beginning of the file, not relative offsets from the header or relative to each other.
 
-The next three values are unsigned 16-bit integer values describing the Carmack-uncompressed length in bytes of each map; this is important because the maps themselves are compressed, so the length of a given map is not the same as its size. Their order is again first architecture, then objects and then logic.
+The next three values are unsigned 16-bit integer values describing the Carmack-compressed length in bytes of each map; this is important because the maps are lumped together adjacent to each other with no seperator. Their order is again first architecture, then objects and then logic.
 
 Next are two unsigned 16-bit integers describing the width and height of the level, in that order. The size appears to always be 64 x 64, but since it's not hardcoded it should not be assumed.
 
-Finally 16 characters, 8-bit ASCII each, form the level's named. In the original implementation the characters are stored in an array of type `char` with unspecified size. This is the standard way of storing ASCII strings in C, but the string needs to be terminated with `\0` (null character). In the file any remaining bytes are filled with `\0`, but in the code there is nothing to ensure that the string is indeed properly terminated, leaving a possibility for an error to happen.
+Finally 16 characters, 8-bit ASCII each, form the level's name. In the original implementation the characters are stored in an array of type `char` with unspecified size. This is the standard way of storing ASCII strings in C, but the string needs to be terminated with `\0` (the null character). In the file any remaining bytes are filled with `\0`, but in the code there is nothing to ensure that the string is indeed properly terminated, leaving a possibility for an error to happen.
 
 #### Extracting the maps ###
-Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression use the length encoded into the map as the decompressed size, it is given in bytes. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
+Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression one can find the decompressed length encoded into the compressed map as the fist word, it is given in bytes. This means the pointer to the compressed sequence must be advanced by one before starting the decompression. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
 
 
 Known bugs and limitations
