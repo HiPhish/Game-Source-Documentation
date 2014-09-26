@@ -18,6 +18,9 @@ Table of contents
 	- Data files
 	| |- File extensions
 	| |- Graphics
+	|    |- Pics
+	|    |- Sprites
+	|
 	| |- Audio
 	| |- Maps
 	|    |- MAPHEAD
@@ -164,6 +167,7 @@ This pseudocode is similar to the original implementation by Id but independent 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
 ###Huffman compression###
+Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two words. Node number 255 is always the root node.
 
 Data files
 ----------
@@ -195,6 +199,37 @@ The file extension of the data files depends on the version of the game. They ar
 - SD3 ???
 
 ### Graphics ###
+There are two types of graphics in the game: *pics* and *sprites*. Pics are rectangular pictures without any transparent holes while sprites are in-game object graphics using transparency.
+
+####Pics####
+To extract pics three files are needed:
+
+	VGADICT     Huffman-tree for decopressing the pics
+	VGAHEAD     Headers describing where to find the pics
+	VGAGRAPH    Compressed pics lumped together
+
+The pics are all Huffman-compressed, so first the Huffman tree has to be loaded.
+
+#### VGADICT ####
+This file is 1024 bytes large, but the last four bytes are just 0x00 byte padding. Four consequtive bytes each form a Huffman tree node and the node itself is made of two words, so the file describes 255 individual Huffman nodes (255 * 4 = 1020). Only those 1020 bytes are read and stored verbatim in an array of Huffman-node type of length 255 (size hard coded). As explained above a Huffman-node is a struct holding two words.
+
+#### VGAHEAD ####
+This file holds the offsets of the pics and is uncompressed. Each offset is a 32-bit signed number, but it is stored using only three bytes instead of four.
+#### VGAGRAPH ####
+
+#### Extracting the pics ####
+Pics are stored Huffman-compressed, so first we need to read the Huffman-table. This is straight forward, simply dump the contents of VGADICT into a pre-allocated array. All sizes are hard coded. Next we need to read the pic headers from VGAHEAD.
+
+First we need to know that number of pics used by the game. This can vary depending on which version of the game is played and the number is hard coded into the executable. It can also be computed by getting the size of the VGAHEAD file in bytes and dividing by three since each head is stored as three bytes. Both approaches are valid and there is a proposal below under "Distributions of the game and magic numbers" for using hard-coded numbers in a way that's compatible with multiple versions of the game at runtime.
+
+Using that number allocate space for an array of that many 32-bit integers and fill each one with the corresponding offset value. Beware that the offsets are stored in the file using only three bytes, not four. One exception is the number 0x00FFFFFF or its corressponding byte sequence `FF FF FF` which gets mapped to the offset -1. It does not appear in neither the registered six-episode release nor in the shareware release. I am not sure what the reason is here, but the original release has the following line in the `CA_FarRead` function:
+
+	if (length>0xffffl)
+		Quit ("CA_FarRead doesn't support 64K reads yet!");
+
+This seems to be a safety check for technical reasons and since that value does not appear among the offsets I am not certain if it is worth replicating.
+
+####Sprites####
 
 ### Audio ###
 
@@ -240,3 +275,9 @@ Known bugs and limitations
 
 1. A map needs at least 1 enemy, 1 piece of treasure and 1 secret door, or else the game will crash. This is the result of the game trying to calculate the percentage the player has picked up and ending up dividing by zero.
 
+### Distributions of the game and magic numbers ###
+Different versions of the game assign different key numbers to the graphics. Each graphic can be identified using an integer "key" magic number and that number depended on what the graphics artists produced. This means the programmers would have had to keep a list of key numbers and always change their code when the graphics changed. Instead the software used by the artists produced alongside the data files also a header file that mapped each number to a macro, so the developers could simply use the macro and the generated header would map the macro to the correct number.
+
+The problem with this is that each build was only suitable for a particular distribution of the game, like shareware, registered, Japanese or Spear of Destiny. The simple solution is to use `#ifdef` directives and set the version at compile time, which is an acceptable solution when building for a particular release, but ill-suited for a source port that needs to be as compatible as possible. I propose the following solution that moves the version detection from compile-time to run-time.
+
+There will be one global header file that has a universal mapping that assigns a number to any image that might exist in any distribution. It is not necessary for it to be compatible to any existing distribution. The programmers will use these global macros then. For each distribution there will be a mapping that maps the universal macro to the distribution's corresponding key number. At run-time when the program starts determine the distribution and assign a global mapping variable to be the mapping for that distribution. The mapping could for example be done using an array where the universal macro is the index and the distribution's key the value. Trying to access an image that does not exist in that particular distribution could be mapped to an invalid number such as -1.
