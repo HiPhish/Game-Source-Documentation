@@ -233,7 +233,32 @@ This seems to be a safety check for technical reasons and since that value does 
 
 Now we need to read the picture table, an array of widths and heights for the individual pics. Open the VGAGRAPH file and jump to the first offset. Now compute the length of this first chunk by taking the offset to the next chunk, substracting the offset of the current chunk and subtracting four. The result is the compressed length of the first chunk, the list of picture dimensions, in bytes. Now allocate enough bytes to hold that sequence and fill it with the first chunk. Allocate enough memory to hold the decompressed picture table and Huffman-expand the first chunk into it.
 
-Now that the preperation work is done we can start extracting the individual pics. So far we have the Huffman tree, an array of offsets, a pic table describing the size of each pic and an open VGAGRAPH file.
+Now that the preperation work is done we can start extracting the individual pics. So far we have the Huffman tree, an array of offsets, a pic table describing the size of each pic and an open VGAGRAPH file. A chunk is identified using its magic number. Get the offset of the chunk and that of the next chunk using their magic numbers. If the offset of the chunk is -1 abort. We can get the magic number of the next chunk by adding +1 to the magic number of the current chunk. If the offset of the next chunk is -1 keep adding +1 to the magic number until the offset is a proper value. Compute the length of the compressed chunk as the difference in chunk offsets and fill a buffer of that size and type 32-bit signed integer with the data of the chunk.
+
+Now we can expand the data. We need to know the expanded size of the chunk, which can be read from the compressed chunk: the first four bytes are a signed 32-bit integer that tells us the size, so read it and advance the pointer by four bytes. There is an exception if the chumk number is greater or equal to `STARTTILE8` and less than `STARTEXTERNS`; I don't really under stand what that is supposed to represent, but the size is hard coded in that case and the pointer is not advanced. Here it the code in question:
+
+	if (chunk >= STARTTILE8 && chunk < STARTEXTERNS) {
+		// expanded sizes of tile8/16/32 are implicit
+		#define BLOCK           64
+		#define MASKBLOCK       128
+		
+		if (chunk<STARTTILE8M)          // tile 8s are all in one chunk!
+			expanded = BLOCK*NUMTILE8;
+		else if (chunk<STARTTILE16)
+			expanded = MASKBLOCK*NUMTILE8M;
+		else if (chunk<STARTTILE16M)    // all other tiles are one/chunk
+			expanded = BLOCK*4;
+		else if (chunk<STARTTILE32)
+			expanded = MASKBLOCK*4;
+		else if (chunk<STARTTILE32M)
+			expanded = BLOCK*16;
+		else
+			expanded = MASKBLOCK*16;
+	}
+
+Allocate enough memory for the uncompressed chunk and pass the pointer to the compressed source, decompressed destination, expanded size and Huffman tree to the Huffman decompression routine. The destination will then hold the address of the decompressed pic chunk. All that is left now is interpreting the chunk as an image.
+
+#### Interpreting pics ####
 
 ####Sprites####
 
