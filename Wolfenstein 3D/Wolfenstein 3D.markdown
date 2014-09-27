@@ -199,7 +199,7 @@ The file extension of the data files depends on the version of the game. They ar
 - SD3 ???
 
 ### Graphics ###
-There are two types of graphics in the game: *pics* and *sprites*. Pics are rectangular pictures without any transparent holes while sprites are in-game object graphics using transparency.
+There are two types of graphics in the game: *pics* and *sprites*. Pics are rectangular pictures of any size without any transparent holes and used outside the 3D portions of the game. An alternative name is *bitmaps*. Sprites are in-game object graphics using the colur 0x980088 for transparency and are always 64x64 pixels large.
 
 ####Pics####
 To extract pics three files are needed:
@@ -211,11 +211,13 @@ To extract pics three files are needed:
 The pics are all Huffman-compressed, so first the Huffman tree has to be loaded.
 
 #### VGADICT ####
-This file is 1024 bytes large, but the last four bytes are just 0x00 byte padding. Four consequtive bytes each form a Huffman tree node and the node itself is made of two words, so the file describes 255 individual Huffman nodes (255 * 4 = 1020). Only those 1020 bytes are read and stored verbatim in an array of Huffman-node type of length 255 (size hard coded). As explained above a Huffman-node is a struct holding two words.
+This file is 1024 bytes large, but the last four bytes are just 0x00 byte padding. Four consequtive bytes each form a Huffman tree node and the node type itself is made of two words, so the file describes 255 individual Huffman nodes (255 * 4 = 1020). Only those 1020 bytes are read and stored verbatim in an array of Huffman-node type of length 255 (size hard coded). As explained above a Huffman-node is a struct holding two words.
 
 #### VGAHEAD ####
-This file holds the offsets of the pics and is uncompressed. Each offset is a 32-bit signed number, but it is stored using only three bytes instead of four.
+This file holds the offsets of the pics and is uncompressed. Each offset is a 32-bit signed number, but it is stored using only three bytes instead of four. The number of offsets is one more than the number of actual chunks; this last offset points to the end of the file. It is necessary because the length of a compressed chunk is not encoded anywhere, it needs to be computed using the starting offset of the next chunk.
+
 #### VGAGRAPH ####
+This is the file containing the Huffman-compressed chunks. The number of pics is hard-coded into the executable and cannot be learned from this file as not all chunks are actually pics, some are text or palettes. The first chunk is the *picture table*, an array of widths and heights for each pic. Each array element is a pair of two words, the first being the width and the second being the height.
 
 #### Extracting the pics ####
 Pics are stored Huffman-compressed, so first we need to read the Huffman-table. This is straight forward, simply dump the contents of VGADICT into a pre-allocated array. All sizes are hard coded. Next we need to read the pic headers from VGAHEAD.
@@ -227,7 +229,11 @@ Using that number allocate space for an array of that many 32-bit integers and f
 	if (length>0xffffl)
 		Quit ("CA_FarRead doesn't support 64K reads yet!");
 
-This seems to be a safety check for technical reasons and since that value does not appear among the offsets I am not certain if it is worth replicating.
+This seems to be a safety check for technical reasons and since that value does not appear among the offsets anyway I am not certain if it is worth replicating.
+
+Now we need to read the picture table, an array of widths and heights for the individual pics. Open the VGAGRAPH file and jump to the first offset. Now compute the length of this first chunk by taking the offset to the next chunk, substracting the offset of the current chunk and subtracting four. The result is the compressed length of the first chunk, the list of picture dimensions, in bytes. Now allocate enough bytes to hold that sequence and fill it with the first chunk. Allocate enough memory to hold the decompressed picture table and Huffman-expand the first chunk into it.
+
+Now that the preperation work is done we can start extracting the individual pics. So far we have the Huffman tree, an array of offsets, a pic table describing the size of each pic and an open VGAGRAPH file.
 
 ####Sprites####
 

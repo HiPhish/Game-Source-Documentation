@@ -258,7 +258,7 @@ Codes for Wolfenstein 3D
 	0x01D3    Dog 3 ^
 	0x01D4    Dog 3 <
 	0x01D5    Dog 3 v
-	0x01D6    BIG Guard!
+	0x01D6    Hans Grösse (boss)
 	0x01D7    *Big officer
 	0x01D8    *Zombie 1 East
 	0x01D9    *Zombie 1 ^
@@ -268,10 +268,10 @@ Codes for Wolfenstein 3D
 	0x01DD    *Zombie 1 ^
 	0x01DE    *Zombie 1 <
 	0x01DF    *Zombie 1 v
-	0x01E0    *Red Ghost
-	0x01E1    *Orange Ghost
-	0x01E2    *Light red Ghost
-	0x01E3    *Blue Ghost
+	0x01E0    Blinky (red ghost)
+	0x01e1    Clyde (orange ghost
+	0x01E2    Pinky (pink ghost)
+	0x01E3    Inky (blue ghost)
 	0x01EA    *Zombie 2 East
 	0x01EB    *Zombie 2 ^
 	0x01EC    *Zombie 2 <
