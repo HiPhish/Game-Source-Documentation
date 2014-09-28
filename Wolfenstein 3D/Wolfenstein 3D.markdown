@@ -167,7 +167,43 @@ This pseudocode is similar to the original implementation by Id but independent 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
 ###Huffman compression###
-Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two words. Node number 255 is always the root node.
+Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two word, and node number 255 is always the root node. Here is how the nodes work: a byte called the *node value* is being kept track of, it is initially 254, the array position of the root node of the tree. From there the input of the compressed stream is being read bit-wise, if the bit is `0` the node value is set to the node's first word, otherwise to the node's second word. If the node value is less than 256 (number hard-coded) the node value is written as a byte (an unsigned number <256 fits inside a byte) and the node pointer is reset back to the root node. Otherwise, if the node value is eaqual to or greater than 256 the node pointer is set to the node at array index (node value - 256).
+
+#### Pseudocode ####
+Since the input cannot be read bit-wise it has to be read one byte at a time and then the input byte is being examined using a masking byte. This byte starts out as 0x01 and is bitewise ANDed with the input byte to decide which path down the tree to take. Afterwards the 1-bit of the masking byte is left-shifted by one to be able to examine the next input-bit. Once the mask byte reached 0x80 the masking bit is all the way to the right, so we need to reset it back to 0x01 and read the next input byte.
+
+	Constants: root = 254
+	
+	Prerequisites: source       = pointer to the start of the compressed input stream as bytes
+	               destination  = pointer to the start of the decompressed output stream as bytes
+	               length       = length of the decompressed data sequence in words
+	               huffman_tree = array of Huffman-tree nodes for decompression
+	               Must allocete enough memory to hold the decompressed sequence
+	
+	Data structures: struct huffman_node {word word_0, word_1} : a structure holding two words
+	
+	Side effects: The pre-allocated memory will be filled with decompressed data
+	
+	1) Make new pointer `node` of type `huffman_node` and set it to `huffman_tree[root]`
+	   Make new pointers `read` and `write` and set them to `source` and `destination`
+	   Make new byte `mask` = 0x01 and `input`, set input to value of `read`, advance `read`
+	   Make new word `node_value`
+	2) Repeat indefinitely
+		2.1) If (`input` & `mask`) == 0x00
+			2.1.1) `node_value` = `node`->`word_0`
+		2.2) Else
+			2.2.1) `node_value` = `node`->`word_1`
+		2.3) If `mask`== 0x80, i.e. the masking bit is all the way to the right
+			2.3.1) Set `input` to value pointed at by read, advance read
+			2.3.2) Set `mask` back to 0x01
+		2.4) Else
+			2.4.1) Bit-shift `mask` by one bit to the left
+		2.5) If `node_value` < 256
+			2.5.1) Write the value of `node_vale` as a byte to `write`, advance `write
+			2.5.2) Reset `node_pointer` back to `huffman_tree`[`root`]
+			2.5.3) If the end of the output stream has been reached break out of the loop
+		2.6) Else
+			2.6.1) `node_pointer` = `huffman_tree`[`node_value` - 256]
 
 Data files
 ----------
@@ -235,7 +271,7 @@ Now we need to read the picture table, an array of widths and heights for the in
 
 Now that the preperation work is done we can start extracting the individual pics. So far we have the Huffman tree, an array of offsets, a pic table describing the size of each pic and an open VGAGRAPH file. A chunk is identified using its magic number. Get the offset of the chunk and that of the next chunk using their magic numbers. If the offset of the chunk is -1 abort. We can get the magic number of the next chunk by adding +1 to the magic number of the current chunk. If the offset of the next chunk is -1 keep adding +1 to the magic number until the offset is a proper value. Compute the length of the compressed chunk as the difference in chunk offsets and fill a buffer of that size and type 32-bit signed integer with the data of the chunk.
 
-Now we can expand the data. We need to know the expanded size of the chunk, which can be read from the compressed chunk: the first four bytes are a signed 32-bit integer that tells us the size, so read it and advance the pointer by four bytes. There is an exception if the chumk number is greater or equal to `STARTTILE8` and less than `STARTEXTERNS`; I don't really under stand what that is supposed to represent, but the size is hard coded in that case and the pointer is not advanced. Here it the code in question:
+Now we can expand the data. We need to know the expanded size of the chunk, which can be read from the compressed chunk: the first four bytes are a signed 32-bit integer that tells us the size, so read it and advance the pointer by four bytes. There is an exception if the chumk number is greater or equal to `STARTTILE8` and less than `STARTEXTERNS`; I don't really understand what that is supposed to represent, but the size is hard coded in that case and the pointer is not advanced. Here it the code in question:
 
 	if (chunk >= STARTTILE8 && chunk < STARTEXTERNS) {
 		// expanded sizes of tile8/16/32 are implicit
