@@ -295,6 +295,7 @@ Now we can expand the data. We need to know the expanded size of the chunk, whic
 Allocate enough memory for the uncompressed chunk and pass the pointer to the compressed source, decompressed destination, expanded size and Huffman tree to the Huffman decompression routine. The destination will then hold the address of the decompressed pic chunk. All that is left now is interpreting the chunk as an image.
 
 #### Interpreting pics ####
+Uncompressed pics are stored as sequences of bytes. A byte's unsigned integer value can range from 0 to 255, which is exactly how many colours the VGA standard supports. Each byte stands for a colour index of a pixel that can be mapped to a colour value using a palette. The palette depends on the game and could be loaded from an external file, it maps the indices to whatever format the target API uses, such as RGBA. In order to display the image as a two-dimensional surface we also need the width and height from the picture table above.
 
 ####Sprites####
 
