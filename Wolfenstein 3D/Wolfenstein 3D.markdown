@@ -20,6 +20,7 @@ Table of contents
 	| |- Graphics
 	|    |- Pics
 	|    |- Sprites
+	|    |- Textures
 	|
 	| |- Audio
 	| |- Maps
@@ -167,10 +168,10 @@ This pseudocode is similar to the original implementation by Id but independent 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
 ###Huffman compression###
-Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two word, and node number 255 is always the root node. Here is how the nodes work: a byte called the *node value* is being kept track of, it is initially 254, the array position of the root node of the tree. From there the input of the compressed stream is being read bit-wise, if the bit is `0` the node value is set to the node's first word, otherwise to the node's second word. If the node value is less than 256 (number hard-coded) the node value is written as a byte (an unsigned number <256 fits inside a byte) and the node pointer is reset back to the root node. Otherwise, if the node value is eaqual to or greater than 256 the node pointer is set to the node at array index (node value - 256).
+Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two words, and node number 255 (inde 254) is always the root node. Here is how the nodes work: a byte called the *node value* is being kept track of, it is initially 254, the array position of the root node of the tree. From there the input of the compressed stream is being read bit-wise, if the bit is `0` the node value is set to the node's first word, otherwise to the node's second word. If the node value is less than 256 (i.e. within the value range of a byte) the node value is written as a byte and the node pointer is reset back to the root node. Otherwise, if the node value is eaqual to or greater than 256 the node pointer is set to the node at array index (node value - 256).
 
 #### Pseudocode ####
-Since the input cannot be read bit-wise it has to be read one byte at a time and then the input byte is being examined using a masking byte. This byte starts out as 0x01 and is bitewise ANDed with the input byte to decide which path down the tree to take. Afterwards the 1-bit of the masking byte is left-shifted by one to be able to examine the next input-bit. Once the mask byte reached 0x80 the masking bit is all the way to the right, so we need to reset it back to 0x01 and read the next input byte.
+Since the input cannot be read bit-wise it has to be read one byte at a time and then the input byte is being examined using a masking byte. This byte starts out as 0x01 and is bitewise ANDed with the input byte to decide which path down the tree to take. Afterwards the 1-bit of the masking byte is left-shifted by one to be able to examine the next input-bit. Once the mask byte reached 0x80 the masking bit is all the way to the left, so we need to reset it back to 0x01 and read the next input byte.
 
 	Constants: root = 254
 	
@@ -185,7 +186,7 @@ Since the input cannot be read bit-wise it has to be read one byte at a time and
 	Side effects: The pre-allocated memory will be filled with decompressed data
 	
 	1) Make new pointer `node` of type `huffman_node` and set it to `huffman_tree[root]`
-	   Make new pointers `read` and `write` and set them to `source` and `destination`
+	   Make new pointers `read` and `write` and set them to `source` and `destination` respectively
 	   Make new byte `mask` = 0x01 and `input`, set input to value of `read`, advance `read`
 	   Make new word `node_value`
 	2) Repeat indefinitely
@@ -198,8 +199,8 @@ Since the input cannot be read bit-wise it has to be read one byte at a time and
 			2.3.2) Set `mask` back to 0x01
 		2.4) Else
 			2.4.1) Bit-shift `mask` by one bit to the left
-		2.5) If `node_value` < 256
-			2.5.1) Write the value of `node_vale` as a byte to `write`, advance `write
+		2.5) If `node_value` < 256 (hex 0xFF)
+			2.5.1) Write the value of `node_vale` as a byte to `write`, advance `write`
 			2.5.2) Reset `node_pointer` back to `huffman_tree`[`root`]
 			2.5.3) If the end of the output stream has been reached break out of the loop
 		2.6) Else
@@ -267,7 +268,7 @@ Using that number allocate space for an array of that many 32-bit integers and f
 
 This seems to be a safety check for technical reasons and since that value does not appear among the offsets anyway I am not certain if it is worth replicating.
 
-Now we need to read the picture table, an array of widths and heights for the individual pics. Open the VGAGRAPH file and jump to the first offset. Now compute the length of this first chunk by taking the offset to the next chunk, substracting the offset of the current chunk and subtracting four. The result is the compressed length of the first chunk, the list of picture dimensions, in bytes. Now allocate enough bytes to hold that sequence and fill it with the first chunk. Allocate enough memory to hold the decompressed picture table and Huffman-expand the first chunk into it.
+Now we need to read the picture table, an array of widths and heights for the individual pics. Open the VGAGRAPH file and jump to the first offset. We can read the expanded length of the chunk in bytes as a signed 32 bit integer from the first four bytes. Now compute the compressed length of this first chunk in bytes by taking the offset to the next chunk, substracting the offset of the current chunk and subtracting four (the extpanded length). Now allocate enough bytes to hold that sequence and fill it with the first chunk minus the first four bytes. Allocate enough memory to hold the decompressed picture table and Huffman-expand the first chunk into it.
 
 Now that the preperation work is done we can start extracting the individual pics. So far we have the Huffman tree, an array of offsets, a pic table describing the size of each pic and an open VGAGRAPH file. A chunk is identified using its magic number. Get the offset of the chunk and that of the next chunk using their magic numbers. If the offset of the chunk is -1 abort. We can get the magic number of the next chunk by adding +1 to the magic number of the current chunk. If the offset of the next chunk is -1 keep adding +1 to the magic number until the offset is a proper value. Compute the length of the compressed chunk as the difference in chunk offsets and fill a buffer of that size and type 32-bit signed integer with the data of the chunk.
 
@@ -295,9 +296,19 @@ Now we can expand the data. We need to know the expanded size of the chunk, whic
 Allocate enough memory for the uncompressed chunk and pass the pointer to the compressed source, decompressed destination, expanded size and Huffman tree to the Huffman decompression routine. The destination will then hold the address of the decompressed pic chunk. All that is left now is interpreting the chunk as an image.
 
 #### Interpreting pics ####
-Uncompressed pics are stored as sequences of bytes. A byte's unsigned integer value can range from 0 to 255, which is exactly how many colours the VGA standard supports. Each byte stands for a colour index of a pixel that can be mapped to a colour value using a palette. The palette depends on the game and could be loaded from an external file, it maps the indices to whatever format the target API uses, such as RGBA. In order to display the image as a two-dimensional surface we also need the width and height from the picture table above.
+Uncompressed pics are stored as sequences of bytes. A byte's unsigned integer value can range from 0 to 255, which is exactly how many colours the VGA standard supports. Each byte stands for a colour index of a pixel that can be mapped to a colour value using a palette. The palette depends on the game and can be loaded from an external file or be hard-coded, it maps the indices to whatever format the target API uses, such as RGBA. In order to display the image as a two-dimensional surface we also need the width and height from the picture table above.
 
-####Sprites####
+Given the size of the picture and a palette we can then assemble the image the following way:
+
+	rgb_pixel[i + j*width] = palette[vga_pixel[(j*(width>>2)+(i>>2))+(i&3)*(width>>2)*height]] 
+
+Here `rgb_pixel` is a linear array of output pixels starting in the top-left corner and growing width-first, height-second. `palette` is an array that maps a colpur index to an RGB colour value. `vga_pixel` is the array of picture pixels. The variables `i` and `j` stand for the current width and height while building the output image. The operators `>>` and `&` are bitwise right-shift and bitwise `AND` respectively.
+
+I don't understand how or why pictures need to be "woven" in such a way, I assume it has to do with the way that the VGA standard works. Trying to order the pixels linearly instead of weaving them results in 4x4 tiles of down-scaled versions of the picture; the original picture can still be recognised. The original code does mention four "layers" when it is about to send the picture to memory.
+
+#### Sprites ####
+
+#### Textures ####
 
 ### Audio ###
 
