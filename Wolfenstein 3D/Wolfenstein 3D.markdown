@@ -247,16 +247,16 @@ To extract pics three files are needed:
 
 The pics are all Huffman-compressed, so first the Huffman tree has to be loaded.
 
-#### VGADICT ####
+##### VGADICT #####
 This file is 1024 bytes large, but the last four bytes are just 0x00 byte padding. Four consequtive bytes each form a Huffman tree node and the node type itself is made of two words, so the file describes 255 individual Huffman nodes (255 * 4 = 1020). Only those 1020 bytes are read and stored verbatim in an array of Huffman-node type of length 255 (size hard coded). As explained above a Huffman-node is a struct holding two words.
 
-#### VGAHEAD ####
+##### VGAHEAD #####
 This file holds the offsets of the pics and is uncompressed. Each offset is a 32-bit signed number, but it is stored using only three bytes instead of four. The number of offsets is one more than the number of actual chunks; this last offset points to the end of the file. It is necessary because the length of a compressed chunk is not encoded anywhere, it needs to be computed using the starting offset of the next chunk.
 
-#### VGAGRAPH ####
+##### VGAGRAPH #####
 This is the file containing the Huffman-compressed chunks. The number of pics is hard-coded into the executable and cannot be learned from this file as not all chunks are actually pics, some are text or palettes. The first chunk is the *picture table*, an array of widths and heights for each pic. Each array element is a pair of two words, the first being the width and the second being the height.
 
-#### Extracting the pics ####
+##### Extracting the pics #####
 Pics are stored Huffman-compressed, so first we need to read the Huffman-table. This is straight forward, simply dump the contents of VGADICT into a pre-allocated array. All sizes are hard coded. Next we need to read the pic headers from VGAHEAD.
 
 First we need to know that number of pics used by the game. This can vary depending on which version of the game is played and the number is hard coded into the executable. It can also be computed by getting the size of the VGAHEAD file in bytes and dividing by three since each head is stored as three bytes. Both approaches are valid and there is a proposal below under "Distributions of the game and magic numbers" for using hard-coded numbers in a way that's compatible with multiple versions of the game at runtime.
@@ -295,7 +295,7 @@ Now we can expand the data. We need to know the expanded size of the chunk, whic
 
 Allocate enough memory for the uncompressed chunk and pass the pointer to the compressed source, decompressed destination, expanded size and Huffman tree to the Huffman decompression routine. The destination will then hold the address of the decompressed pic chunk. All that is left now is interpreting the chunk as an image.
 
-#### Interpreting pics ####
+##### Interpreting pics #####
 Uncompressed pics are stored as sequences of bytes. A byte's unsigned integer value can range from 0 to 255, which is exactly how many colours the VGA standard supports. Each byte stands for a colour index of a pixel that can be mapped to a colour value using a palette. The palette depends on the game and can be loaded from an external file or be hard-coded, it maps the indices to whatever format the target API uses, such as RGBA. In order to display the image as a two-dimensional surface we also need the width and height from the picture table above.
 
 Given the size of the picture and a palette we can then assemble the image the following way:
@@ -307,6 +307,25 @@ Here `rgb_pixel` is a linear array of output pixels starting in the top-left cor
 I don't understand how or why pictures need to be "woven" in such a way, I assume it has to do with the way that the VGA standard works. Trying to order the pixels linearly instead of weaving them results in 4x4 tiles of down-scaled versions of the picture; the original picture can still be recognised. The original code does mention four "layers" when it is about to send the picture to memory.
 
 #### Sprites ####
+Sprites are stored in the file VSWAP, together with textures and sound effects, there are no other files involved. Each sprite is 64x64 pixels large. They are drawn column-wise and since there is a lot of empty columns left and right of the visible picture only the columns between and including the outer-most non-empty columns are given. Each column is described via a variable-length list of drawing instructions, each instruction being six bytes in size.
+
+##### VSWAP #####
+The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting offset of the sprite chunk relative to the beginning of the file. The third integer is the starting offset of the sounds. I will only be focusing on the sprites here.
+
+Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a sprite or a sound one has to use the chunk's index and compare it with the amount of sprite- and sound chunks.
+
+Once we have a sprite's offset and length we can read it. The sprite has its own header consisting of two words followed by an array of up to 64 words. The first word is the index of the left-most non-empty column, the second wrd is the index of the right-most column. The array is of variable length and contains the offsets to the drawing instruction list of each column; the first array element is the offset to the drawing instruction list of the left-most non-empty column, the last array element is the offset for the right-most non-empty column, and evey element in between belongs to the column after the previous one. All these offsets are relative to the beginning of the sprite, not the VSWAP file.
+
+The number of instruction offsets can be computed as follows: `last_column - first_column + 1`. The index of the beginning of the pixel data within the sprite can thus be found as follows:
+
+	(last_column - first_column + 1 + 2) * sizeof(word)
+
+To fill the image with pixels we fill all pixels before the first column with transparency. Next we iterate over the non-empty columns. Here the variable `x` will refer to the index of the current column, it gives us the horizontal position of the pixel. The vertical position is derived from the drawing instructions: the first word divided by two is the lower starting point of the pixel sequence, the third word is the upper end point of the sequence (columns are drawn from bottom to top). If the first word is 0x0000 it means the end of the column has been reached and we can advance `x` to the next one. I don't know what the third byte does.
+
+All that's missing now is how which pixels to draw onto the sprite. Sprites use a sort of RLE-compression: in the compressed sprite data each byte after the instruction offsets is a pixel and the n-th pixel belongs to the n-th instruction. The extents of the instruction tell us how often to draw these pixels. After an instruction has been executed move on to the next pixel.
+
+(//TODO: I need to find out if the second byte of an instruction is needed or not)
+
 
 #### Textures ####
 
