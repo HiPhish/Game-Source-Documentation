@@ -18,11 +18,14 @@ Table of contents
 	- Data files
 	| |- File extensions
 	| |- Graphics
-	|    |- Pics
-	|    |- Sprites
-	|    |- Textures
-	|
+	| |  |- Pics
+	| |  |- Sprites
+	| |  |- Textures
+	| |
 	| |- Audio
+	| |  |- Sound effects
+	| |  |- Music
+	| |
 	| |- Maps
 	|    |- MAPHEAD
 	|    |- GAMEMAPS
@@ -42,6 +45,8 @@ All continuous numbers are written in the standard big-endian notation used in t
 Notes are written as "//NOTE", tasks are written as "//TODO" and bugs in the original implementation are written as "//BUG", all without the quotation marks. This allows using the editor's search function to quickly jump to these points. An optional colon (:) can be suffixed, so make sure the editor ignores these.
 
 Pseudocode is based on how C works, so if an integer is added to or subtracted from a pointer it means the pointer is advanced by the amount of bytes its value takes up. For instance, if `p` is a pointer to a word and a word is two bytes in size, then `p + 2` is a pointer that points four bytes (two words) further away from `p`. Variables in pseudocode are considered immutable, every arithmetic operation returns a copy. In the above example the pointer `p` would not advance, instead `p + 2` would be a new pointer. To mutate a variable use a verb such as "increment" or "advance".
+
+Pointers and arrays are used more or less interchangably in the pseudocode as well. Usually when a pointer is described as a "sequence" of something it can be an array as well. Similarly, the square bracked notation `pointer[i]` means "the value of `pointer + i`". Whether the actual implementation uses pointers, arrays, vectors, linked lists of whatever is irrelevant.
 
 
 2D or 3D
@@ -307,29 +312,88 @@ Here `rgb_pixel` is a linear array of output pixels starting in the top-left cor
 I don't understand how or why pictures need to be "woven" in such a way, I assume it has to do with the way that the VGA standard works. Trying to order the pixels linearly instead of weaving them results in 4x4 tiles of down-scaled versions of the picture; the original picture can still be recognised. The original code does mention four "layers" when it is about to send the picture to memory.
 
 #### Sprites ####
-Sprites are stored in the file VSWAP, together with textures and sound effects, there are no other files involved. Each sprite is 64x64 pixels large. They are drawn column-wise and since there is a lot of empty columns left and right of the visible picture only the columns between and including the outer-most non-empty columns are given. Each column is described via a variable-length list of drawing instructions, each instruction being six bytes in size.
+Sprites are stored in the file VSWAP, together with textures and sound effects, there are no other files involved. Each sprite is 64x64 pixels large. They are drawn column-wise and since there is a lot of empty columns left and right of the visible picture. Only the columns between and including the outer-most non-empty columns are given. Each column is described via a variable-length list of drawing instructions, each instruction being six bytes in size.
 
 ##### VSWAP #####
-The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting offset of the sprite chunk relative to the beginning of the file. The third integer is the starting offset of the sounds. I will only be focusing on the sprites here.
+The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting offset of the sprite chunk relative to the beginning of the file. The third integer is the starting offset of the sound effects. I will only be focusing on the sprites here.
 
-Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a sprite or a sound one has to use the chunk's index and compare it with the amount of sprite- and sound chunks.
+Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a texture, a sprite or a sound one has to use the chunk's index and compare it to the amount of sprite- and sound chunks. If you want to read a sprite or a sound you have to add the starting offset to the magic number, for example if the sprite offset is 35 and we want to read sprite 8 we have to read chunk 43.
 
-Once we have a sprite's offset and length we can read it. The sprite has its own header consisting of two words followed by an array of up to 64 words. The first word is the index of the left-most non-empty column, the second wrd is the index of the right-most column. The array is of variable length and contains the offsets to the drawing instruction list of each column; the first array element is the offset to the drawing instruction list of the left-most non-empty column, the last array element is the offset for the right-most non-empty column, and evey element in between belongs to the column after the previous one. All these offsets are relative to the beginning of the sprite, not the VSWAP file.
+Once we have a sprite's offset and length we can read it. The sprite has its own header consisting of two words followed by an array of up to 64 words. The first word is the index of the left-most non-empty column, the second word is the index of the right-most column. The array is of variable length and contains the offsets to the head of the drawing instruction list of each column; the first array element is the offset to the drawing instruction list of the left-most non-empty column, the last array element is the offset for the right-most non-empty column, and evey element in between belongs to the column after the previous one. All these offsets are relative to the beginning of the sprite, not the VSWAP file.
 
 The number of instruction offsets can be computed as follows: `last_column - first_column + 1`. The index of the beginning of the pixel data within the sprite can thus be found as follows:
 
 	(last_column - first_column + 1 + 2) * sizeof(word)
 
-To fill the image with pixels we fill all pixels before the first column with transparency. Next we iterate over the non-empty columns. Here the variable `x` will refer to the index of the current column, it gives us the horizontal position of the pixel. The vertical position is derived from the drawing instructions: the first word divided by two is the lower starting point of the pixel sequence, the third word is the upper end point of the sequence (columns are drawn from bottom to top). If the first word is 0x0000 it means the end of the column has been reached and we can advance `x` to the next one. I don't know what the third byte does.
+Here is a schematic of a sprite chunk:
+	
+	W- first_column
+	|
+	W- last_column
+	|
+	W- offset[0] -> |W|W|W| ... |W|W|W|
+	:
+	W- offset[n] -> |W|W|W| ... |W|W|W|
+	|
+	B- data
+	:
+	B- data
 
-All that's missing now is how which pixels to draw onto the sprite. Sprites use a sort of RLE-compression: in the compressed sprite data each byte after the instruction offsets is a pixel and the n-th pixel belongs to the n-th instruction. The extents of the instruction tell us how often to draw these pixels. After an instruction has been executed move on to the next pixel.
+A `W` means `word`, a `B` means `byte`, a `- ` means "is" and a `->` means "points to" or "is an offset to", offsets are relative to the beginnig of the chunk. The data stands to any remaing data that's in the sprite, regardless of what it represents. It is given in bytes, because that's how the pixels will be read, but the column instructions are three *words*, so take care to read three words or six bytes, not three bytes.
 
-(//TODO: I need to find out if the second byte of an instruction is needed or not)
+To fill the image with pixels we fill the entire image with transparency (byte `0xFF`). Next we iterate over the non-empty columns. Here the variable `x` will refer to the index of the current column, it gives us the horizontal position of the pixel. The vertical position is derived from the drawing instructions: the first word divided by two is the lower starting point of the pixel sequence, the third word is the upper end point of the sequence (columns are drawn from bottom to top). If the first word is 0x0000 it means the end of the column has been reached and we can advance `x` to the next one. The middle word is used to reference which pixels to use, but oddly enough it is not necessary.
 
+All that's missing now is how which pixels to draw onto the sprite. Sprites use a sort of RLE-compression: in the compressed sprite data each byte after the instruction offsets is a pixel sequence and the n-th sequence belongs to the n-th instruction. The extents of the instruction tell us how many pixels from that sequence to draw. After an instruction has been executed move on to the next pixel. here is the pseudocode:
+
+	constants: transparency = 0xFF
+	
+	prerequsites: chunk       = pointer to the compressed chunk as a byte sequence
+	              first_colum = index of the first column (within range [0, 63), less than last_column)
+	              last_colum  = index of the last column (within range (0, 63], greater than first_column)
+	              offsets     = offsets of the column drawing instructions
+	              i           = (last_column - first_column + 1 + 2) * sizeof(word)
+	              Must allocate enough space to hold decompressed sprite (64*64 bytes)
+	
+	1) Fill entire sprite with the colour for transparency
+	2) Make pointer to word `column_offset_reader` and set it to the first column instruction offset
+	3) For (word `column` = `first_column`, while `column` <= `last_column`, iterate ++`column`)
+		3.1) Make pointer to word `drawing_instruction` and set to `chunk` + value of `column_offset_reader` (as word)
+		3.2) Make integer `idx` = 0
+		3.3) While `drawing_instruction`[`idx`] != 0x0000
+		    3.3.1) For (word row = `drawing_instruction`[`idx`+2] / 2, while row < `drawing_instruction`[`idx`] / 2, iterate ++row)
+		        3.3.1.1) `result`[`column` + (63 - `row`) * 64] = `chunk`[`i`]
+		        3.3.1.2) ++`i`
+		    3.3.2) `idx` += 3
+		3.4) Advance `column_offset_reader` by one word
+
+Now about the second word of the instruction; rather than using the above method to get the pixel sequence it is possible to use that word. Use the numeric value of the word plus the current row as the offset from the beginning of the compressed chunk. As far as I can tell both ways yield the same result, so I don't know which one to prefer. If in doubt go with this one though, just in case that there is a weird exception somewhere out there. Here is the modified pseudocode from above:
+
+	1) ...
+	1) ...
+	3) ...
+		3.1) ...
+		3.2) ...
+		3.3) ...
+			3.3.1) ...
+				3.3.1.1) `result`[`column` + (63 - `row`) * 64] = `chunk`[`drawing_instruction`[`idx`+1] + row]
+			3.3.2) ...
+		3.4) ...
+
+We don't need the variable `i` anymore, and so we don't increment it either.
+
+##### Interpreting sprites #####
+Sprites use the same palette as bitmap pictures, but the order in which pixels are stored is different. If you have been following the above instructions the sprite will be flipped horizontally, i.e. upside-down. This means the first row in the raw byte data is the last row in the RGB data, the second row is the second-to-last and so on. Columns are not affected.
 
 #### Textures ####
+Textures are simple since they are not compressed. Just like sprites they are always 64x64 pixels large, but they have no holes. They are also stored in the VSWAP file, but their type has no offset, the magic number of a texture is the number of its chunk. To read the texture simply read 4096 bytes from the chunk verbatim. That fixed number can be replaced by the chunk length as discussed above for sprites.
+
+Textures use the same palette as bitmap pictures and sprites as well, but the order of their pixels is different. The entire image is transposed, meaning that the row and column of each pixel needs to be swapped, like a transposed matrix. Or in other words, Wolfenstein 3D drew the textures column-first, row-second.
 
 ### Audio ###
+
+#### Sound effects ####
+
+#### Music ####
 
 ### Levels & Maps ###
 Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the levels's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
