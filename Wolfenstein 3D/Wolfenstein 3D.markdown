@@ -32,6 +32,8 @@ Table of contents
 	|    |- Extracting the maps
 	|
 	- Known bugs and limitations
+	|
+	- References
 
 
 Conventions and nomenclature
@@ -281,8 +283,8 @@ Now we can expand the data. We need to know the expanded size of the chunk, whic
 
 	if (chunk >= STARTTILE8 && chunk < STARTEXTERNS) {
 		// expanded sizes of tile8/16/32 are implicit
-		#define BLOCK           64
-		#define MASKBLOCK       128
+		#define BLOCK        64
+		#define MASKBLOCK    128
 		
 		if (chunk<STARTTILE8M)          // tile 8s are all in one chunk!
 			expanded = BLOCK*NUMTILE8;
@@ -315,9 +317,9 @@ I don't understand how or why pictures need to be "woven" in such a way, I assum
 Sprites are stored in the file VSWAP, together with textures and sound effects, there are no other files involved. Each sprite is 64x64 pixels large. They are drawn column-wise and since there is a lot of empty columns left and right of the visible picture. Only the columns between and including the outer-most non-empty columns are given. Each column is described via a variable-length list of drawing instructions, each instruction being six bytes in size.
 
 ##### VSWAP #####
-The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting offset of the sprite chunk relative to the beginning of the file. The third integer is the starting offset of the sound effects. I will only be focusing on the sprites here.
+The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting index of the sprite chunk relative to the beginning of the file. The third integer is the starting index of the sound effects. I will only be focusing on the sprites here.
 
-Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a texture, a sprite or a sound one has to use the chunk's index and compare it to the amount of sprite- and sound chunks. If you want to read a sprite or a sound you have to add the starting offset to the magic number, for example if the sprite offset is 35 and we want to read sprite 8 we have to read chunk 43.
+Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a texture, a sprite or a sound one has to use the chunk's index and compare it to the number of sprite- and sound chunks and their starting index. If you want to read a sprite or a sound you have to add the starting index to the magic number, for example if the sprite index is 35 and we want to read sprite 8 we have to read chunk 43.
 
 Once we have a sprite's offset and length we can read it. The sprite has its own header consisting of two words followed by an array of up to 64 words. The first word is the index of the left-most non-empty column, the second word is the index of the right-most column. The array is of variable length and contains the offsets to the head of the drawing instruction list of each column; the first array element is the offset to the drawing instruction list of the left-most non-empty column, the last array element is the offset for the right-most non-empty column, and evey element in between belongs to the column after the previous one. All these offsets are relative to the beginning of the sprite, not the VSWAP file.
 
@@ -390,10 +392,89 @@ Textures are simple since they are not compressed. Just like sprites they are al
 Textures use the same palette as bitmap pictures and sprites as well, but the order of their pixels is different. The entire image is transposed, meaning that the row and column of each pixel needs to be swapped, like a transposed matrix. Or in other words, Wolfenstein 3D drew the textures column-first, row-second.
 
 ### Audio ###
+Audio is divided into two categories: sound effect and music tracks and they share the same files. There is a head file called *AUDIOHED* that contains the offsets to the the individual chunks as signed 32-bit integers and the chunks are stored uncompressed in the *AUDIOT* file.
+
+##### AUDIOHED #####
+There are three types of sound effects: PC speaker, AdLib sound and digitised sound. Every sound effect exists in every format and they are stored in the same order, so the magic number of a sound effect needs to be mapped to the appropriate chunk. Given the number of sound effects, which is hard-coded, we can compute the starting offsets of a format the following way:
+
+	start_pc    = 0 * number_of_sounds
+	start_adlib = 1 * number_of_sounds
+	start_digi  = 2 * number_of_sounds
+	start_music = 3 * number_of_sounds
+
+To get the AdLib version of sound `n` we can thus compute its index as `1 * number_of_sounds + n`. We can also see that the music chunks follow the sound effect chunks, and their amount is also hard-coded. We can thus compute the total number of chunk offsets as follows:
+
+	number_of_offsets = start_music + number_of_tracks + 1
+
+Where does that extra `1` come from? That's the offset to an imaginary chunk one past the last chunk. It does not exist, but it is necessary for computing the length of the last chunk. Computing the length of a chunk is done using the offset of the next chunk; for the i-th chunk that would be:
+
+	size[i] = offset[i+1] - offset[i]
+
+It is possible that the size of some chunks is 0, in this case the chunk can be seen as non-existent and should be skipped. In fact, all the digitised sound effects are like this, they are actually stored in the *VSWAP* file instead, right afer the sprite chunks.
+
+##### AUDIOT #####
+This file is a container for various other files, stored as uncompressed chunks all lumped together. To find a particular chunk use its offset and size gotten from the *AUDIOHED* file. What to do with that chunk varies on a type-by-type basis. There are also tags of the form `!ID!` (`0x21 0x49 0x44 0x21`) the the end of each file format group, but they are skipped by the offsets anyway.
 
 #### Sound effects ####
+As explained above there are three different types of sound effects and they are stored ordered by format first and magic number second. Digitised sound is an exception though: MUSE, the program used by Id, offered that format but never supported it. The data structures are all there, but they are never used and the chunks in the AUDIOT file all the length 0. They are stored in another file instead.
 
-#### Music ####
+##### PC speaker #####
+PC speaker sound effects are a form of *inverse frequency sound format* where the data bytes represent the inverse of the frequency to play. Here is how the file is composed: the first four bytes are an unsigned 32-bit integer giving the length of the sound data, it should be the size of the chunk minus 7. It is followed by two bytes of unsigned 16-bit intger giving the priority of the sound effect. Since in the original engine only one sound could play at a time a sound will interrupt any sound of lower or equal priority. Next up is the sequence of data bytes of the length encoded in the first four bytes. Finally one single byte is used to terminate the file, it is usually (always?) 0x00. The file has therefore 7 bytes of non-sound data (length, priority and terminator). There is no file name encoded, so the file can only be accessed using the magic number of the sound effect.
+
+Each byte (unsigned 8-bit integer) of the audio data sequence represents a certain sound frequency measured in *Hz*. The frequency can be computed this way:
+	
+	frequency = 1193181 / (value * 60)    // for value != 0
+	          = 0                         // for value == 0
+	
+The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of the speaker is 140 Hz, so each instruction lasts (1/140)Hz. Also keep in mind that multiplying a the byte value by 60 can exceed the range of an 8-bit integer, so the computation has to be done at least using 16 bits.
+
+| Data type    | Name       | Description                            |
+|--------------|------------|----------------------------------------|
+| uint_32      | length     | Length of sound data, chunk length - 7 |
+| uint_16      | priority   | Highter priority wins                  |
+| byte[length] | data       | Actual audio data                      |
+| uint_8       | terminator | Unused by the game                     |
+
+##### AdLib #####
+AdLib sounds are written to specifically talk to the AdLib sound card. It starts with a header of six bytes: the first four bytes are an unsigned 32-bit integer for the *length* of the sound data in bytes, the remaining two bytes are the *priority*, similar to the priority for PC speaker sound.
+
+Then comes the relevant part: 16 bytes of instrument settings forllowed by a byte for the octave number and then the data bytes with the length from above.
+
+Finally we have a footer consisting of a terminator byte, not used by the game, and a null-terminated ASCII string for the file name.
+
+| Data type   | Name       | Description              |
+|-------------|------------|--------------------------|
+| uint_32     | length     | Length of the sound data |
+| uint_16     | priority   | Higher priority wins     |
+| byte[16]    | instrument | Instrument settings      |
+| byte        | octave     | Octave to play notes at  |
+| byte[length | data       | Actual audio data        |
+| uint_8      | terminator | Unused by the game       |
+| char[]      | file name  | Null-terminated string   |
+
+The instrument settings are as follows:
+
+| Data type | Name    | OPL register | Description                                        |
+|-----------|---------|--------------|----------------------------------------------------|
+| uint_8    | mChar   | 0x20         | Modulator characteristics                          |
+| uint_8    | cChar   | 0x23         | Carrier characteristics                            |
+| uint_8    | mScale  | 0x40         | Modulator scale                                    |
+| uint_8    | cScale  | 0x43         | Carrier scale                                      |
+| uint_8    | mAttack | 0x60         | Modulator attack/decay rate                        |
+| uint_8    | cAttack | 0x63         | Carrier attack/decay rate                          |
+| uint_8    | mSus    | 0x80         | Modulator sustain                                  |
+| uint_8    | cSus    | 0x83         | Carrier sustain                                    |
+| uint_8    | mWave   | 0xE0         | Modulator waveform                                 |
+| uint_8    | cWave   | 0xE3         | Carrier waveform                                   |
+| uint_8    | nConn   | 0xC0         | Feedback/connection (usually ignored and set to 0) |
+| uint_8    | voice   | -            | unused by game                                     |
+| uint_8    | mode    | -            | unused by game                                     |
+| uint_8[3] | padding | -            | pad instrument definition up to 16 bytes           |
+
+##### Digitised #####
+
+#### Music tracks ####
+The music format is `WLF`, which is essentially type-1 `IMF` whith a playback rate of 700Hz instead of 560Hz.
 
 ### Levels & Maps ###
 Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the levels's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
@@ -443,3 +524,12 @@ Different versions of the game assign different key numbers to the graphics. Eac
 The problem with this is that each build was only suitable for a particular distribution of the game, like shareware, registered, Japanese or Spear of Destiny. The simple solution is to use `#ifdef` directives and set the version at compile time, which is an acceptable solution when building for a particular release, but ill-suited for a source port that needs to be as compatible as possible. I propose the following solution that moves the version detection from compile-time to run-time.
 
 There will be one global header file that has a universal mapping that assigns a number to any image that might exist in any distribution. It is not necessary for it to be compatible to any existing distribution. The programmers will use these global macros then. For each distribution there will be a mapping that maps the universal macro to the distribution's corresponding key number. At run-time when the program starts determine the distribution and assign a global mapping variable to be the mapping for that distribution. The mapping could for example be done using an array where the universal macro is the index and the distribution's key the value. Trying to access an image that does not exist in that particular distribution could be mapped to an invalid number such as -1.
+
+References
+----------
+The following sources were used for reference and to guide me in the right direction:
+
+- [Wolfenstein 3D source code][1](https://github.com/id-Software/wolf3d)
+- [Chocolate Wolfenstein 3D source code][2](https://github.com/fabiensanglard/Chocolate-Wolfenstein-3D)
+- [Wolfensein 3D on Modding Wiki][3](http://www.shikadi.net/moddingwiki/Wolfenstein_3-D)
+- [Some guy's abandoned attempt to understand the game data][4](http://devinsmith.net/backups/bruce/wolf3d.html)
