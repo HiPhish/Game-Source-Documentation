@@ -419,14 +419,14 @@ This file is a container for various other files, stored as uncompressed chunks 
 As explained above there are three different types of sound effects and they are stored ordered by format first and magic number second. Digitised sound is an exception though: MUSE, the program used by Id, offered that format but never supported it. The data structures are all there, but they are never used and the chunks in the AUDIOT file all the length 0. They are stored in another file instead.
 
 ##### PC speaker #####
-PC speaker sound effects are a form of *inverse frequency sound format* where the data bytes represent the inverse of the frequency to play. Here is how the file is composed: the first four bytes are an unsigned 32-bit integer giving the length of the sound data, it should be the size of the chunk minus 7. It is followed by two bytes of unsigned 16-bit intger giving the priority of the sound effect. Since in the original engine only one sound could play at a time a sound will interrupt any sound of lower or equal priority. Next up is the sequence of data bytes of the length encoded in the first four bytes. Finally one single byte is used to terminate the file, it is usually (always?) 0x00. The file has therefore 7 bytes of non-sound data (length, priority and terminator). There is no file name encoded, so the file can only be accessed using the magic number of the sound effect.
+PC speaker sound effects are a form of *inverse frequency sound format* where the data bytes represent the inverse of the frequency to play. Here is how the file is composed: the first four bytes are an unsigned 32-bit integer giving the length of the sound data, it should be the size of the chunk minus 7. It is followed by two bytes of unsigned 16-bit integer giving the priority of the sound effect. Since in the original engine only one sound could play at a time a sound will interrupt any sound of lower or equal priority. Next up is the sequence of data bytes of the length encoded in the first four bytes. Finally one single byte is used to terminate the file, it is usually (always?) 0x00. The file has therefore 7 bytes of non-sound data (length, priority and terminator). There is no file name encoded, so the file can only be accessed using the magic number of the sound effect.
 
 Each byte (unsigned 8-bit integer) of the audio data sequence represents a certain sound frequency measured in *Hz*. The frequency can be computed this way:
 	
 	frequency = 1193181 / (value * 60)    // for value != 0
 	          = 0                         // for value == 0
 	
-The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of the speaker is 140 Hz, so each instruction lasts (1/140)Hz. Also keep in mind that multiplying a the byte value by 60 can exceed the range of an 8-bit integer, so the computation has to be done at least using 16 bits.
+The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of the speaker is 140 Hz, so each instruction lasts (1/140) seconds. Also keep in mind that multiplying a byte value by 60 can exceed the range of an 8-bit integer, so the computation has to be done at least using 16 bits.
 
 | Data type    | Name       | Description                            |
 |--------------|------------|----------------------------------------|
@@ -434,6 +434,60 @@ The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of t
 | uint_16      | priority   | Highter priority wins                  |
 | byte[length] | data       | Actual audio data                      |
 | uint_8       | terminator | Unused by the game                     |
+
+###### Interpreting the data ######
+Aside from the raw audio data there is no playback information stored in the file, everything is hard-coded. Since the PC speaker was not able to play different frequencies many developers used a trick called *pulse-width modulation* to create the illusion. The frequency perceived by the listener is created by precisely controlling short bursts of audio pulses. Explainging the mathematical properties would be beyond the scope of this document, so I'll refer instead to its [Wikipedia article](http://en.wikipedia.org/wiki/Pulse-width_modulation).
+
+Each byte tells us how long the the phase needs so be. First we read a byte and muliply its numeric value by 60 (hard-coded number). This lets us compute the length of the phase:
+
+	tone         = input_byte * 60
+	phase_length = sample_rate * (tone / 1193181) * 1/2
+
+The *sample rate* depends on how precisely we want to sample the data. Higher numbers are more precise, but take up more space. We also need to make shure the sample rate matches the sample rate of our playback, i.e. it is the number of samples played per second. A value of 40,000 is adequate.
+
+The formula works as follows: looking at the second formula we compute the inverse of the frequency we want to simulate. This means a higher frequency will have a shorter duration than a lower one. This inverse frequency is multiplied by the sample rate; frequencies are measured in Hz, which is just another way of writing *1/s*, i.e. one per second of something, so an inverse frequency is a duration, measured in seconds. The sample rate is measured in *samples/second* and by multiplying it with the duration we get the number of samples to generate. Finally we divide by two because we need to flip back-and forth between high and low volume at the half-point mark.
+
+Now it's time to write the sample bytes. How many samples should be written per byte depends on the selected sample rate as well as the original playback rate of 140Hz:
+
+	samples_per_byte = sample_rate / 140
+
+For each byte written we also keep track of the "ticks": each written byte increments the counter, and if the ticks have reached the phase length we flip the sign and reset the counter. A tone of *0* interrupts everything, it writes the neutral sound (128) and keeps the tick counter at 0. The byte written is 128 plus the volume level of the simulated speaker. This level can be chose arbitrarily, as long as it's less or equal to 127.
+
+Here is the pseudocode:
+
+	Constants: base_timer = 1193181
+	           pcs_rate   =     140 (playback rate of PC speaker)
+	           volume     =      20 (arbitrarily chosen, must be <= 127)
+	
+	Prerequisites: source      = pointer to the start of the input stream as bytes.
+	               destination = pointer to the start of the decompressed output stream as bytes
+	               pcs_length  = length of the decompressed data sequence in words
+	               sample_rate = how many samples to play back per second
+	
+	Side effects: The destination buffer will be allocated and filled with data
+	
+	1) Make new variable `samples_per_byte` = `sample_rate` / `pcs_rate`
+	2) Make new variable `wav_length` = pcs_length * samples_per_byte * sizeof(byte)
+	3) Allocate memory to `destination` of length `pcs_length` * `samples_of_bytes` *sizeof(byte)
+	4) Make new pointers `read` and `write` and set them to `source` and `destination` respectively
+	5) Make new signed integer variable `sign` = -1
+	6) Make new unsigned integer variable `phase_tick` = 0
+	7) While pcs_length > 0
+		7.1) Make new variable `tone` = (value of `read`) * 60, advance read one byte
+		7.2) Make new variable `phase_length` = sample_rate * (`tone` / `base_timer`) * 1/2
+		7.3) For (int i = 0, while i < samples_per_byte, iterate ++i)
+			7.3.1) If tone != 0
+				7.3.1.1) Write (128 + `sign` * `volume`) to `write`, advance `write`
+				7.3.1.2) If phase_tick >= phase_length
+					7.3.1.2.1) `sign` *= -1
+					7.3.1.2.2) `phase_tick` = 0
+				7.3.1.3) ++phase_tick
+			7.3.2) Else
+				7.3.2.1) phase_tick = 0
+				7.3.2.1) Write 128 to `write`, advance `write`
+		7.4) --pcs_length
+
+Bytes are in this document equivalent to unsigned 8-bit integers, so it might look conflicting that we use a signed integer and use it for multiplication. However, since the neutral sound is 128, the middle of the 8-bit value range, it doesn't matter in C. For other languages this might not necessarily hold true though, so make sure it is well-defined.
 
 ##### AdLib #####
 AdLib sounds are written to specifically talk to the AdLib sound card. It starts with a header of six bytes: the first four bytes are an unsigned 32-bit integer for the *length* of the sound data in bytes, the remaining two bytes are the *priority*, similar to the priority for PC speaker sound.
