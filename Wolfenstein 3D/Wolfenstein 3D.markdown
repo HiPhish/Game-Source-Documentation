@@ -317,7 +317,7 @@ I don't understand how or why pictures need to be "woven" in such a way, I assum
 Sprites are stored in the file VSWAP, together with textures and sound effects, there are no other files involved. Each sprite is 64x64 pixels large. They are drawn column-wise and since there is a lot of empty columns left and right of the visible picture. Only the columns between and including the outer-most non-empty columns are given. Each column is described via a variable-length list of drawing instructions, each instruction being six bytes in size.
 
 ##### VSWAP #####
-The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting index of the sprite chunk relative to the beginning of the file. The third integer is the starting index of the sound effects. I will only be focusing on the sprites here.
+The first six bytes of this file is the header consisting of three signed 16-bit integers. The first integer is the total number of chunks in the file, regardless of type. The second integer is the starting index of the sprite chunks relative to the beginning of the file. The third integer is the starting index of the sound effects. I will only be focusing on the sprites here.
 
 Next up is a list of all chunk offsets. They are stored as unsigned 32-bit integers and their amount is the number of chunks. It is followed by a second list, the list of chunk lengths, same amount but stored as words. To decide whether a chunk is a texture, a sprite or a sound one has to use the chunk's index and compare it to the number of sprite- and sound chunks and their starting index. If you want to read a sprite or a sound you have to add the starting index to the magic number, for example if the sprite index is 35 and we want to read sprite 8 we have to read chunk 43.
 
@@ -526,6 +526,13 @@ The instrument settings are as follows:
 | uint_8[3] | padding | -            | pad instrument definition up to 16 bytes           |
 
 ##### Digitised #####
+Digitised sound effects, such as voices or gun shots are stored in the VSWAP file. That file has been discussed in the *sprites* section, so refer there for information on how to read the file. The data chunks are raw PCM data, played back at a sample rate of 7000Hz, mono sound and eight bytes per sample.
+
+Where it gets complicated is that some audio files are split over multiple successive audio chunks; one example is the very first effect ("Achtung!), which is split over the first and second chunk. That is also why there are more sound effect chunks than there are sound effects (120 instead of 46). We must read the last chunk of the VSWAP file, it contains the audio list consisting of pairs of words; the first word is the index of the biginning of the first audio chunk, the second word is the length of the complete audio chunk. This means that the global list of lengths and offsets detailed in the *sprites* section is only needed for the offsets.
+
+The index of a sound effect chunk can be learned by adding the effect's index from the audio list and the sound start index. This gives us the global file index of the first chunk of the sound effect. Using this global index we can find the offset of the chunk in the lgobal list. The length of the total audio sequence is the length from the audio list.
+
+The number of digitised sound effects is the length of the audio list divided by four. The length of the list is the length of the VSWAP file minus the offset of the list, i.e. the list is the very last chunk of the file.
 
 #### Music tracks ####
 The music format is `WLF`, which is essentially type-1 `IMF` whith a playback rate of 700Hz instead of 560Hz.
