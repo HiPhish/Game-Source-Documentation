@@ -415,6 +415,8 @@ It is possible that the size of some chunks is 0, in this case the chunk can be 
 ##### AUDIOT #####
 This file is a container for various other files, stored as uncompressed chunks all lumped together. To find a particular chunk use its offset and size gotten from the *AUDIOHED* file. What to do with that chunk varies on a type-by-type basis. There are also tags of the form `!ID!` (`0x21 0x49 0x44 0x21`) the the end of each file format group, but they are skipped by the offsets anyway.
 
+The AdLib sound effects and the music are stored in a format that has been specifically designed for AdLib sound cards, so unlike the other data it cannot be simply converted to wave data. One would have to emulate the AdLib hardware, at least the necessary parts, or use a library.
+
 #### Sound effects ####
 As explained above there are three different types of sound effects and they are stored ordered by format first and magic number second. Digitised sound is an exception though: MUSE, the program used by Id, offered that format but never supported it. The data structures are all there, but they are never used and the chunks in the AUDIOT file all the length 0. They are stored in another file instead.
 
@@ -436,14 +438,14 @@ The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of t
 | uint_8       | terminator | Unused by the game                     |
 
 ###### Interpreting the data ######
-Aside from the raw audio data there is no playback information stored in the file, everything is hard-coded. Since the PC speaker was not able to play different frequencies many developers used a trick called *pulse-width modulation* to create the illusion. The frequency perceived by the listener is created by precisely controlling short bursts of audio pulses. Explainging the mathematical properties would be beyond the scope of this document, so I'll refer instead to its [Wikipedia article](http://en.wikipedia.org/wiki/Pulse-width_modulation).
+Aside from the raw audio data there is no playback information stored in the file, everything is hard-coded. Since the PC speaker was not able to play different tones many developers used a trick called *pulse-width modulation* to create the illusion. The frequency perceived by the listener is created by precisely controlling short bursts of audio pulses. Explaining the mathematical properties would be beyond the scope of this document, so I'll refer instead to its [Wikipedia article](http://en.wikipedia.org/wiki/Pulse-width_modulation).
 
 Each byte tells us how long the the phase needs so be. First we read a byte and muliply its numeric value by 60 (hard-coded number). This lets us compute the length of the phase:
 
 	tone         = input_byte * 60
 	phase_length = sample_rate * (tone / 1193181) * 1/2
 
-The *sample rate* depends on how precisely we want to sample the data. Higher numbers are more precise, but take up more space. We also need to make shure the sample rate matches the sample rate of our playback, i.e. it is the number of samples played per second. A value of 40,000 is adequate.
+The *sample rate* depends on how precisely we want to sample the data. Higher numbers are more precise, but take up more space. We also need to make sure the sample rate matches the sample rate of our playback, i.e. it is the number of samples played per second. A value of 40,000 is adequate.
 
 The formula works as follows: looking at the second formula we compute the inverse of the frequency we want to simulate. This means a higher frequency will have a shorter duration than a lower one. This inverse frequency is multiplied by the sample rate; frequencies are measured in Hz, which is just another way of writing *1/s*, i.e. one per second of something, so an inverse frequency is a duration, measured in seconds. The sample rate is measured in *samples/second* and by multiplying it with the duration we get the number of samples to generate. Finally we divide by two because we need to flip back-and forth between high and low volume at the half-point mark.
 
@@ -492,19 +494,19 @@ Bytes are in this document equivalent to unsigned 8-bit integers, so it might lo
 ##### AdLib #####
 AdLib sounds are written to specifically talk to the AdLib sound card. It starts with a header of six bytes: the first four bytes are an unsigned 32-bit integer for the *length* of the sound data in bytes, the remaining two bytes are the *priority*, similar to the priority for PC speaker sound.
 
-Then comes the relevant part: 16 bytes of instrument settings forllowed by a byte for the octave number and then the data bytes with the length from above.
+Then comes the relevant part: 16 bytes of instrument settings followed by a byte for the octave number and then the data bytes with the length from above.
 
-Finally we have a footer consisting of a terminator byte, not used by the game, and a null-terminated ASCII string for the file name.
+Finally we have a footer consisting of a terminator byte, not used by the game, and a null-terminated ASCII string for the file name, not used either.
 
-| Data type   | Name       | Description              |
-|-------------|------------|--------------------------|
-| uint_32     | length     | Length of the sound data |
-| uint_16     | priority   | Higher priority wins     |
-| byte[16]    | instrument | Instrument settings      |
-| byte        | octave     | Octave to play notes at  |
-| byte[length | data       | Actual audio data        |
-| uint_8      | terminator | Unused by the game       |
-| char[]      | file name  | Null-terminated string   |
+| Data type    | Name       | Description              |
+|--------------|------------|--------------------------|
+| uint_32      | length     | Length of the sound data |
+| uint_16      | priority   | Higher priority wins     |
+| byte[16]     | instrument | Instrument settings      |
+| byte         | octave     | Octave to play notes at  |
+| byte[length] | data       | Actual audio data        |
+| uint_8       | terminator | Unused by the game       |
+| char[]       | file name  | Null-terminated string   |
 
 The instrument settings are as follows:
 
@@ -525,6 +527,34 @@ The instrument settings are as follows:
 | uint_8    | mode    | -            | unused by game                                     |
 | uint_8[3] | padding | -            | pad instrument definition up to 16 bytes           |
 
+Sound effects are played on channel *0* because the other channels of the sound card are reserved for music; the replay rate is 140Hz. The octave value is written to AdLib register *0xB0* and it must be computed to following way to prevent it from interfering with other bits stored in the register:
+
+	block = (octave & 7) << 2       // 7=00000111b
+	regB0 = block | other_fields
+
+The audio data consists oft he raw bytes to send to register *0xA0* and the byte *0x00* means silence. Silence can be achieved by setting the fifth bit (hexadecimal 0x20) to 0 in register 0xB0. Here is the pseudocode for playback:
+
+	Constants: `block`   = (octave & 7) << 2
+	           `note_on` = 0x20
+	
+	Prerequisites: Byte sequence of audio data to read
+	
+	1) Make boolean variable `note` and set to false
+	2) Make byte variable `next_byte`
+	3) While there is data to read
+		3.1) Read `next_byte`
+		3.2) If (`next_byte` == 0x00)
+			3.2.1) Set register 0xB0 to `block`
+			3.2.2) Set `note` to false
+		3.3) Else
+			3.3.1) Set register 0xA0 to `next_byte`
+			3.3.2) If (`note` == false)
+				3.3.2.1) Set register 0xB0 to (`block` | `note_on`)
+				3.3.2.2) Set `note` to true
+		3.4) Wait until next tick (playmback rate 140Hz)
+
+The original code also checked if the next byte was equal to the previous one, and if so it kept playing the same note instead of sending the same data to the sound card again.
+
 ##### Digitised #####
 Digitised sound effects, such as voices or gun shots are stored in the VSWAP file. That file has been discussed in the *sprites* section, so refer there for information on how to read the file. The data chunks are raw PCM data, played back at a sample rate of 7000Hz, mono sound and eight bytes per sample.
 
@@ -535,7 +565,21 @@ The index of a sound effect chunk can be learned by adding the effect's index fr
 The number of digitised sound effects is the length of the audio list divided by four. The length of the list is the length of the VSWAP file minus the offset of the list, i.e. the list is the very last chunk of the file.
 
 #### Music tracks ####
-The music format is `WLF`, which is essentially type-1 `IMF` whith a playback rate of 700Hz instead of 560Hz.
+The music format is `WLF`, which is essentially type-1 `IMF` whith a playback rate of 700Hz instead of 560Hz. Here is a *WLF* file is composed:
+
+| Type         | Name       | Description                            |
+|--------------|------------|----------------------------------------|
+| uint_16      | length     | Length of the sound data               |
+| byte[length] | sound data | The sound data to play                 |
+| byte[]       | metadata   | Arbitrary metadata, unused by the game |
+
+The sound data consists of byte quartets of the following form:
+
+| Type | Description    |
+|------|----------------|
+| byte | AdLib register |
+| byte | AdLib data     |
+| word | Delay          |
 
 ### Levels & Maps ###
 Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the levels's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
