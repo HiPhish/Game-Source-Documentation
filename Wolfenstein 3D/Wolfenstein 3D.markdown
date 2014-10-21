@@ -6,35 +6,41 @@ Analysing and documenting the source code workings of Wolfenstein 3D for DOS. (T
 Table of contents
 -----------------
 
-	- Conventions and nomenclature
+	- Wolfenstein 3D code design document
+	| |- Conventions and nomenclature
+	| |- 2D or 3DGame versions and file extensions
+	| |- Game versions and file extensions
 	|
-	- 2D or 3D
-	|
-	- Compression algorithms
-	| |- RLEW compression
-	| |- Carmack compression
-	| |- Huffman compression
-	|
-	- Data files
-	| |- File extensions
-	| |- Graphics
-	| |  |- Pics
-	| |  |- Sprites
-	| |  |- Textures
+	- Part I - File formats
+	| |- Compression algorithms
+	| |  |- RLEW compression
+	| |  |- Carmack compression
+	| |  |- Huffman compression
 	| |
-	| |- Audio
-	| |  |- Sound effects
-	| |  |- Music
-	| |
-	| |- Maps
-	|    |- MAPHEAD
-	|    |- GAMEMAPS
-	|    |- Extracting the maps
+	| |- Data files
+	|    |- Graphics
+	|    |  |- Pics
+	|    |  |- Sprites
+	|    |  |- Textures
+	|    |
+	|    |- Audio
+	|    |  |- Sound effects
+	|    |  |- Music
+	|    |
+	|    |- Maps
+	|       |- MAPHEAD
+	|       |- GAMEMAPS
+	|       |- Extracting the maps
 	|
-	- Known bugs and limitations
+	- Part II - Game rules
+	| |- Actors / Entities
+	|    |- The actor structure
+	|    |- Actor states
+	|    |- Structure of actors
 	|
-	- References
-
+	- Appendix
+	  |- Known bugs and limitations
+	  |- References
 
 Conventions and nomenclature
 ----------------------------
@@ -55,6 +61,27 @@ Pointers and arrays are used more or less interchangably in the pseudocode as we
 --------
 Despite its name Wolfenstein 3D is not a true 3D game; the game's data and simulation all happen in a flat 2D space on a strict grid, while the rendering appears to take place in a 3D world to the player. In this document the game world (called "world space") will be treated as if it was actually a three-dimensional space, since that is what the player is experiencing. On the other hand, simulation space, where all the game's actual mechanics are implemented, will be treated like a two-dimensional plane, since that is the way the game works.
 
+Game versions and file extensions
+---------------------------------
+
+The file extension of the data files depends on the version of the game. They are as follows:
+
+| Extension | Version                          |
+|-----------|----------------------------------|
+| WL1       | Shareware                        |
+| WL3       | Early three-episode full version |
+| WL6       | Six-episode full version         |
+| WJ1       | Japanese shareware?              |
+| WJ6       | Japanese full version?           |
+| SOD       | Spear of Destiny?                |
+| SDM       | ???                              |
+| SD1       | SoD M2: Return to Danger?        |
+| SD2       | SoD M3: Ultimate challenge       |
+| SD3       | ???                              |
+
+
+Part I - File Formats
+=====================
 
 Compression algorithms
 ----------------------
@@ -226,21 +253,6 @@ The game assets for WS3D are stored in various files with the same extension, wh
 (//TODO: all of this needs to be properly confirmed)
 
 The header files contain information about the structure of the actual asset files
-
-### File extensions ###
-
-The file extension of the data files depends on the version of the game. They are as follows:
-
-- WL1 Shareware
-- WL3 Early three-episode full version
-- WL6 Six-episode full version
-- WJ1 Japanese shareware?
-- WJ6 Japanese full version?
-- SOD Spear of Destiny?
-- SDM ???
-- SD1 ???
-- SD2 ???
-- SD3 ???
 
 ### Graphics ###
 There are two types of graphics in the game: *pics* and *sprites*. Pics are rectangular pictures of any size without any transparent holes and used outside the 3D portions of the game. An alternative name is *bitmaps*. Sprites are in-game object graphics using the colur 0x980088 for transparency and are always 64x64 pixels large.
@@ -617,6 +629,212 @@ Finally 16 characters, 8-bit ASCII each, form the level's name. In the original 
 #### Extracting the maps ###
 Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression one can find the decompressed length encoded into the compressed map as the fist word, it is given in bytes. This means the pointer to the compressed sequence must be advanced by one before starting the decompression. For some reason the pointer to the Carmack-decompressed but still RLEW-compressed sequence must be advanced by one word as well; could be a leftover from a previouse map format. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
 
+
+Part II - Game rules
+====================
+Time is measured in *ticks* from now on. In the original implementation one tick was intended to last 1/70th of a second.
+
+Actors / Entities
+-----------------
+Actors, or entities as they can also be referred to in the code, are any in-game entities that can move around in the world. They include enemies as well as projectiles like fireballs or rockets and even BJ himself, but not static objects like weapons, food, chairs or stone columns. An actor's behaviour is modelled using a finite-state machine where each state holds information on what sprite to display, how long the state lasts, what state to transition to.
+
+### The actor structure ###
+An actor is define as a structure with the following members:
+
+| Type        | Name           | Description                        |
+|-------------|----------------|------------------------------------|
+| integer     | position_x     | Horizontal position on the map     |
+| integer     | position_y     | Vertical position on the map       |
+| integer     | angle          | Angle the actor is facing          |
+| integer     | current_health | Current health of the actor        |
+| integer     | maximum_health | Maximum health of the actor        |
+| integer     | speed;         | Walking speed                      |
+| integer     | ticcount;      | Timer driving the actions          |
+| integer     | temp2;         | Reaction time for noticing player? |
+| integer     | distance;      | ???                                |
+| character   | tile_x         | Tile the actor is standing on      |
+| character   | tile_y         | Tile the actor is standing on      |
+| character   | area_number    | Area on the map                    |
+| integer     |	waitfordoor_x  | // waiting on this door if non 0   |
+| integer     | waitfordoor_y  |                                    |
+| W8          | flags;	       | Various flags for game rules       |
+| actor_state | state;         | Currents state                     |
+| dir8type    | direction;     | Direction to move into             |
+| integer     | sprite;        | Sprite to display                  |
+
+#### Starting hit points ####
+The starting hit points of an actor depend on the chosen game difficuly. The list will be its own file, since it would be too large for this document. (//TODO)
+
+#### List of entities ####
+The following is a list of all actors defined in Wolfenstein 3D and their description.
+
+| Name    | Description                       |
+|---------|-----------------------------------|
+| Guard   | Brown guards                      |
+| Officer | White soldiers                    |
+| SS      | Blue soldiers                     |
+| Boss    | Hans Grosse                       |
+| Schabbs | Dr. Schabbs                       |
+| Fake    | Fake Hitler                       |
+| Mecha   | Mech Hitler                       |
+| Hitler  | Real Hitler                       |
+| Mutant  | Mutant soldier                    |
+| Blinky  | Red Pac-Man ghost                 |
+| Clyde   | Orange Pac-Man ghost              |
+| Pinky   | Pink Pac-Man ghost                |
+| Inky    | Cyan Pac-Man ghost                |
+| Gretel  | Gretel Grosse                     |
+| Gift    | Otto Gifmacher                    |
+| Fat     | General Fettgesicht               |
+|         |                                   |
+| Needle  | Syringe thrown by Schabbs         |
+| Fire    | Fireball from Fake Hitler         |
+| Rocket  | Some bosses have rocket launchers |
+| Smoke   | Smoke from rockets                |
+|         |                                   |
+| BJ      | BJ doing the victory jump         |
+
+Spear of destiny adds the following actors as well:
+
+| Name    | Description      |
+|---------|------------------|
+| Spark   | ???              |
+| hrocket | ???              |
+| hsmoke  | ???              |
+|         |                  |
+| Spectre | Spectre enemy    |
+| Angel   | Angle of Death   |
+| Trans   | Trans Grosse     |
+| Uber    | Ubermutant       |
+| Will    | Barnacle Wilhelm |
+| Death   | Death Knight     |
+
+The mission packs introduce the following enemies:
+
+| Name  | Description          |
+|-------|----------------------|
+| Bat   | Bats, replace mutant |
+| Willi | Sumbarine Willi      |
+| Quark | Dr. Quarkblitz       |
+| Axe   | The Axe              |
+| Robot | The Robot            |
+| Devil | Decil Incarnate      |
+
+Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the mission packs are just re-skins of enemies from Spear of Destiny.
+
+
+### Actor states ###
+Each actors uses the same basic state structure:
+
+| Type      | Name        | Description                                            |
+|-----------|-------------|--------------------------------------------------------|
+| `boolean` | can_rotate  | `true` if actor has unique sprites for every rotation  |
+| `int`     | base_sprite | Base sprite for when facing the player                 |
+| `int`     | timeout     | Duration of the state until transiotiong to next state |
+| `think`   | thought     | Function to call every frame during this state         |
+| `think`   | action      | Function to call when changing state                   |
+| `state`   | next_state  | Next state to transition to naturally                  |
+
+The first member tells us wheter the actor has different sprites for rotation or if it is always facing the player; for example, guards have different directions for walking, allowing the player to sneak behind them, but they always face the player when they are shooting or when they are dying.
+
+The second member tells us the index of the base sprite, the image to display when the actor is facing the player. For non-rotateable states this is the sprite to always display, but for ratateable states the right sprite has to be found using the base sprite and adding an appropiate offset to get the index of the proper sprite. The offset depends on the rotation of the actor relative to the player.
+
+The `think` type is a function pointer to a function that takes one actor as its argument, usually the actor calling it, and returns nothing:
+
+	typedef void (*think_t)( entity_t *self )
+
+We can see that these states allow the actors to naturally transition from one state into another solely based on time passed. A patrolling enemy will cycle between patrolling states on its own as long as it doesn't become aware of the player, an enemy in pain will naturally transition to shooting and a dying enemy will automatically be dead once the dying animation has finished playing. The exact actor states are hard-coded and can be found within the *wolf_act_stat.h* file of the original source. There can be several states with simila function, like several walking states, they are driving the animation frames.
+
+#### Groups of states ####
+States can be split into the follwing groups:
+
+- **Standing still** The actor is just standing in one spot and waiting
+- **Patrolling** The actor is moving along a pre-defined part and can open doors if needed. Dogs cannot stand still and must always walk.
+- **In pain** Temporarily paralysed after getting shot at
+- **Attacking** Shooting for humans and biting for dogs
+- **Chasing** Actively pursuing the player and occasionally stopping to shoot
+- **Dying** In the process of dying
+- **Dead** Having died
+- **Removed** ???
+
+Each of these groups consists of several actual states, with the exception of the standing- and dead state since there is only one way of standing still or being dead. If a state is unused it is still defined, but its members are useless junk data and the sprite is the "demo" sprite. Each state can only display one sprite, so in order to cycle through animation frames the states within one group must be cycled through. In the case of the brown guard there are three shooting frames, so the guard cycles through the first three of his shooting states with the remaining shooting states being unused. There also appear to be special states for some actors, but those are just the above states re-purposed.
+
+#### List of states ####
+The following is a list of all actor states in the order they are defined in the original source. Sticking to that order is not strictly necessary, but one has to make sure to keep the mapping scorrect.
+
+###### Standing still ######
+| State | Index |
+|-------|-------|
+| stand |     0 |
+	
+###### Patrolling ######
+| State  | Index |
+|--------|-------|
+| path1  |     1 |
+| path1s |     2 |
+| path2  |     3 |
+| path3  |     4 |
+| path3s |     5 |
+| path4  |     6 |
+	
+###### Paralysed in pain ######
+| State | Index |
+|-------|-------|
+| pain  |     7 |
+| pain1 |     8 |
+	
+###### Shooting ######
+| State  | Index |
+|--------|-------|
+| shoot1 |     9 |
+| shoot2 |    10 |
+| shoot3 |    11 |
+| shoot4 |    12 |
+| shoot5 |    13 |
+| shoot6 |    14 |
+| shoot7 |    15 |
+| shoot8 |    16 |
+| shoot9 |    17 |
+	
+###### Chasing the player ######
+| State   | Index |
+|---------|-------|
+| chase1  |    18 |
+| chase1s |    19 |
+| chase2  |    20 |
+| chase3  |    21 |
+| chase3s |    22 |
+| chase4  |    23 |
+	
+###### Dying ######
+| State | Index |
+|-------|-------|
+| die1  |    24 |
+| die2  |    25 |
+| die3  |    26 |
+| die4  |    27 |
+| die5  |    28 |
+| die6  |    29 |
+| die7  |    30 |
+| die8  |    31 |
+| die9  |    32 |
+	
+###### Being dead ######
+| State  | Index |
+|--------|-------|
+| dead   |    33 |
+| remove |    34 |
+
+A list of all actor states for each actor would be too large for this document, so it will have its own file. (//TODO)
+
+### Structure of actors ###
+The actors all serve as enemies, be it regular soldiers, bosses, or projectiles. 
+
+
+
+
+Appendix
+========
 
 Known bugs and limitations
 --------------------------
