@@ -33,14 +33,20 @@ Table of contents
 	|       |- Extracting the maps
 	|
 	- Part II - Game rules
+	| |- Mathematics
 	| |- Actors / Entities
 	|    |- The actor structure
 	|    |- Actor states
-	|    |- Structure of actors
 	|
 	- Appendix
+	  |- Tables for actors
+	  |  |- List of actor classes
+	  |  |- List of state classes
+	  |
 	  |- Known bugs and limitations
 	  |- References
+
+--------------------------------------------------------------------------------
 
 Conventions and nomenclature
 ----------------------------
@@ -79,6 +85,7 @@ The file extension of the data files depends on the version of the game. They ar
 | SD2       | SoD M3: Ultimate challenge       |
 | SD3       | ???                              |
 
+--------------------------------------------------------------------------------
 
 Part I - File Formats
 =====================
@@ -87,7 +94,7 @@ Compression algorithms
 ----------------------
 The compression algorithms all assume little-endian multibyte numbers, a byte size of 8 bits and a word size of two bytes.
 
-###RLEW compression###
+### RLEW compression ###
 A variant of RLE (Run Length Encoding) that uses words instead of bytes as the underlying unit. Repeating words are stored as a word triplet `(tag, count, word)` where `tag` is a constant word used to identify the triplet, `count` is how many times to copy the word and `word` is the word to copy. Aside from these triplets there are also uncompressed words that are copied verbatim. Here is the pseudocode:
 
 	Prerequisites: source      = pointer to the start of the compressed input stream
@@ -118,12 +125,12 @@ A variant of RLE (Run Length Encoding) that uses words instead of bytes as the u
 
 What about the word that's identical to `tag`? It will be compressed as `(tag, 0x01 0x00, tag)`, i.e. copy the word `tag` one time. This is actually a threefold increase in data compared to the uncompressed version, but in practice this is a better solution than having special cases.
 
-###Carmack compression###
+### Carmack compression ###
 The underlying idea of this compression method is that certain information patterns are going to be repeated several times. Instead of repeating the pattern each time a reference to previous instances of the pattern is stored; the already uncompressed data is referenced by the still compressed data.
 
 The compressed data consists of uncompressed words, one of two types of pointers, near pointers and far pointers, and exceptions where all four can appear in the same file depending on which is necessary. Near pointers are byte triplets and far pointers are byte quadruples. On top of this ther are special exceptions for words that might be confused for pointers. Remember that all offsets are given in *words* and that a word on the original target architecture was two bytes in size. To get the *byte* offset multiply the word offset by two.
 
-####Near pointers####
+#### Near pointers ####
 Near pointers are a sequence of three bytes (count, tag, offset). The first byte tells us how many words to copy, it is an usingned 8-bit integer. The second byte is the tag and always 0xA7, it is used to identify a near pointer. The third byte is the unsigned 8-bit integer offset relative from the last written word to the word to copy. Take the following example:
 
 	// near pointer
@@ -137,20 +144,20 @@ The `??` is the current position of the destination pointer; it points at memory
 
 First a copy of the destination pointer (called *copy pointer*) is moved four words back, pointing at the byte `0C`. The byte pointed at by the copy pointer is copied to the value pointed at by the destination pointer and both pointers are incremented. This is repeated eight times, at which point the copy pointer has reached the original position of the destination pointer.
 
-####Far pointers####
+#### Far pointers ####
 The disadvantage of near pointers is that the offset is an 8-bit integer, so it can only reach 255 words back. Far pointers (count tag low_offset high_offset) use a 16-bit offset, so they take up one more byte in memory. The offset is given relative to the start of the decompressed sequence, i.e. the first destination pointer. Aside from the offset they work the same as near pointers, their tag is 0xA8.
 
-####Exception####
+#### Exception ####
 Words with a high byte (second byte) of `0xA7` or `0xA8` can be confused for pointers. In compressed form the low byte is replaced by the byte `0x00` and the low bytes value is appened after the high byte. A count of 0 would make no sense for a pointer, so the algoruthm can tell when an exception has occured. Since the low byte comes after the high byte the word is actually stores in big-endian notation and needs to be swapped around when written to the destination.
 
-####Extraction####
+#### Extraction ####
 To decompress the data we need to know the length of the decompressed data because there is no indication when the end of the compressed sequence is reached; the compressed data is often stored adjacent to other compressed data in the same file. On top of that there is also uncompressed data between near- and far pointers which must be copied verbatim.
 
 Keep count of the bytes or words already written. When using words instead of bytes to keep track make sure you divide the byte count by two. At first the count is 0 and it is incremented every time we write a word or byte. Once the count reaches the size of the decompressed data the extraction is done. After each write increment the count and advance the pointers appropriately. This means the destination pointer is advanced by one byte for every byte written and the source pointer is advanced by three bytes for near pointers and exceptions, four for far pointers, and two for regular words.
 
 During each iteration step read a word. If the word's high byte (second byte) is neither the near- nor the far flag copy the word to the destination. If it's the near flag and the count is not 0x00 step `offset` words back through the decompressed data and copy `count` words from there to the decompressed data. If it's a far pointer and the count is not 0x00 copy `count` words `offset` words from the start of the decompressed data. If the count is zero advance the pointer by one byte and copy the reversed word.
 
-####Pseudocode####
+#### Pseudocode ####
 This pseudocode is similar to the original implementation by Id but independent of language or architecture. It operates on words, but that's just one way to do it.
 
 	Constants: zero = 0x00
@@ -201,7 +208,7 @@ This pseudocode is similar to the original implementation by Id but independent 
 
 Near- and far pointers are very similar, the only difference is in how the offset is computed and that near pointer have to advance by one byte while far pointers advance by one word.
 
-###Huffman compression###
+### Huffman compression ###
 Id's implementation of the Huffman compression algorithm uses a 255 node large Huffman tree stored as a flat array where each node consist of two words, and node number 255 (inde 254) is always the root node. Here is how the nodes work: a byte called the *node value* is being kept track of, it is initially 254, the array position of the root node of the tree. From there the input of the compressed stream is being read bit-wise, if the bit is `0` the node value is set to the node's first word, otherwise to the node's second word. If the node value is less than 256 (i.e. within the value range of a byte) the node value is written as a byte and the node pointer is reset back to the root node. Otherwise, if the node value is eaqual to or greater than 256 the node pointer is set to the node at array index (node value - 256).
 
 #### Pseudocode ####
@@ -257,7 +264,7 @@ The header files contain information about the structure of the actual asset fil
 ### Graphics ###
 There are two types of graphics in the game: *pics* and *sprites*. Pics are rectangular pictures of any size without any transparent holes and used outside the 3D portions of the game. An alternative name is *bitmaps*. Sprites are in-game object graphics using the colur 0x980088 for transparency and are always 64x64 pixels large.
 
-####Pics####
+#### Pics ####
 To extract pics three files are needed:
 
 	VGADICT     Huffman-tree for decopressing the pics
@@ -629,10 +636,111 @@ Finally 16 characters, 8-bit ASCII each, form the level's name. In the original 
 #### Extracting the maps ###
 Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression one can find the decompressed length encoded into the compressed map as the fist word, it is given in bytes. This means the pointer to the compressed sequence must be advanced by one before starting the decompression. For some reason the pointer to the Carmack-decompressed but still RLEW-compressed sequence must be advanced by one word as well; could be a leftover from a previouse map format. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
 
+--------------------------------------------------------------------------------
 
 Part II - Game rules
 ====================
-Time is measured in *ticks* from now on. In the original implementation one tick was intended to last 1/70th of a second.
+Time is measured in *ticks* from now on. In the original implementation one tick was intended to last 1/70th of a second. The game was inteded to run at one ticks per frame or 70 frames per second.
+
+Mathematics
+-----------
+//TODO This whole section might be superfluous
+To faithfully recreate the gameplay of Wolfenstein 3D one has to understand how the developers worked around the technical limitations of the original hardware. Even if we were to use proper modern techniques we should at least know under what quirks the original implementation had.
+
+### Fixed point instead of floating point ###
+The processor of the target hardware, the Intel 286 and 386, did not natively support floating point operations, they would have to be implemente in software, which would have been too slow for gameplay. The solution was to use fixed-point arithmetic by using integers. That would give the programmers half the bits on both sides of the radix point. Truncating the fractional part of such a number can be done by right-shifting by half the type's size. Here is an example using a 32-bit integer:
+
+	| 2^n | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | -1 | -2 | -3 | -4 | -5 | -6 | -7 | -8 |
+	|-----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|----|
+	| bit | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |  0 |  0 |  1 |  0 |  0 |  0 |  1 |  0 |
+	
+	1*2^5 + 1*2^1 + 1*2^(-3) + 1*2^(-7) = 32 + 2 + 0.125 + 0.0078125 = 34.1328125
+
+The number can be treated like an integer for the most part.
+
+
+### Enumerations and constants ###
+The game has a number of hard-coded constants for gameplay.
+
+| Name       | Type    | Value        | Description                           |
+|------------|---------|--------------|---------------------------------------|
+| FLOATTILE  | Float   | 65536.0f     | ???                                   |
+| TILEGLOBAL | integer | 0x10000      | ???                                   |
+| HALFTILE   | integer | 0x08000      | 0.5 as fixed-point decimal            |
+| MINDIST    | integer | 0x05800      | ???                                   |
+| STEP       | float   | 0.0078125f   | How many degrees are one step         |
+| STEPRAD    | float   | 0.000136354f | How many radians are one step         |
+| MAX_GUARDS | integer | 255          | Maximum number of enemies in the game |
+| SPDPATROL  | integer | 512          | Patrolling speed of humans            |
+| SPDDOG     | integer | 1500         | Patrolling speed of dogs              | 
+These are the enumerations defined in the code:
+
+	quadrant    = {first, second, third, fourth}
+	direction_8 = {east, north_east, north, north_west, west, south_west, south, south_east}
+	direction_4 = {east,             north,             west,             south            }
+
+All enumerations are mapped to integer values as defined in the C standard: the first element has value 0 and ever successive element has a value +1 greater than the previous one. In the following enumeration elements will be treated as equivalent to integers.
+
+### Functions and macros ###
+There are a number of functions and macros defined. The first batch is standard stuff:
+
+	max(x, y) : maximum of two numbers
+	abs(x)    : absolute value of a number
+
+The following are converting between world-space and tile-space; to understand them we need to know that positions are stored as 32-bit integers representing fixed-point decimals. Shifting a number by `TILESHIFT` (=16) left turns an integer into a decimal and shifting right turns a decimal into an integer.
+
+	tile_to_pos(a) : converters tile coordinate to world coordinate
+	                 Make `a` into fixed-point, add `HALFTILE`
+	pos_to_tile(a) : converts world coordinate to tile coordinate
+	                 Make `a` into an integer
+	
+	pos_to_tile_f(a) : Converts world coordinate to floating-point tile coordinate
+	                   divide `a` by `FLOATTILE`
+
+### Angles & trigonometry ###
+The limited precision offered by fixed-point arithmetic forced the developers to work around it. Angles are given in *steps* and can be converted to degree and radians. See the table of constatns for the conversion ratios. Here is the list of pre-defined angles in steps:
+
+| Degrees | Steps |
+|---------|-------|
+|     5   |     0 |
+|     1   |   128 |
+|     6   |   768 |
+|    15   |  1920 |
+|    22.5 |  2880 |
+|    30   |  3840 |
+|    45   |  5760 |
+|    67.5 |  8640 |
+|    90   | 11520 |
+|   112.5 | 14400 |
+|   135   | 17280 |
+|   157.5 | 20160 |
+|   180   | 32040 |
+|   202.5 | 25920 |
+|   225   | 28800 |
+|   247.5 | 31680 |
+|   270   | 34560 |
+|   292.5 | 37440 |
+|   315   | 40320 |
+|   337.5 | 43200 |
+|   360   | 46080 |
+
+All of these numbers could be computed at runtime from one base value, but they were manually pre-computed and hard-coded. Conversion between steps and angles works as follows:
+
+	step_to_radian(a) = (`a` * PI) / `angle_180`
+	radian_to_step(a) = (`a` * `angle_180`) / PI
+	
+	step_to_degree(a)   = (float)(a) / angle_1
+	step_to_degree_f(a) = (a) / (float)angle_1
+	degree_to_step(a)   = (a) * angle_1
+
+The first cast prevents precision loss during division, the second cast makes the result of the division itself a floating-point number.
+
+After defining these discrete angles we build tables of trigonometric values. The sine- cosine and tangens table simply hold the respective values for each angle. Finally we have a number of angle-related functions:
+
+	normalize_angle(a) : convert any integer to a number between 0 and 360, in steps
+
+To convert an angle to a direction we use the *floor*: an angle always corresponds to the nearest direction that's below an angle. For instance, an 89° angle would correspond to north-east, because it's rounded down to 45°.
+
 
 Actors / Entities
 -----------------
@@ -646,85 +754,42 @@ An actor is define as a structure with the following members:
 | integer     | position_x     | Horizontal position on the map     |
 | integer     | position_y     | Vertical position on the map       |
 | integer     | angle          | Angle the actor is facing          |
+| integer     | type           | Class of the actor (e.g. guard)    |
 | integer     | current_health | Current health of the actor        |
 | integer     | maximum_health | Maximum health of the actor        |
-| integer     | speed;         | Walking speed                      |
-| integer     | ticcount;      | Timer driving the actions          |
-| integer     | temp2;         | Reaction time for noticing player? |
+| integer     | speed          | Walking speed                      |
+| integer     | tic_count      | Timer driving the actions          |
+| integer     | temp2          | Reaction time for noticing player? |
 | integer     | distance;      | ???                                |
 | character   | tile_x         | Tile the actor is standing on      |
 | character   | tile_y         | Tile the actor is standing on      |
 | character   | area_number    | Area on the map                    |
 | integer     |	waitfordoor_x  | // waiting on this door if non 0   |
 | integer     | waitfordoor_y  |                                    |
-| W8          | flags;	       | Various flags for game rules       |
-| actor_state | state;         | Currents state                     |
-| dir8type    | direction;     | Direction to move into             |
-| integer     | sprite;        | Sprite to display                  |
+| actor_flags | flags 	       | Various flags for game rules       |
+| actor_state | state          | Currents state                     |
+| dir8type    | direction      | Direction to move into             |
+| integer     | sprite         | Sprite to display                  |
+
+The type `actor_flags` is a combination of various options which can be either on or off.
+
+| Option      | Meaning |
+|-------------|---------|
+| Shootable   | ?       |
+| Bonus       | ?       |
+| Nevermark   | ?       |
+| Visable     | ?       |
+| Attackmode  | ?       |
+| Firstattack | ?       |
+| Ambush      | ?       |
+| Nonmark     | ?       |
 
 #### Starting hit points ####
-The starting hit points of an actor depend on the chosen game difficuly. The list will be its own file, since it would be too large for this document. (//TODO)
-
-#### List of entities ####
-The following is a list of all actors defined in Wolfenstein 3D and their description.
-
-| Name    | Description                       |
-|---------|-----------------------------------|
-| Guard   | Brown guards                      |
-| Officer | White soldiers                    |
-| SS      | Blue soldiers                     |
-| Boss    | Hans Grosse                       |
-| Schabbs | Dr. Schabbs                       |
-| Fake    | Fake Hitler                       |
-| Mecha   | Mech Hitler                       |
-| Hitler  | Real Hitler                       |
-| Mutant  | Mutant soldier                    |
-| Blinky  | Red Pac-Man ghost                 |
-| Clyde   | Orange Pac-Man ghost              |
-| Pinky   | Pink Pac-Man ghost                |
-| Inky    | Cyan Pac-Man ghost                |
-| Gretel  | Gretel Grosse                     |
-| Gift    | Otto Gifmacher                    |
-| Fat     | General Fettgesicht               |
-|         |                                   |
-| Needle  | Syringe thrown by Schabbs         |
-| Fire    | Fireball from Fake Hitler         |
-| Rocket  | Some bosses have rocket launchers |
-| Smoke   | Smoke from rockets                |
-|         |                                   |
-| BJ      | BJ doing the victory jump         |
-
-Spear of destiny adds the following actors as well:
-
-| Name    | Description      |
-|---------|------------------|
-| Spark   | ???              |
-| hrocket | ???              |
-| hsmoke  | ???              |
-|         |                  |
-| Spectre | Spectre enemy    |
-| Angel   | Angle of Death   |
-| Trans   | Trans Grosse     |
-| Uber    | Ubermutant       |
-| Will    | Barnacle Wilhelm |
-| Death   | Death Knight     |
-
-The mission packs introduce the following enemies:
-
-| Name  | Description          |
-|-------|----------------------|
-| Bat   | Bats, replace mutant |
-| Willi | Sumbarine Willi      |
-| Quark | Dr. Quarkblitz       |
-| Axe   | The Axe              |
-| Robot | The Robot            |
-| Devil | Decil Incarnate      |
-
-Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the mission packs are just re-skins of enemies from Spear of Destiny.
+The starting hit points of an actor depend on the chosen game difficuly. The list can be found in the appendix, since it would be too large for this section. (//TODO)
 
 
 ### Actor states ###
-Each actors uses the same basic state structure:
+Each actor state uses the same basic state structure:
 
 | Type      | Name        | Description                                            |
 |-----------|-------------|--------------------------------------------------------|
@@ -759,15 +824,281 @@ States can be split into the follwing groups:
 
 Each of these groups consists of several actual states, with the exception of the standing- and dead state since there is only one way of standing still or being dead. If a state is unused it is still defined, but its members are useless junk data and the sprite is the "demo" sprite. Each state can only display one sprite, so in order to cycle through animation frames the states within one group must be cycled through. In the case of the brown guard there are three shooting frames, so the guard cycles through the first three of his shooting states with the remaining shooting states being unused. There also appear to be special states for some actors, but those are just the above states re-purposed.
 
-#### List of states ####
-The following is a list of all actor states in the order they are defined in the original source. Sticking to that order is not strictly necessary, but one has to make sure to keep the mapping scorrect.
+#### Changing state ####
+To change the state of an actor set its state to the target state. If the state is the `remove` state set the `tic_count` to `0`, otherwise set it to the `timeout` of the target state.
 
-###### Standing still ######
+	prerequisites: `actor`       = existing actor
+	               `target`      = target state
+	               `state_table` = maps actor and state to concrete state object
+	
+	side effects: will change the `state` and `tic_count` of `actor`
+	
+	1) Set state of `actor` to `target`
+	2) If `target` == `remove`
+		2.1) Set tic_count of `actor` to 0
+	3) Else
+		3.1) Set tic_count of `actor` to timeout of `state_table`(`actor`, `target`)
+
+#### Actor routine ####
+The following routine if called every frame on every actor when processing actors (see below). The variable `ticks` measures the number of ticks that have passed since the last frame; for a 30 FPS game that wuld be two ticks.
+
+
+	prerequisites: `actor` = the actor to run the routine on
+	               `tics`  = ticks passed since last time
+	
+	side effects: - might change the state of `actor`
+	              - might call the `thought` and `action` of the state
+	
+	return value: boolean, false if `actor` ends up in the `remove` state
+	
+	1) If `tic_count` of `actor` != 0
+		1.1) Subtract `ticks` from `tic_count` of `actor`
+		1.2) While `tick_count` of `actor` <= 0
+			1.2.1) Set `action` to the `action` of `actor`
+			1.2.2) If `action` is not NULL
+				1.2.2.1) Perform `action`
+				1.2.2.2) If `state` of `actor` is `remove`
+					1.2.2.2.1) Return false
+			1.2.3) Transition to next state
+			1.2.4) If the state is `remove`
+				1.2.4.1) Return false
+			1.2.5) If `timeout` of the state is 0
+				1.2.5.1) Set `tic_count` of `actor` to 0
+				1.2.5.2) Break out of the loop
+			1.2.6) Add `timeout` of the state to the `tic_count` of `actor`
+	2) Set `thought` to the `thought` of `actor`
+	3) If `thought` is not NULL
+		3.1) Perform `think`
+		3.2) If the state of `actor` is `remove`
+			3.2.1) Return false
+	4) Return true
+
+
+The routine has two major parts. In the first part we subtract the time passed from the actor's tick count. If the count drops to 0 or below we have to call the actor's action and change the state. We have to do this for every state that has passed since the last run of the routine.
+
+This routine is not perfect, if the game speed drops too low the subtracted ticks might skip too many calls of the actor's *think* function.
+
+#### Removing an actor ####
+To remove an actor remove it from the global list of actors. This will make any functions that iterates over actors skip it, but the actor will still remain as a corpse sprite in the game.
+
+#### Processing actors ####
+Pseudocode:
+
+	1) For each living (i.e. not dead) actor do the following
+		1.1) Run the actor routine on the current actor
+		1.2) If the routine returned false
+			1.2.1) Remove the actor and skip to the next actor
+		1.3) Adjust the position and angle of the actor's sprite
+		1.4) If the actor state can rotate
+			1.4.1) Add the rotation to the index of the base sprite
+		1.5) Display the sprite
+
+Rotating a sprite means taking the actor's angle and computing the closest direction. Each direction can be mapped to an integer number and this number is added to the index of the base sprite texture (the one facing the player). The mapping is as follows
+
+	r_add8dir[ 9 ] = { 4, 7, 6, 5, 0, 1, 2, 3, 0 };  // for rockets and hrockets
+	a_add8dir[ 9 ] = { 4, 5, 6, 7, 0, 1, 2, 3, 0 };  // for every other actor
+
+The index of the direction to use is the direction of the angle difference between the player and the actor. This means we first compute the absolute difference in angles between actor and player and use that angle to get an eight-way direction. This direction is the index of the number to add.
+
+#### Creating a new actor ####
+Creating a new actor is the invers of removing it. Instantiate a new empty actor and add it to the list of actors. Its members will be initialised by the function calling this.
+
+#### Spawning actors ####
+Spawning actors is split into a number of similar but not exatly same functions. There are standing actors, patrolling actors, dead actors, bosses and ghosts. All the spawning functions call one general spawning function.
+
+In my opinion these are too many special cases that should be resolved using a sort of table and only one spawning function.
+
+##### Spawn general actor #####
+This function is called by other functions to spawn an actor in the world. Pseudocode:
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	               `dir`   = 4-way direction for the actor to face
+	               `level` = the level to spawn in
+	
+	1) Create a new actor as `actor`
+	2) Convert `x` and `y` to to world positions and set them as the actor position
+	3) Set `angle` and `direction` of `actor` to `dir`
+	4) Set `area_number` to area of tile the actor is standing on
+	5) If `area_number` < 0
+		5.1) Set`area_number` to 0 
+	6) Set `type` of the actor to `class`
+	7) Set `health` of the actor from the health table (see appendix)
+	8) Set `sprite` of the actor to a newly created sprite
+
+##### Spawning standing actor #####
+This function spawns a regular still-standing actor. The actor can be either on guard or in ambush mode (deaf) Pseudocode:
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	               `dir`   = 4-way direction for the actor to face
+	               `level` = the level to spawn in
+	
+	1) Spawn a new actor as `actor`
+	2) Set `state` of the actor to `stand` and `speed` to `SPDPATROL`
+	3) If `timeout` of the state for this actor class and state class `stand` != 0
+		3.1) Set `tic_count` of the actor to `timeout`+1
+	4) Else
+		4.1) Set `tic_count` of the actor to 0
+	5) Add the Shootable flag to the actor
+	6) If the actor is standing on an ambush tile
+		6.1) Add the Ambush flag to the actor
+	7) Increment level's enemy count
+
+##### Spawning patrolling actor #####
+This function spawns a patrolling actor, dogs always patrol. Pseudocode:
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	               `dir`   = 4-way direction for the actor to face
+	               `level` = the level to spawn in
+	
+	1) Spawn a new actor as `actor`
+	2) Set `state` of the actor to `path1` and `speed` to `SPDPATROL`
+	3) Set `speed` of the actor to SPDPATROL, or SPDDOG if the actor is a dog
+	4) Set `distance` of the actor to TILEGLOBAL
+	5) If the `timeout` of the state from the state table != 0
+		5.1) Set `tic_count` of the actor to the `timeout`+1
+	6) Else
+		5.1) Set `tic_count` of the actor to 0
+	7) Add the Shootable flag to the actor
+	8) Increment level's enemy count
+
+
+##### Spawning dead actor #####
+Dead actors are special in that they have no direction to look at. Pseudocode:
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	
+	1) Spawn a new actor as `actor` with no direction
+	2) Set `state` of the actor to `dead`
+	3) Set health and `speed` of the actor to 0
+	5) If the `timeout` of the state from the state table != 0
+		5.1) Set `tic_count` of the actor to the `timeout`+1
+	6) Else
+		5.1) Set `tic_count` of the actor to 0
+
+
+##### Spawning boss actor #####
+The direction of bosses depend on the particular boss. Pseudocode:
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	
+	 1) Make 4-way direction variable `dir`
+	 2) Value of dir is
+	 	2.1) South for: Hans, Schabbs, Fettgesicht and Hitler
+	 	2.2) North for: Fake Hitler, Gretel and Giftmacher
+	 	2.3) No direction for everything else
+	 3) Spawn a new actor as `actor` with direction `dir`
+	 4) Set the state of the actor to `path_1` for a spectre and `stand` for everyone else
+	 5) Set `speed` of the actor to SPDPATROL
+	 6) Set `health` of the actor from the starting health table (redundant?)
+	 7) If the `timeout` of the state from the state table != 0
+	 	7.1) Set `tic_count` of the actor to the `timeout`+1
+	 8) Else
+	 	8.1) Set `tic_count` of the actor to 0
+	 9) Add the Shootable and Ambush flag to the actor
+	10) Increment level's enemy count
+	
+
+##### Spawning ghost actor #####
+This function spawns Pac-Man ghosts. Pseudocode
+
+	prerequisites: `class` = actor class of the new actor
+	               `x`     = tile X-coordinate of the actor
+	               `y`     = tile Y-coordinate of the actor
+	
+	1) Spawn a new actor as `actor` with no direction
+	2) Set `state` of the actor to `chase1`
+	3) Set `speed` of the actor to SPDPATROL*3
+	4) Set `health` of the actor from the starting health table (redundant?)
+	5) If the `timeout` of the state from the state table != 0
+		7.1) Set `tic_count` of the actor to the `timeout`+1
+	6) Else
+		8.1) Set `tic_count` of the actor to 0
+	7) Add the Ambush flag to the actor
+	8) Increment level's enemy count
+
+Appendix
+========
+
+Tables for actors
+-----------------
+
+### List of actor classes ###
+The following is a list of all types of actors defined in Wolfenstein 3D and their description. They are ordered by their appearance in the game.
+
+| Name    | Description                       |
+|---------|-----------------------------------|
+| Guard   | Brown guards                      |
+| Officer | White soldiers                    |
+| SS      | Blue soldiers                     |
+| Dog     | Shepherd dogs                     |
+| Hans    | Hans Grosse                       |
+| Schabbs | Dr. Schabbs                       |
+| Fake    | Fake Hitler                       |
+| Mecha   | Mecha Hitler                      |
+| Hitler  | Real Hitler                       |
+| Mutant  | Mutant soldier                    |
+| Blinky  | Red Pac-Man ghost                 |
+| Clyde   | Orange Pac-Man ghost              |
+| Pinky   | Pink Pac-Man ghost                |
+| Inky    | Cyan Pac-Man ghost                |
+| Gretel  | Gretel Grosse                     |
+| Gift    | Otto Gifmacher                    |
+| Fat     | General Fettgesicht               |
+|         |                                   |
+| Needle  | Syringe thrown by Schabbs         |
+| Fire    | Fireball from Fake Hitler         |
+| Rocket  | Some bosses have rocket launchers |
+| Smoke   | Smoke from rockets                |
+|         |                                   |
+| BJ      | BJ doing the victory jump         |
+
+Spear of destiny adds the following actors as well:
+
+| Name    | Description      |
+|---------|------------------|
+| Spark   | ???              |
+| hrocket | ???              |
+| hsmoke  | ???              |
+|         |                  |
+| Spectre | Spectre enemy    |
+| Angel   | Angle of Death   |
+| Trans   | Trans Grosse     |
+| Uber    | Ubermutant       |
+| Will    | Barnacle Wilhelm |
+| Death   | Death Knight     |
+
+The mission packs introduce the following enemies:
+
+| Name  | Description           |
+|-------|-----------------------|
+| Bat   | Bats, replace mutants |
+| Willi | Sumbarine Willi       |
+| Quark | Dr. Quarkblitz        |
+| Axe   | The Axe               |
+| Robot | The Robot             |
+| Devil | Decil Incarnate       |
+
+Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the mission packs are just re-skins of enemies from Spear of Destiny.
+
+### List of state classes ###
+The following is a list of all types of actor states in the order they are defined in the original source. Sticking to that order is not strictly necessary, but one has to make sure to keep the mapping scorrect.
+
+##### Standing still #####
 | State | Index |
 |-------|-------|
 | stand |     0 |
 	
-###### Patrolling ######
+##### Patrolling #####
 | State  | Index |
 |--------|-------|
 | path1  |     1 |
@@ -777,13 +1108,13 @@ The following is a list of all actor states in the order they are defined in the
 | path3s |     5 |
 | path4  |     6 |
 	
-###### Paralysed in pain ######
+##### Paralysed in pain #####
 | State | Index |
 |-------|-------|
 | pain  |     7 |
 | pain1 |     8 |
 	
-###### Shooting ######
+##### Shooting #####
 | State  | Index |
 |--------|-------|
 | shoot1 |     9 |
@@ -796,7 +1127,7 @@ The following is a list of all actor states in the order they are defined in the
 | shoot8 |    16 |
 | shoot9 |    17 |
 	
-###### Chasing the player ######
+##### Chasing the player #####
 | State   | Index |
 |---------|-------|
 | chase1  |    18 |
@@ -806,7 +1137,7 @@ The following is a list of all actor states in the order they are defined in the
 | chase3s |    22 |
 | chase4  |    23 |
 	
-###### Dying ######
+##### Dying #####
 | State | Index |
 |-------|-------|
 | die1  |    24 |
@@ -818,8 +1149,8 @@ The following is a list of all actor states in the order they are defined in the
 | die7  |    30 |
 | die8  |    31 |
 | die9  |    32 |
-	
-###### Being dead ######
+
+##### Being dead #####
 | State  | Index |
 |--------|-------|
 | dead   |    33 |
@@ -827,14 +1158,332 @@ The following is a list of all actor states in the order they are defined in the
 
 A list of all actor states for each actor would be too large for this document, so it will have its own file. (//TODO)
 
-### Structure of actors ###
-The actors all serve as enemies, be it regular soldiers, bosses, or projectiles. 
+### Starting hit points ###
+The starting hit points of an actor depend on the game difficulty selected at start.
+
+| Actor   | Baby | Easy | Normal | Hard |
+|---------|------|------|--------|------|
+| Guard   |   25 |   25 |     25 |   25 |
+| Officer |   50 |   50 |     50 |   50 |
+| SS      |  100 |  100 |    100 |  100 |
+| Dog     |    1 |    1 |      1 |    1 |
+| Hans    |  850 |  950 |   1050 | 1200 |
+| Schabbs |  850 |  950 |   1550 | 2400 |
+| Fake    |  200 |  300 |    400 |  500 |
+| Mecha   |  800 |  950 |   1050 | 1200 |
+| Hitler  |  500 |  700 |    800 |  900 |
+| Mutant  |   45 |   55 |     55 |   65 |
+| Blinky  |   25 |   25 |     25 |   25 |
+| Clyde   |   25 |   25 |     25 |   25 |
+| Pinky   |   25 |   25 |     25 |   25 |
+| Inky    |   25 |   25 |     25 |   25 |
+| Gretel  |  850 |  950 |   1050 | 1200 |
+| Gift    |  850 |  950 |   1050 | 1200 |
+| Fat     |  850 |  950 |   1050 | 1200 |
+|         |      |      |        |      |
+| Needle  |    0 |    0 |      0 |    0 |
+| Fire    |    0 |    0 |      0 |    0 |
+| Rocket  |    0 |    0 |      0 |    0 |
+| Smoke   |    0 |    0 |      0 |    0 |
+|         |      |      |        |      |
+| BJ      |  100 |  100 |    100 |  100 |
+|         |      |      |        |      |
+| Spark   |    0 |    0 |      0 |    0 |
+| hrocket |    0 |    0 |      0 |    0 |
+| hsmoke  |    0 |    0 |      0 |    0 |
+|         |      |      |        |      |
+| Spectre |   10 |   10 |     15 |   25 |
+| Angel   | 1550 | 1550 |   1650 | 2000 |
+| Trans   |  950 |  950 |   1050 | 1200 |
+| Uber    | 1150 | 1150 |   1250 | 1400 |
+| Will    | 1050 | 1050 |   1150 | 1300 |
+| Death   | 1350 | 1350 |   1450 | 1600 |
+|         |      |      |        |      |
+| Bat     |   10 |   10 |     15 |   25 |
+| Willi   | 1550 | 1550 |   1650 | 2000 |
+| Quark   |  950 |  950 |   1050 | 1200 |
+| Axe     | 1150 | 1150 |   1250 | 1400 |
+| Robot   | 1050 | 1050 |   1150 | 1300 |
+| Devil   | 1350 | 1350 |   1450 | 1600 |
+
+The enemies from the Spear of Destiny mission packs are just reskins of the Spear of Destiny game, so they use the hit points of their originals.
+
+### Actor states ###
+The following tables list the states for every actor class and state class.
+
+#### Guard ####
+| State       | can_rotate | base_sprite    | timeout | thought | action       | next_state |
+|-------------|------------|----------------|---------|---------|--------------|------------|
+| **stand**   | true       | SPR_GRD_S_1    |       0 | Stand   |              | stand      |
+|             |            |                |         |         |              |            |
+| **path1**   | true       | SPR_GRD_W1_1   |      20 | Path    |              | path1s     |
+| **path1s**  | true       | SPR_GRD_W1_1   |       5 |         |              | path2      |
+| **path2**   | true       | SPR_GRD_W2_1   |      15 | Path    |              | path3      |
+| **path3**   | true       | SPR_GRD_W3_1   |      20 | Path    |              | path3s     |
+| **path3s**  | true       | SPR_GRD_W3_1   |       5 |         |              | path4      |
+| **path4**   | true       | SPR_GRD_W4_1   |      15 | Path    |              | path1      |
+|             |            |                |         |         |              |            |
+| **pain**    | false      | SPR_GRD_PAIN_1 |      10 |         |              | chase1     |
+| **pain1**   | false      | SPR_GRD_PAIN_2 |      10 |         |              | chase1     |
+|             |            |                |         |         |              |            |
+| **shoot1**  | false      | SPR_GRD_SHOOT1 |      20 |         |              | shoot2     |
+| **shoot2**  | false      | SPR_GRD_SHOOT2 |      20 |         | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_GRD_SHOOT3 |      20 |         |              | chase1     |
+| **shoot4**  | false      |                |       0 |         |              | chase1     |
+| **shoot5**  | false      |                |       0 |         |              | chase1     |
+| **shoot6**  | false      |                |       0 |         |              | chase1     |
+| **shoot7**  | false      |                |       0 |         |              | chase1     |
+| **shoot8**  | false      |                |       0 |         |              | chase1     |
+| **shoot9**  | false      |                |       0 |         |              | chase1     |
+|             |            |                |         |         |              |            |
+| **chase1**  | true       | SPR_GRD_W1_1   |      10 | Chase   |              | chase1s    |
+| **chase1s** | true       | SPR_GRD_W1_1   |       3 |         |              | chase2     |
+| **chase2**  | true       | SPR_GRD_W2_1   |       8 | Chase   |              | chase3     |
+| **chase3**  | true       | SPR_GRD_W3_1   |      10 | Chase   |              | chase3s    |
+| **chase3s** | true       | SPR_GRD_W3_1   |       3 |         |              | chase4     |
+| **chase4**  | true       | SPR_GRD_W4_1   |       8 | Chase   |              | chase1     |
+|             |            |                |         |         |              |            |
+| **die1**    | false      | SPR_GRD_DIE_1  |      15 |         | Death Scream | die2       |
+| **die2**    | false      | SPR_GRD_DIE_2  |      15 |         |              | die3       |
+| **die3**    | false      | SPR_GRD_DIE_3  |      15 |         |              | dead       |
+| **die4**    | false      |                |       0 |         |              | dead       |
+| **die5**    | false      |                |       0 |         |              | dead       |
+| **die6**    | false      |                |       0 |         |              | dead       |
+| **die7**    | false      |                |       0 |         |              | dead       |
+| **die8**    | false      |                |       0 |         |              | dead       |
+| **die9**    | false      |                |       0 |         |              | dead       |
+|             |            |                |         |         |              |            |
+| **dead**    | false      | SPR_GRD_DEAD   |       0 |         |              | dead       |
 
 
+#### Officer ####
+| State       | can_rotate | base_sprite    | timeout | thought | action       | next_state |
+|-------------|------------|----------------|---------|---------|--------------|------------|
+| **stand**   | true       | SPR_OFC_S_1    |       0 | Stand   |              | stand      |
+|             |            |                |         |         |              |            |
+| **path1**   | true       | SPR_OFC_W1_1   |      20 | Path    |              | path1s     |
+| **path1s**  | true       | SPR_OFC_W1_1   |       5 |         |              | path2      |
+| **path2**   | true       | SPR_OFC_W2_1   |      15 | Path    |              | path3      |
+| **path3**   | true       | SPR_OFC_W3_1   |      20 | Path    |              | path3s     |
+| **path3s**  | true       | SPR_OFC_W3_1   |       5 |         |              | path4      |
+| **path4**   | true       | SPR_OFC_W4_1   |      15 | Path    |              | path1      |
+|             |            |                |         |         |              |            |
+| **pain**    | false      | SPR_GRD_PAIN_1 |      10 |         |              | chase1     |
+| **pain1**   | false      | SPR_GRD_PAIN_2 |      10 |         |              | chase1     |
+|             |            |                |         |         |              |            |
+| **shoot1**  | false      | SPR_GRD_SHOOT1 |       6 |         |              | shoot2     |
+| **shoot2**  | false      | SPR_GRD_SHOOT2 |      20 |         | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_GRD_SHOOT3 |      10 |         |              | chase1     |
+| **shoot4**  | false      |                |       0 |         |              | chase1     |
+| **shoot5**  | false      |                |       0 |         |              | chase1     |
+| **shoot6**  | false      |                |       0 |         |              | chase1     |
+| **shoot7**  | false      |                |       0 |         |              | chase1     |
+| **shoot8**  | false      |                |       0 |         |              | chase1     |
+| **shoot9**  | false      |                |       0 |         |              | chase1     |
+|             |            |                |         |         |              |            |
+| **chase1**  | true       | SPR_OFC_W1_1   |      10 | Chase   |              | chase1s    |
+| **chase1s** | true       | SPR_OFC_W1_1   |       3 |         |              | chase2     |
+| **chase2**  | true       | SPR_OFC_W2_1   |       8 | Chase   |              | chase3     |
+| **chase3**  | true       | SPR_OFC_W3_1   |      10 | Chase   |              | chase3s    |
+| **chase3s** | true       | SPR_OFC_W3_1   |       3 |         |              | chase4     |
+| **chase4**  | true       | SPR_OFC_W4_1   |       8 | Chase   |              | chase1     |
+|             |            |                |         |         |              |            |
+| **die1**    | false      | SPR_OFC_DIE_1  |      11 |         | Death Scream | die2       |
+| **die2**    | false      | SPR_OFC_DIE_2  |      11 |         |              | die3       |
+| **die3**    | false      | SPR_OFC_DIE_3  |      11 |         |              | dead       |
+| **die4**    | false      |                |       0 |         |              | dead       |
+| **die5**    | false      |                |       0 |         |              | dead       |
+| **die6**    | false      |                |       0 |         |              | dead       |
+| **die7**    | false      |                |       0 |         |              | dead       |
+| **die8**    | false      |                |       0 |         |              | dead       |
+| **die9**    | false      |                |       0 |         |              | dead       |
+|             |            |                |         |         |              |            |
+| **dead**    | false      | SPR_OFC_DEAD   |       0 |         |              | dead       |
 
 
-Appendix
-========
+#### SS ####
+| State       | Can Rotate | Base Sprite   | Timeout | Thought | Action       | Next State |
+|-------------|------------|---------------|---------|---------|--------------|------------|
+| **stand**   | true       | SPR_SS_S_1    |       0 | Stand   |              | stand      |
+|             |            |               |         |         |              |            |
+| **path1**   | true       | SPR_SS_W1_1   |      20 | Path    |              | path1s     |
+| **path1s**  | true       | SPR_SS_W1_1   |       5 |         |              | path2      |
+| **path2**   | true       | SPR_SS_W2_1   |      15 | Path    |              | path3      |
+| **path3**   | true       | SPR_SS_W3_1   |      20 | Path    |              | path3s     |
+| **path3s**  | true       | SPR_SS_W3_1   |       5 |         |              | path4      |
+| **path4**   | true       | SPR_SS_W4_1   |      15 | Path    |              | path1      |
+|             |            |               |         |         |              |            |
+| **pain**    | false      | SPR_SS_PAIN_1 |      10 |         |              | chase1     |
+| **pain1**   | false      | SPR_SS_PAIN_2 |      10 |         |              | chase1     |
+|             |            |               |         |         |              |            |
+| **shoot1**  | false      | SPR_SS_SHOOT1 |      20 |         |              | shoot2     |
+| **shoot2**  | false      | SPR_SS_SHOOT2 |      20 |         | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_SS_SHOOT3 |      10 |         |              | chase1     |
+| **shoot4**  | false      | SPR_SS_SHOOT2 |      10 |         | Shoot        | chase1     |
+| **shoot5**  | false      | SPR_SS_SHOOT3 |      10 |         |              | chase1     |
+| **shoot6**  | false      | SPR_SS_SHOOT2 |      10 |         | Shoot        | chase1     |
+| **shoot7**  | false      | SPR_SS_SHOOT3 |      10 |         |              | chase1     |
+| **shoot8**  | false      | SPR_SS_SHOOT2 |      10 |         | Shoot        | chase1     |
+| **shoot9**  | false      | SPR_SS_SHOOT3 |      10 |         |              | chase1     |
+|             |            |               |         |         |              |            |
+| **chase1**  | true       | SPR_SS_W1_1   |      10 | Chase   |              | chase1s    |
+| **chase1s** | true       | SPR_SS_W1_1   |       3 |         |              | chase2     |
+| **chase2**  | true       | SPR_SS_W2_1   |       8 | Chase   |              | chase3     |
+| **chase3**  | true       | SPR_SS_W3_1   |      10 | Chase   |              | chase3s    |
+| **chase3s** | true       | SPR_SS_W3_1   |       3 |         |              | chase4     |
+| **chase4**  | true       | SPR_SS_W4_1   |       8 | Chase   |              | chase1     |
+|             |            |               |         |         |              |            |
+| **die1**    | false      | SPR_SS_DIE_1  |      15 |         | Death Scream | die2       |
+| **die2**    | false      | SPR_SS_DIE_2  |      15 |         |              | die3       |
+| **die3**    | false      | SPR_SS_DIE_3  |      15 |         |              | dead       |
+| **die4**    | false      |               |       0 |         |              | dead       |
+| **die5**    | false      |               |       0 |         |              | dead       |
+| **die6**    | false      |               |       0 |         |              | dead       |
+| **die7**    | false      |               |       0 |         |              | dead       |
+| **die8**    | false      |               |       0 |         |              | dead       |
+| **die9**    | false      |               |       0 |         |              | dead       |
+|             |            |               |         |         |              |            |
+| **dead**    | false      | SPR_SS_DEAD   |       0 |         |              | dead       |
+
+
+#### Dog ####
+Dogs have no pain because they have only one hit point.
+
+| State       | Can Rotate | Base Sprite   | Timeout | Thought | Action       | Next State |
+|-------------|------------|---------------|---------|---------|--------------|------------|
+| **stand**   | false      |               |       0 |         |              | stand      |
+|             |            |               |         |         |              |            |
+| **path1**   | true       | SPR_DOG_W1_1  |      20 | Path    |              | path1s     |
+| **path1s**  | true       | SPR_DOG_W1_1  |       5 |         |              | path2      |
+| **path2**   | true       | SPR_DOG_W2_1  |      15 | Path    |              | path3      |
+| **path3**   | true       | SPR_DOG_W3_1  |      20 | Path    |              | path3s     |
+| **path3s**  | true       | SPR_DOG_W3_1  |       5 |         |              | path4      |
+| **path4**   | true       | SPR_DOG_W4_1  |      15 | Path    |              | path1      |
+|             |            |               |         |         |              |            |
+| **pain**    | false      |               |      10 |         |              | chase1     |
+| **pain1**   | false      |               |      10 |         |              | chase1     |
+|             |            |               |         |         |              |            |
+| **shoot1**  | false      | SPR_DOG_JUMP1 |      20 |         |              | shoot2     |
+| **shoot2**  | false      | SPR_DOG_JUMP2 |      20 |         | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_DOG_JUMP3 |      10 |         |              | chase1     |
+| **shoot4**  | false      | SPR_DOG_JUMP2 |      10 |         | Shoot        | chase1     |
+| **shoot5**  | false      | SPR_DOG_W1_1  |      10 |         |              | chase1     |
+| **shoot6**  | false      |               |      10 |         | Shoot        | chase1     |
+| **shoot7**  | false      |               |      10 |         |              | chase1     |
+| **shoot8**  | false      |               |      10 |         | Shoot        | chase1     |
+| **shoot9**  | false      |               |      10 |         |              | chase1     |
+|             |            |               |         |         |              |            |
+| **chase1**  | true       | SPR_DOG_W1_1  |      10 | Chase   |              | chase1s    |
+| **chase1s** | true       | SPR_DOG_W1_1  |       3 |         |              | chase2     |
+| **chase2**  | true       | SPR_DOG_W2_1  |       8 | Chase   |              | chase3     |
+| **chase3**  | true       | SPR_DOG_W3_1  |      10 | Chase   |              | chase3s    |
+| **chase3s** | true       | SPR_DOG_W3_1  |       3 |         |              | chase4     |
+| **chase4**  | true       | SPR_DOG_W4_1  |       8 | Chase   |              | chase1     |
+|             |            |               |         |         |              |            |
+| **die1**    | false      | SPR_DOG_DIE_1 |      15 |         | Death Scream | die2       |
+| **die2**    | false      | SPR_DOG_DIE_2 |      15 |         |              | die3       |
+| **die3**    | false      | SPR_DOG_DIE_3 |      15 |         |              | dead       |
+| **die4**    | false      |               |       0 |         |              | dead       |
+| **die5**    | false      |               |       0 |         |              | dead       |
+| **die6**    | false      |               |       0 |         |              | dead       |
+| **die7**    | false      |               |       0 |         |              | dead       |
+| **die8**    | false      |               |       0 |         |              | dead       |
+| **die9**    | false      |               |       0 |         |              | dead       |
+|             |            |               |         |         |              |            |
+| **dead**    | false      | SPR_DOG_DEAD  |       0 |         |              | dead       |
+
+
+#### Hans ####
+Hans has no pain and no patrol.
+
+| State       | Can Rotate | Base Sprite     | Timeout | Thought | Action       | Next State |
+|-------------|------------|-----------------|---------|---------|--------------|------------|
+| **stand**   | true       | SPR_BOSS_W1    |       0 | Stand   |              | stand      |
+|             |            |                 |         |         |              |            |
+| **path1**   | true       |                 |       0 | Path    |              | path1s     |
+| **path1s**  | true       |                 |       0 |         |              | path2      |
+| **path2**   | true       |                 |       0 | Path    |              | path3      |
+| **path3**   | true       |                 |       0 | Path    |              | path3s     |
+| **path3s**  | true       |                 |       0 |         |              | path4      |
+| **path4**   | true       |                 |       0 | Path    |              | path1      |
+|             |            |                 |         |         |              |            |
+| **pain**    | false      |                 |       0 |         |              | chase1     |
+| **pain1**   | false      |                 |       0 |         |              | chase1     |
+|             |            |                 |         |         |              |            |
+| **shoot1**  | false      | SPR_BOSS_SHOOT1 |      30 |         |              | shoot2     |
+| **shoot2**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase4     |
+| **shoot4**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | chase5     |
+| **shoot5**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase6     |
+| **shoot6**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | chase7     |
+| **shoot7**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase8     |
+| **shoot8**  | false      | SPR_BOSS_SHOOT1 |      10 |         |              | chase1     |
+| **shoot9**  | false      |                 |       0 |         |              | chase1     |
+|             |            |                 |         |         |              |            |
+| **chase1**  | true       | SPR_BOSS_W1     |      10 | Chase   |              | chase1s    |
+| **chase1s** | true       | SPR_BOSS_W1     |       3 |         |              | chase2     |
+| **chase2**  | true       | SPR_BOSS_W2     |       8 | Chase   |              | chase3     |
+| **chase3**  | true       | SPR_BOSS_W3     |      10 | Chase   |              | chase3s    |
+| **chase3s** | true       | SPR_BOSS_W3     |       3 |         |              | chase4     |
+| **chase4**  | true       | SPR_BOSS_W4     |       8 | Chase   |              | chase1     |
+|             |            |                 |         |         |              |            |
+| **die1**    | false      | SPR_BOSS_DIE_1  |      15 |         | Death Scream | die2       |
+| **die2**    | false      | SPR_BOSS_DIE_2  |      15 |         |              | die3       |
+| **die3**    | false      | SPR_BOSS_DIE_3  |      15 |         |              | dead       |
+| **die4**    | false      |                 |       0 |         |              | dead       |
+| **die5**    | false      |                 |       0 |         |              | dead       |
+| **die6**    | false      |                 |       0 |         |              | dead       |
+| **die7**    | false      |                 |       0 |         |              | dead       |
+| **die8**    | false      |                 |       0 |         |              | dead       |
+| **die9**    | false      |                 |       0 |         |              | dead       |
+|             |            |                 |         |         |              |            |
+| **dead**    | false      | SPR_BOSS_DEAD   |       0 |         |              | dead       |
+
+
+#### Schabbs ####
+| State       | Can Rotate | Base Sprite            | Timeout | Thought    | Action       | Next State |
+|-------------|------------|------------------------|---------|------------|--------------|------------|
+| **stand**   | false      | SPR_SCHABB_W1          |       0 | Stand      |              | stand      |
+|             |            |                        |         |            |              |            |
+| **path1**   | false      |                        |       0 |            |              | path1s     |
+| **path1s**  | false      |                        |       0 |            |              | path2      |
+| **path2**   | false      |                        |       0 |            |              | path3      |
+| **path3**   | false      |                        |       0 |            |              | path3s     |
+| **path3s**  | false      |                        |       0 |            |              | path4      |
+| **path4**   | false      |                        |       0 |            |              | path1      |
+|             |            |                        |         |            |              |            |
+| **pain**    | false      |                        |       0 |            |              | chase1     |
+| **pain1**   | false      |                        |       0 |            |              | chase1     |
+|             |            |                        |         |            |              |            |
+| **shoot1**  | false      | SPR_SCHABB_SHOOT1      |      30 |            |              | shoot2     |
+| **shoot2**  | false      | SPR_SCHABB_SHOOT2      |      10 |            | Launch       | chase1     |
+| **shoot3**  | false      |                        |      10 |            |              | chase1     |
+| **shoot4**  | false      |                        |      10 |            |              | chase1     |
+| **shoot5**  | false      |                        |      10 |            |              | chase1     |
+| **shoot6**  | false      |                        |      10 |            |              | chase1     |
+| **shoot7**  | false      |                        |      10 |            |              | chase1     |
+| **shoot8**  | false      |                        |      10 |            |              | chase1     |
+| **shoot9**  | false      |                        |       0 |            |              | chase1     |
+|             |            |                        |         |            |              |            |
+| **chase1**  | false      | SPR_SCHABB_W1          |      10 | Boss Chase |              | chase1s    |
+| **chase1s** | false      | SPR_SCHABB_W1          |       3 |            |              | chase2     |
+| **chase2**  | false      | SPR_SCHABB_W2          |       8 | Boss Chase |              | chase3     |
+| **chase3**  | false      | SPR_SCHABB_W3          |      10 | Boss Chase |              | chase3s    |
+| **chase3s** | false      | SPR_SCHABB_W3          |       3 |            |              | chase4     |
+| **chase4**  | false      | SPR_SCHABB_W4          |       8 | Boss Chase |              | chase1     |
+|             |            |                        |         |            |              |            |
+| **die1**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            | Death Scream | die2       |
+| **die2**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            |              | die3       |
+| **die3**    | false      | SPR_SCHABB_SCHABB_DIE1 |      10 |            |              | die4       |
+| **die4**    | false      | SPR_SCHABB_SCHABB_DIE2 |      10 |            |              | die5       |
+| **die5**    | false      | SPR_SCHABB_SCHABB_DIE3 |      10 |            |              | die6       |
+| **die6**    | false      |                        |       0 |            |              | dead       |
+| **die7**    | false      |                        |       0 |            |              | dead       |
+| **die8**    | false      |                        |       0 |            |              | dead       |
+| **die9**    | false      |                        |       0 |            |              | dead       |
+|             |            |                        |         |            |              |            |
+| **dead**    | false      | SPR_SCHABB_DEAD        |       0 |            |              | dead       |
+
 
 Known bugs and limitations
 --------------------------
