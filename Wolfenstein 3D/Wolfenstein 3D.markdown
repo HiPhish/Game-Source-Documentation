@@ -34,14 +34,16 @@ Table of contents
 	|
 	- Part II - Game rules
 	| |- Mathematics
+	| |- Levels
 	| |- Actors / Entities
 	|    |- The actor structure
 	|    |- Actor states
 	|
 	- Appendix
 	  |- Tables for actors
-	  |  |- List of actor classes
+	  |  |- List of actor classes and starting hit points
 	  |  |- List of state classes
+	  |  |- Table of actor states 
 	  |
 	  |- Known bugs and limitations
 	  |- References
@@ -742,6 +744,10 @@ After defining these discrete angles we build tables of trigonometric values. Th
 To convert an angle to a direction we use the *floor*: an angle always corresponds to the nearest direction that's below an angle. For instance, an 89° angle would correspond to north-east, because it's rounded down to 45°.
 
 
+Levels
+------
+
+
 Actors / Entities
 -----------------
 Actors, or entities as they can also be referred to in the code, are any in-game entities that can move around in the world. They include enemies as well as projectiles like fireballs or rockets and even BJ himself, but not static objects like weapons, food, chairs or stone columns. An actor's behaviour is modelled using a finite-state machine where each state holds information on what sprite to display, how long the state lasts, what state to transition to.
@@ -759,7 +765,7 @@ An actor is define as a structure with the following members:
 | integer     | maximum_health | Maximum health of the actor        |
 | integer     | speed          | Walking speed                      |
 | integer     | tic_count      | Timer driving the actions          |
-| integer     | temp2          | Reaction time for noticing player? |
+| integer     | reaction       | Reaction time for noticing player? |
 | integer     | distance;      | ???                                |
 | character   | tile_x         | Tile the actor is standing on      |
 | character   | tile_y         | Tile the actor is standing on      |
@@ -1026,69 +1032,176 @@ This function spawns Pac-Man ghosts. Pseudocode
 	7) Add the Ambush flag to the actor
 	8) Increment level's enemy count
 
+### Actor AI ###
+
+#### General AI routine ####
+These AI routines are not called directly, but they are called by other functions
+
+##### Check Sight #####
+This routine scans the line of sight of the actor for the presence of the player. Pseudocode:
+
+	constants: `MINSIGHT` = 1.1; below this distance the player is always noticed
+	
+	1) If the actor does not have the Ambush flag set and the player is not in the same area
+		1.1) Return false
+	2) If the difference of the actor's and player's position on both coordinates is less than `MINSIGHT`
+		2.1) Return true
+	3) If the player is not in front of the actor return false
+	   We only compare the direction of the player, not if the actor can actually see the player
+	4) Return the result of the Check Line function using the actor and the player
+	   The function is discussed in the level section
+
+First we exclude the cases that are easy to verify. Then we exclude the cases where the player is behind the actor, e.g. if the actor is facing south and the player is north of the actor. Finally, we check if the line between the actor and the player is unobstructed; the player could be hiding around a corner or behind a door like in the title screen.
+
+##### First Sighting #####
+This routine puts the actor into an attack state and makes it face the player. Pseudocode:
+
+	1) Play a sound and multiply the actor's `speed` by a factor
+	   Both depend on the actor's class, there is a table below
+	2) If the actor's `waitfordoor_x` != 0
+		2.1) Set the actor's `waitfordoor_x` and `waitfordoor_y` to 0
+	3) Change the actor's state to Chase1
+	4) Set actor's direction to no direction
+	5) Set the actor's Attackmode and Firstattack flags on
+
+If the actor was waiting for a door to open while is spotted the player the waiting is canacelled since the actor is now primarily concerned with killing the player, not opening a door. Here is the table with the sound effects and speed factors for the individual actor classes.
+
+| Actor class | Sound number | Factor          |
+|-------------|--------------|-----------------|
+| Guard       |            1 |             * 3 |
+| Officer     |           71 |             * 5 |
+| SS          |           15 |             * 4 |
+| Dog         |            2 |             * 2 |
+| Hans        |           71 | = SPDPATROL * 3 |
+| Schabbs     |           65 |             * 3 |
+| Fake        |           54 |             * 3 |
+| Mecha       |           40 |             * 3 |
+| Hitler      |           40 |             * 5 |
+| Mutant      |              |             * 3 |
+| Blinky      |              |             * 2 |
+| Clyde       |              |             * 2 |
+| Pinky       |              |             * 2 |
+| Inky        |              |             * 2 |
+| Gretel      |          112 |             * 3 |
+| Gift        |           96 |             * 3 |
+| Fat         |          102 |             * 3 |
+|             |              |                 |
+| Officer     |           43 |                 |
+| Spectre     |            3 |          =  800 |
+| Angel       |           95 |          = 1536 |
+| Trans       |           66 |          = 1536 |
+| Uber        |              |          = 3000 |
+| Will        |           73 |          = 2048 |
+| Death       |           85 |          = 2048 |
+
+The officer has a different sound for Spear of Destiny, but the same speed. Speeds prepended with '=' are set to a fixed value. The ghosts and the (uber)mutant have no sound to play.
+
+##### Find Target #####
+This routine is scanning the surroundings of the actor for the player. After the player has been spotted the actor will act surprised for a while and actios will be delayed; this is achieved by the actor's `reaction` member. Pseudocode
+
+	returns: true if the player was detected, false otherwise
+	
+	side effects: Changes the `react` of the actor
+	              Might change the actor's Ambush flag
+	
+	1) If `reaction` of the actor > 0
+		1.1) Subtract ticks since last frame from `reaction`
+		1.2) If `reaction` > 0
+			1.2.1) Return false
+		1.3) Set `reaction` to 0
+	2) Else
+		2.1) Set `reaction` to 0
+		2.2) If the player has the Notarget flag set ("notarget" cheat)
+			2.2.1) Return false
+		2.3) If the actor does not have the ambush flag and the player is not in the same area
+			2.3.1) Return false
+		2.4) If Check Sight returned false //failed to see, attempt to hear
+			2.4.1) If the actor has the Ambush flag set or if the player hasn't made any noise
+				2.4.1.1) Return false
+		2.5) Remove the Ambush flag from the actor
+		2.6) Set the actor's `reaction` depending on the actor's class
+			2.6.1) For guards to (1 + Random/4)
+			2.6.2) For officers to 2
+			2.6.3) For SS and mutants to (1 + Random/6)
+			2.6.4) For dogs to (1 + Random/8)
+			2.6.5) For everyone else to 1
+		2.7) Return false
+	3) Run the First Sighting routine on the actor
+	4) Return true
+
+This function works in two ways: If the player hasn't been spotted it will keep looking. Once the player has been spotted a reaction delay will be initialised. As long as that delay persists the function will just keep decrementing it. Only after the reaction delay has passed will the function be called where the actor does actually react.
+
+Note that once an actor has spotted the player it will eventually react, there is no way to quickly run into hiding or that the actor will forget about the player.
+
+####2.6Special AI routines ####
+Thes2.6 AI routines are called directly
+
+##### Stand #####
+
+
 Appendix
 ========
 
 Tables for actors
 -----------------
 
-### List of actor classes ###
-The following is a list of all types of actors defined in Wolfenstein 3D and their description. They are ordered by their appearance in the game.
+### List of actor classes and starting hit points ###
+The following is a list of all types of actors defined in Wolfenstein 3D and their description, as well as their starting hit points for every dificulty. They are ordered by their appearance in the game.
 
-| Name    | Description                       |
-|---------|-----------------------------------|
-| Guard   | Brown guards                      |
-| Officer | White soldiers                    |
-| SS      | Blue soldiers                     |
-| Dog     | Shepherd dogs                     |
-| Hans    | Hans Grosse                       |
-| Schabbs | Dr. Schabbs                       |
-| Fake    | Fake Hitler                       |
-| Mecha   | Mecha Hitler                      |
-| Hitler  | Real Hitler                       |
-| Mutant  | Mutant soldier                    |
-| Blinky  | Red Pac-Man ghost                 |
-| Clyde   | Orange Pac-Man ghost              |
-| Pinky   | Pink Pac-Man ghost                |
-| Inky    | Cyan Pac-Man ghost                |
-| Gretel  | Gretel Grosse                     |
-| Gift    | Otto Gifmacher                    |
-| Fat     | General Fettgesicht               |
-|         |                                   |
-| Needle  | Syringe thrown by Schabbs         |
-| Fire    | Fireball from Fake Hitler         |
-| Rocket  | Some bosses have rocket launchers |
-| Smoke   | Smoke from rockets                |
-|         |                                   |
-| BJ      | BJ doing the victory jump         |
+| Name    | Description                       | Baby | Easy | Normal | Hard |
+|---------|-----------------------------------|-----:|-----:|-------:|-----:|
+| Guard   | Brown guards                      |   25 |   25 |     25 |   25 |
+| Officer | White soldiers                    |   50 |   50 |     50 |   50 |
+| SS      | Blue soldiers                     |  100 |  100 |    100 |  100 |
+| Dog     | Shepherd dogs                     |    1 |    1 |      1 |    1 |
+| Hans    | Hans Grosse                       |  850 |  950 |   1050 | 1200 |
+| Schabbs | Dr. Schabbs                       |  850 |  950 |   1550 | 2400 |
+| Fake    | Fake Hitler                       |  200 |  300 |    400 |  500 |
+| Mecha   | Mecha Hitler                      |  800 |  950 |   1050 | 1200 |
+| Hitler  | Real Hitler                       |  500 |  700 |    800 |  900 |
+| Mutant  | Mutant soldier                    |   45 |   55 |     55 |   65 |
+| Blinky  | Red Pac-Man ghost                 |   25 |   25 |     25 |   25 |
+| Clyde   | Orange Pac-Man ghost              |   25 |   25 |     25 |   25 |
+| Pinky   | Pink Pac-Man ghost                |   25 |   25 |     25 |   25 |
+| Inky    | Cyan Pac-Man ghost                |   25 |   25 |     25 |   25 |
+| Gretel  | Gretel Grosse                     |  850 |  950 |   1050 | 1200 |
+| Gift    | Otto Gifmacher                    |  850 |  950 |   1050 | 1200 |
+| Fat     | General Fettgesicht               |  850 |  950 |   1050 | 1200 |
+|         |                                   |      |      |        |      |
+| Needle  | Syringe thrown by Schabbs         |    0 |    0 |      0 |    0 |
+| Fire    | Fireball from Fake Hitler         |    0 |    0 |      0 |    0 |
+| Rocket  | Some bosses have rocket launchers |    0 |    0 |      0 |    0 |
+| Smoke   | Smoke from rockets                |    0 |    0 |      0 |    0 |
+|         |                                   |      |      |        |      |
+| BJ      | BJ doing the victory jump         |  100 |  100 |    100 |  100 |
 
 Spear of destiny adds the following actors as well:
 
-| Name    | Description      |
-|---------|------------------|
-| Spark   | ???              |
-| hrocket | ???              |
-| hsmoke  | ???              |
-|         |                  |
-| Spectre | Spectre enemy    |
-| Angel   | Angle of Death   |
-| Trans   | Trans Grosse     |
-| Uber    | Ubermutant       |
-| Will    | Barnacle Wilhelm |
-| Death   | Death Knight     |
+| Name    | Description      | Baby | Easy | Normal | Hard |
+|---------|------------------|-----:|-----:|-------:|-----:|
+| Spark   | ???              |    0 |    0 |      0 |    0 |
+| hrocket | ???              |    0 |    0 |      0 |    0 |
+| hsmoke  | ???              |    0 |    0 |      0 |    0 |
+|         |                  |      |      |        |      |
+| Spectre | Spectre enemy    |   10 |   10 |     15 |   25 |
+| Angel   | Angle of Death   | 1550 | 1550 |   1650 | 2000 |
+| Trans   | Trans Grosse     |  950 |  950 |   1050 | 1200 |
+| Uber    | Ubermutant       | 1150 | 1150 |   1250 | 1400 |
+| Will    | Barnacle Wilhelm | 1050 | 1050 |   1150 | 1300 |
+| Death   | Death Knight     | 1350 | 1350 |   1450 | 1600 |
 
 The mission packs introduce the following enemies:
 
-| Name  | Description           |
-|-------|-----------------------|
-| Bat   | Bats, replace mutants |
-| Willi | Sumbarine Willi       |
-| Quark | Dr. Quarkblitz        |
-| Axe   | The Axe               |
-| Robot | The Robot             |
-| Devil | Decil Incarnate       |
+| Name  | Description           | Baby | Easy | Normal | Hard |
+|-------|-----------------------|-----:|-----:|-------:|-----:|
+| Bat   | Bats, replace mutants |   10 |   10 |     15 |   25 |
+| Willi | Sumbarine Willi       | 1550 | 1550 |   1650 | 2000 |
+| Quark | Dr. Quarkblitz        |  950 |  950 |   1050 | 1200 |
+| Axe   | The Axe               | 1150 | 1150 |   1250 | 1400 |
+| Robot | The Robot             | 1050 | 1050 |   1150 | 1300 |
+| Devil | Decil Incarnate       | 1350 | 1350 |   1450 | 1600 |
 
-Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the mission packs are just re-skins of enemies from Spear of Destiny.
+Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the mission packs are just re-skins of enemies from Spear of Destiny, to their starting hit points are the same.
 
 ### List of state classes ###
 The following is a list of all types of actor states in the order they are defined in the original source. Sticking to that order is not strictly necessary, but one has to make sure to keep the mapping scorrect.
@@ -1158,62 +1271,12 @@ The following is a list of all types of actor states in the order they are defin
 
 A list of all actor states for each actor would be too large for this document, so it will have its own file. (//TODO)
 
-### Starting hit points ###
-The starting hit points of an actor depend on the game difficulty selected at start.
-
-| Actor   | Baby | Easy | Normal | Hard |
-|---------|------|------|--------|------|
-| Guard   |   25 |   25 |     25 |   25 |
-| Officer |   50 |   50 |     50 |   50 |
-| SS      |  100 |  100 |    100 |  100 |
-| Dog     |    1 |    1 |      1 |    1 |
-| Hans    |  850 |  950 |   1050 | 1200 |
-| Schabbs |  850 |  950 |   1550 | 2400 |
-| Fake    |  200 |  300 |    400 |  500 |
-| Mecha   |  800 |  950 |   1050 | 1200 |
-| Hitler  |  500 |  700 |    800 |  900 |
-| Mutant  |   45 |   55 |     55 |   65 |
-| Blinky  |   25 |   25 |     25 |   25 |
-| Clyde   |   25 |   25 |     25 |   25 |
-| Pinky   |   25 |   25 |     25 |   25 |
-| Inky    |   25 |   25 |     25 |   25 |
-| Gretel  |  850 |  950 |   1050 | 1200 |
-| Gift    |  850 |  950 |   1050 | 1200 |
-| Fat     |  850 |  950 |   1050 | 1200 |
-|         |      |      |        |      |
-| Needle  |    0 |    0 |      0 |    0 |
-| Fire    |    0 |    0 |      0 |    0 |
-| Rocket  |    0 |    0 |      0 |    0 |
-| Smoke   |    0 |    0 |      0 |    0 |
-|         |      |      |        |      |
-| BJ      |  100 |  100 |    100 |  100 |
-|         |      |      |        |      |
-| Spark   |    0 |    0 |      0 |    0 |
-| hrocket |    0 |    0 |      0 |    0 |
-| hsmoke  |    0 |    0 |      0 |    0 |
-|         |      |      |        |      |
-| Spectre |   10 |   10 |     15 |   25 |
-| Angel   | 1550 | 1550 |   1650 | 2000 |
-| Trans   |  950 |  950 |   1050 | 1200 |
-| Uber    | 1150 | 1150 |   1250 | 1400 |
-| Will    | 1050 | 1050 |   1150 | 1300 |
-| Death   | 1350 | 1350 |   1450 | 1600 |
-|         |      |      |        |      |
-| Bat     |   10 |   10 |     15 |   25 |
-| Willi   | 1550 | 1550 |   1650 | 2000 |
-| Quark   |  950 |  950 |   1050 | 1200 |
-| Axe     | 1150 | 1150 |   1250 | 1400 |
-| Robot   | 1050 | 1050 |   1150 | 1300 |
-| Devil   | 1350 | 1350 |   1450 | 1600 |
-
-The enemies from the Spear of Destiny mission packs are just reskins of the Spear of Destiny game, so they use the hit points of their originals.
-
-### Actor states ###
-The following tables list the states for every actor class and state class.
+### Table of actor states ###
+The following tables list the states for every actor class and state class. If a field is empty, then there is nothing defined for it. In the case of a function pointer it means the pointer is `NULL` and in the case of a sprite the sprite is just some useless junk sprite.
 
 #### Guard ####
-| State       | can_rotate | base_sprite    | timeout | thought | action       | next_state |
-|-------------|------------|----------------|---------|---------|--------------|------------|
+| State       | Can Rotate | Base Sprite    | Timeout | Thought | Action       | Next State |
+|-------------|------------|----------------|--------:|---------|--------------|------------|
 | **stand**   | true       | SPR_GRD_S_1    |       0 | Stand   |              | stand      |
 |             |            |                |         |         |              |            |
 | **path1**   | true       | SPR_GRD_W1_1   |      20 | Path    |              | path1s     |
@@ -1257,8 +1320,8 @@ The following tables list the states for every actor class and state class.
 
 
 #### Officer ####
-| State       | can_rotate | base_sprite    | timeout | thought | action       | next_state |
-|-------------|------------|----------------|---------|---------|--------------|------------|
+| State       | Can Rotate | Base Sprite    | Timeout | Thought | Action       | Next State |
+|-------------|------------|----------------|--------:|---------|--------------|------------|
 | **stand**   | true       | SPR_OFC_S_1    |       0 | Stand   |              | stand      |
 |             |            |                |         |         |              |            |
 | **path1**   | true       | SPR_OFC_W1_1   |      20 | Path    |              | path1s     |
@@ -1303,7 +1366,7 @@ The following tables list the states for every actor class and state class.
 
 #### SS ####
 | State       | Can Rotate | Base Sprite   | Timeout | Thought | Action       | Next State |
-|-------------|------------|---------------|---------|---------|--------------|------------|
+|-------------|------------|---------------|--------:|---------|--------------|------------|
 | **stand**   | true       | SPR_SS_S_1    |       0 | Stand   |              | stand      |
 |             |            |               |         |         |              |            |
 | **path1**   | true       | SPR_SS_W1_1   |      20 | Path    |              | path1s     |
@@ -1350,7 +1413,7 @@ The following tables list the states for every actor class and state class.
 Dogs have no pain because they have only one hit point.
 
 | State       | Can Rotate | Base Sprite   | Timeout | Thought | Action       | Next State |
-|-------------|------------|---------------|---------|---------|--------------|------------|
+|-------------|------------|---------------|--------:|---------|--------------|------------|
 | **stand**   | false      |               |       0 |         |              | stand      |
 |             |            |               |         |         |              |            |
 | **path1**   | true       | SPR_DOG_W1_1  |      20 | Path    |              | path1s     |
@@ -1393,96 +1456,456 @@ Dogs have no pain because they have only one hit point.
 | **dead**    | false      | SPR_DOG_DEAD  |       0 |         |              | dead       |
 
 
-#### Hans ####
+#### Hans Grosse ####
 Hans has no pain and no patrol.
 
-| State       | Can Rotate | Base Sprite     | Timeout | Thought | Action       | Next State |
-|-------------|------------|-----------------|---------|---------|--------------|------------|
-| **stand**   | true       | SPR_BOSS_W1    |       0 | Stand   |              | stand      |
-|             |            |                 |         |         |              |            |
-| **path1**   | true       |                 |       0 | Path    |              | path1s     |
-| **path1s**  | true       |                 |       0 |         |              | path2      |
-| **path2**   | true       |                 |       0 | Path    |              | path3      |
-| **path3**   | true       |                 |       0 | Path    |              | path3s     |
-| **path3s**  | true       |                 |       0 |         |              | path4      |
-| **path4**   | true       |                 |       0 | Path    |              | path1      |
-|             |            |                 |         |         |              |            |
-| **pain**    | false      |                 |       0 |         |              | chase1     |
-| **pain1**   | false      |                 |       0 |         |              | chase1     |
-|             |            |                 |         |         |              |            |
-| **shoot1**  | false      | SPR_BOSS_SHOOT1 |      30 |         |              | shoot2     |
-| **shoot2**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | shoot3     |
-| **shoot3**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase4     |
-| **shoot4**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | chase5     |
-| **shoot5**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase6     |
-| **shoot6**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot        | chase7     |
-| **shoot7**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot        | chase8     |
-| **shoot8**  | false      | SPR_BOSS_SHOOT1 |      10 |         |              | chase1     |
-| **shoot9**  | false      |                 |       0 |         |              | chase1     |
-|             |            |                 |         |         |              |            |
-| **chase1**  | true       | SPR_BOSS_W1     |      10 | Chase   |              | chase1s    |
-| **chase1s** | true       | SPR_BOSS_W1     |       3 |         |              | chase2     |
-| **chase2**  | true       | SPR_BOSS_W2     |       8 | Chase   |              | chase3     |
-| **chase3**  | true       | SPR_BOSS_W3     |      10 | Chase   |              | chase3s    |
-| **chase3s** | true       | SPR_BOSS_W3     |       3 |         |              | chase4     |
-| **chase4**  | true       | SPR_BOSS_W4     |       8 | Chase   |              | chase1     |
-|             |            |                 |         |         |              |            |
-| **die1**    | false      | SPR_BOSS_DIE_1  |      15 |         | Death Scream | die2       |
-| **die2**    | false      | SPR_BOSS_DIE_2  |      15 |         |              | die3       |
-| **die3**    | false      | SPR_BOSS_DIE_3  |      15 |         |              | dead       |
-| **die4**    | false      |                 |       0 |         |              | dead       |
-| **die5**    | false      |                 |       0 |         |              | dead       |
-| **die6**    | false      |                 |       0 |         |              | dead       |
-| **die7**    | false      |                 |       0 |         |              | dead       |
-| **die8**    | false      |                 |       0 |         |              | dead       |
-| **die9**    | false      |                 |       0 |         |              | dead       |
-|             |            |                 |         |         |              |            |
-| **dead**    | false      | SPR_BOSS_DEAD   |       0 |         |              | dead       |
+| State       | Can Rotate | Base Sprite     | Timeout | Thought | Action          | Next State |
+|-------------|------------|-----------------|--------:|---------|-----------------|------------|
+| **stand**   | true       | SPR_BOSS_W1     |       0 | Stand   |                 | stand      |
+|             |            |                 |         |         |                 |            |
+| **path1**   | true       |                 |       0 | Path    |                 | path1s     |
+| **path1s**  | true       |                 |       0 |         |                 | path2      |
+| **path2**   | true       |                 |       0 | Path    |                 | path3      |
+| **path3**   | true       |                 |       0 | Path    |                 | path3s     |
+| **path3s**  | true       |                 |       0 |         |                 | path4      |
+| **path4**   | true       |                 |       0 | Path    |                 | path1      |
+|             |            |                 |         |         |                 |            |
+| **pain**    | false      |                 |       0 |         |                 | chase1     |
+| **pain1**   | false      |                 |       0 |         |                 | chase1     |
+|             |            |                 |         |         |                 |            |
+| **shoot1**  | false      | SPR_BOSS_SHOOT1 |      30 |         |                 | shoot2     |
+| **shoot2**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot           | shoot3     |
+| **shoot3**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot           | chase4     |
+| **shoot4**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot           | chase5     |
+| **shoot5**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot           | chase6     |
+| **shoot6**  | false      | SPR_BOSS_SHOOT2 |      10 |         | Shoot           | chase7     |
+| **shoot7**  | false      | SPR_BOSS_SHOOT3 |      10 |         | Shoot           | chase8     |
+| **shoot8**  | false      | SPR_BOSS_SHOOT1 |      10 |         |                 | chase1     |
+| **shoot9**  | false      |                 |       0 |         |                 | chase1     |
+|             |            |                 |         |         |                 |            |
+| **chase1**  | true       | SPR_BOSS_W1     |      10 | Chase   |                 | chase1s    |
+| **chase1s** | true       | SPR_BOSS_W1     |       3 |         |                 | chase2     |
+| **chase2**  | true       | SPR_BOSS_W2     |       8 | Chase   |                 | chase3     |
+| **chase3**  | true       | SPR_BOSS_W3     |      10 | Chase   |                 | chase3s    |
+| **chase3s** | true       | SPR_BOSS_W3     |       3 |         |                 | chase4     |
+| **chase4**  | true       | SPR_BOSS_W4     |       8 | Chase   |                 | chase1     |
+|             |            |                 |         |         |                 |            |
+| **die1**    | false      | SPR_BOSS_DIE_1  |      15 |         | Death Scream    | die2       |
+| **die2**    | false      | SPR_BOSS_DIE_2  |      15 |         |                 | die3       |
+| **die3**    | false      | SPR_BOSS_DIE_3  |      15 |         |                 | dead       |
+| **die4**    | false      |                 |       0 |         |                 | dead       |
+| **die5**    | false      |                 |       0 |         |                 | dead       |
+| **die6**    | false      |                 |       0 |         |                 | dead       |
+| **die7**    | false      |                 |       0 |         |                 | dead       |
+| **die8**    | false      |                 |       0 |         |                 | dead       |
+| **die9**    | false      |                 |       0 |         |                 | dead       |
+|             |            |                 |         |         |                 |            |
+| **dead**    | false      | SPR_BOSS_DEAD   |       0 |         | Start Death Cam | dead       |
 
 
-#### Schabbs ####
-| State       | Can Rotate | Base Sprite            | Timeout | Thought    | Action       | Next State |
-|-------------|------------|------------------------|---------|------------|--------------|------------|
-| **stand**   | false      | SPR_SCHABB_W1          |       0 | Stand      |              | stand      |
-|             |            |                        |         |            |              |            |
-| **path1**   | false      |                        |       0 |            |              | path1s     |
-| **path1s**  | false      |                        |       0 |            |              | path2      |
-| **path2**   | false      |                        |       0 |            |              | path3      |
-| **path3**   | false      |                        |       0 |            |              | path3s     |
-| **path3s**  | false      |                        |       0 |            |              | path4      |
-| **path4**   | false      |                        |       0 |            |              | path1      |
-|             |            |                        |         |            |              |            |
-| **pain**    | false      |                        |       0 |            |              | chase1     |
-| **pain1**   | false      |                        |       0 |            |              | chase1     |
-|             |            |                        |         |            |              |            |
-| **shoot1**  | false      | SPR_SCHABB_SHOOT1      |      30 |            |              | shoot2     |
-| **shoot2**  | false      | SPR_SCHABB_SHOOT2      |      10 |            | Launch       | chase1     |
-| **shoot3**  | false      |                        |      10 |            |              | chase1     |
-| **shoot4**  | false      |                        |      10 |            |              | chase1     |
-| **shoot5**  | false      |                        |      10 |            |              | chase1     |
-| **shoot6**  | false      |                        |      10 |            |              | chase1     |
-| **shoot7**  | false      |                        |      10 |            |              | chase1     |
-| **shoot8**  | false      |                        |      10 |            |              | chase1     |
-| **shoot9**  | false      |                        |       0 |            |              | chase1     |
-|             |            |                        |         |            |              |            |
-| **chase1**  | false      | SPR_SCHABB_W1          |      10 | Boss Chase |              | chase1s    |
-| **chase1s** | false      | SPR_SCHABB_W1          |       3 |            |              | chase2     |
-| **chase2**  | false      | SPR_SCHABB_W2          |       8 | Boss Chase |              | chase3     |
-| **chase3**  | false      | SPR_SCHABB_W3          |      10 | Boss Chase |              | chase3s    |
-| **chase3s** | false      | SPR_SCHABB_W3          |       3 |            |              | chase4     |
-| **chase4**  | false      | SPR_SCHABB_W4          |       8 | Boss Chase |              | chase1     |
-|             |            |                        |         |            |              |            |
-| **die1**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            | Death Scream | die2       |
-| **die2**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            |              | die3       |
-| **die3**    | false      | SPR_SCHABB_SCHABB_DIE1 |      10 |            |              | die4       |
-| **die4**    | false      | SPR_SCHABB_SCHABB_DIE2 |      10 |            |              | die5       |
-| **die5**    | false      | SPR_SCHABB_SCHABB_DIE3 |      10 |            |              | die6       |
-| **die6**    | false      |                        |       0 |            |              | dead       |
-| **die7**    | false      |                        |       0 |            |              | dead       |
-| **die8**    | false      |                        |       0 |            |              | dead       |
-| **die9**    | false      |                        |       0 |            |              | dead       |
-|             |            |                        |         |            |              |            |
-| **dead**    | false      | SPR_SCHABB_DEAD        |       0 |            |              | dead       |
+#### Dr. Schabbs ####
+| State       | Can Rotate | Base Sprite            | Timeout | Thought    | Action          | Next State |
+|-------------|------------|------------------------|--------:|------------|-----------------|------------|
+| **stand**   | false      | SPR_SCHABB_W1          |       0 | Stand      |                 | stand      |
+|             |            |                        |         |            |                 |            |
+| **path1**   | false      |                        |       0 |            |                 | path1s     |
+| **path1s**  | false      |                        |       0 |            |                 | path2      |
+| **path2**   | false      |                        |       0 |            |                 | path3      |
+| **path3**   | false      |                        |       0 |            |                 | path3s     |
+| **path3s**  | false      |                        |       0 |            |                 | path4      |
+| **path4**   | false      |                        |       0 |            |                 | path1      |
+|             |            |                        |         |            |                 |            |
+| **pain**    | false      |                        |       0 |            |                 | chase1     |
+| **pain1**   | false      |                        |       0 |            |                 | chase1     |
+|             |            |                        |         |            |                 |            |
+| **shoot1**  | false      | SPR_SCHABB_SHOOT1      |      30 |            |                 | shoot2     |
+| **shoot2**  | false      | SPR_SCHABB_SHOOT2      |      10 |            | Launch          | chase1     |
+| **shoot3**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot4**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot5**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot6**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot7**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot8**  | false      |                        |      10 |            |                 | chase1     |
+| **shoot9**  | false      |                        |       0 |            |                 | chase1     |
+|             |            |                        |         |            |                 |            |
+| **chase1**  | false      | SPR_SCHABB_W1          |      10 | Boss Chase |                 | chase1s    |
+| **chase1s** | false      | SPR_SCHABB_W1          |       3 |            |                 | chase2     |
+| **chase2**  | false      | SPR_SCHABB_W2          |       8 | Boss Chase |                 | chase3     |
+| **chase3**  | false      | SPR_SCHABB_W3          |      10 | Boss Chase |                 | chase3s    |
+| **chase3s** | false      | SPR_SCHABB_W3          |       3 |            |                 | chase4     |
+| **chase4**  | false      | SPR_SCHABB_W4          |       8 | Boss Chase |                 | chase1     |
+|             |            |                        |         |            |                 |            |
+| **die1**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            | Death Scream    | die2       |
+| **die2**    | false      | SPR_SCHABB_SCHABB_W1   |      10 |            |                 | die3       |
+| **die3**    | false      | SPR_SCHABB_SCHABB_DIE1 |      10 |            |                 | die4       |
+| **die4**    | false      | SPR_SCHABB_SCHABB_DIE2 |      10 |            |                 | die5       |
+| **die5**    | false      | SPR_SCHABB_SCHABB_DIE3 |      10 |            |                 | die6       |
+| **die6**    | false      |                        |       0 |            |                 | dead       |
+| **die7**    | false      |                        |       0 |            |                 | dead       |
+| **die8**    | false      |                        |       0 |            |                 | dead       |
+| **die9**    | false      |                        |       0 |            |                 | dead       |
+|             |            |                        |         |            |                 |            |
+| **dead**    | false      | SPR_SCHABB_DEAD        |       0 |            | Start Death Cam | dead       |
+
+
+#### Fake Hitler ####
+| State       | Can Rotate | Base Sprite    | Timeout | Thought    | Action       | Next State |
+|-------------|------------|----------------|--------:|------------|--------------|------------|
+| **stand**   | false      | SPR_FAKE_W1    |       0 | Stand      |              | stand      |
+|             |            |                |         |            |              |            |
+| **path1**   | false      |                |       0 |            |              | path1s     |
+| **path1s**  | false      |                |       0 |            |              | path2      |
+| **path2**   | false      |                |       0 |            |              | path3      |
+| **path3**   | false      |                |       0 |            |              | path3s     |
+| **path3s**  | false      |                |       0 |            |              | path4      |
+| **path4**   | false      |                |       0 |            |              | path1      |
+|             |            |                |         |            |              |            |
+| **pain**    | false      |                |       0 |            |              | chase1     |
+| **pain1**   | false      |                |       0 |            |              | chase1     |
+|             |            |                |         |            |              |            |
+| **shoot1**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot2     |
+| **shoot2**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot3     |
+| **shoot3**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot4     |
+| **shoot4**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot5     |
+| **shoot5**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot6     |
+| **shoot6**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot7     |
+| **shoot7**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot8     |
+| **shoot8**  | false      | SPR_FAKE_SHOOT |       8 |            | Launch       | shoot9     |
+| **shoot9**  | false      | SPR_FAKE_SHOOT |       8 |            |              | chase1     |
+|             |            |                |         |            |              |            |
+| **chase1**  | false      | SPR_FAKE_W1    |      10 | Fake       |              | chase1s    |
+| **chase1s** | false      | SPR_FAKE_W1    |       3 |            |              | chase2     |
+| **chase2**  | false      | SPR_FAKE_W2    |       8 | Fake       |              | chase3     |
+| **chase3**  | false      | SPR_FAKE_W3    |      10 | Fake       |              | chase3s    |
+| **chase3s** | false      | SPR_FAKE_W3    |       3 |            |              | chase4     |
+| **chase4**  | false      | SPR_FAKE_W4    |       8 | Fake       |              | chase1     |
+|             |            |                |         |            |              |            |
+| **die1**    | false      | SPR_FAKE_DIE1  |      10 |            | Death Scream | die2       |
+| **die2**    | false      | SPR_FAKE_DIE2  |      10 |            |              | die3       |
+| **die3**    | false      | SPR_FAKE_DIE3  |      10 |            |              | die4       |
+| **die4**    | false      | SPR_FAKE_DIE4  |      10 |            |              | die5       |
+| **die5**    | false      | SPR_FAKE_DIE5  |      10 |            |              | dead       |
+| **die6**    | false      |                |       0 |            |              | dead       |
+| **die7**    | false      |                |       0 |            |              | dead       |
+| **die8**    | false      |                |       0 |            |              | dead       |
+| **die9**    | false      |                |       0 |            |              | dead       |
+|             |            |                |         |            |              |            |
+| **dead**    | false      | SPR_FAKE_DEAD  |       0 |            |              | dead       |
+
+
+#### Mecha Hitler ####
+| State       | Can Rotate | Base Sprite      | Timeout | Thought    | Action       | Next State |
+|-------------|------------|------------------|--------:|------------|--------------|------------|
+| **stand**   | false      | SPR_MECHA_W1     |       0 | Stand      |              | stand      |
+|             |            |                  |         |            |              |            |
+| **path1**   | false      |                  |       0 |            |              | path1s     |
+| **path1s**  | false      |                  |       0 |            |              | path2      |
+| **path2**   | false      |                  |       0 |            |              | path3      |
+| **path3**   | false      |                  |       0 |            |              | path3s     |
+| **path3s**  | false      |                  |       0 |            |              | path4      |
+| **path4**   | false      |                  |       0 |            |              | path1      |
+|             |            |                  |         |            |              |            |
+| **pain**    | false      |                  |       0 |            |              | chase1     |
+| **pain1**   | false      |                  |       0 |            |              | chase1     |
+|             |            |                  |         |            |              |            |
+| **shoot1**  | false      | SPR_MECHA_SHOOT1 |      30 |            |              | shoot2     |
+| **shoot2**  | false      | SPR_MECHA_SHOOT2 |      10 |            | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_MECHA_SHOOT3 |      10 |            | Shoot        | shoot4     |
+| **shoot4**  | false      | SPR_MECHA_SHOOT2 |      10 |            | Shoot        | shoot5     |
+| **shoot5**  | false      | SPR_MECHA_SHOOT3 |      10 |            | Shoot        | shoot6     |
+| **shoot6**  | false      | SPR_MECHA_SHOOT2 |      10 |            | Shoot        | shoot7     |
+| **shoot7**  | false      |                  |       0 |            |              | shoot8     |
+| **shoot8**  | false      |                  |       0 |            |              | shoot9     |
+| **shoot9**  | false      |                  |       0 |            |              | chase1     |
+|             |            |                  |         |            |              |            |
+| **chase1**  | false      | SPR_MECHA_W1     |      10 | Chase      | Mecha Sound  | chase1s    |
+| **chase1s** | false      | SPR_MECHA_W1     |       6 |            |              | chase2     |
+| **chase2**  | false      | SPR_MECHA_W2     |       8 | Chase      |              | chase3     |
+| **chase3**  | false      | SPR_MECHA_W3     |      10 | Chase      | Mecha Sound  | chase3s    |
+| **chase3s** | false      | SPR_MECHA_W3     |       6 |            |              | chase4     |
+| **chase4**  | false      | SPR_MECHA_W4     |       8 | Chase      |              | chase1     |
+|             |            |                  |         |            |              |            |
+| **die1**    | false      | SPR_MECHA_DIE1   |      10 |            | Death Scream | die2       |
+| **die2**    | false      | SPR_MECHA_DIE2   |      10 |            |              | die3       |
+| **die3**    | false      | SPR_MECHA_DIE3   |      10 |            | Hitler Morph | dead       |
+| **die4**    | false      |                  |       0 |            |              | dead       |
+| **die5**    | false      |                  |       0 |            |              | dead       |
+| **die6**    | false      |                  |       0 |            |              | dead       |
+| **die7**    | false      |                  |       0 |            |              | dead       |
+| **die8**    | false      |                  |       0 |            |              | dead       |
+| **die9**    | false      |                  |       0 |            |              | dead       |
+|             |            |                  |         |            |              |            |
+| **dead**    | false      | SPR_MECHA_DEAD   |       0 |            |              | dead       |
+
+
+#### Adolf Hitler ####
+| State       | Can Rotate | Base Sprite       | Timeout | Thought    | Action          | Next State |
+|-------------|------------|-------------------|--------:|------------|-----------------|------------|
+| **stand**   | false      |                   |       0 | Stand      |                 | stand      |
+|             |            |                   |         |            |                 |            |
+| **path1**   | false      |                   |       0 |            |                 | path1s     |
+| **path1s**  | false      |                   |       0 |            |                 | path2      |
+| **path2**   | false      |                   |       0 |            |                 | path3      |
+| **path3**   | false      |                   |       0 |            |                 | path3s     |
+| **path3s**  | false      |                   |       0 |            |                 | path4      |
+| **path4**   | false      |                   |       0 |            |                 | path1      |
+|             |            |                   |         |            |                 |            |
+| **pain**    | false      |                   |       0 |            |                 | chase1     |
+| **pain1**   | false      |                   |       0 |            |                 | chase1     |
+|             |            |                   |         |            |                 |            |
+| **shoot1**  | false      | SPR_HITLER_SHOOT1 |      30 |            |                 | shoot2     |
+| **shoot2**  | false      | SPR_HITLER_SHOOT2 |      10 |            | Shoot           | shoot3     |
+| **shoot3**  | false      | SPR_HITLER_SHOOT3 |      10 |            | Shoot           | shoot4     |
+| **shoot4**  | false      | SPR_HITLER_SHOOT2 |      10 |            | Shoot           | shoot5     |
+| **shoot5**  | false      | SPR_HITLER_SHOOT3 |      10 |            | Shoot           | shoot6     |
+| **shoot6**  | false      | SPR_HITLER_SHOOT2 |      10 |            | Shoot           | shoot7     |
+| **shoot7**  | false      |                   |       0 |            |                 | shoot8     |
+| **shoot8**  | false      |                   |       0 |            |                 | shoot9     |
+| **shoot9**  | false      |                   |       0 |            |                 | chase1     |
+|             |            |                   |         |            |                 |            |
+| **chase1**  | false      | SPR_HITLER_W1     |       6 | Chase      |                 | chase1s    |
+| **chase1s** | false      | SPR_HITLER_W1     |       4 |            |                 | chase2     |
+| **chase2**  | false      | SPR_HITLER_W2     |       2 | Chase      |                 | chase3     |
+| **chase3**  | false      | SPR_HITLER_W3     |       6 | Chase      |                 | chase3s    |
+| **chase3s** | false      | SPR_HITLER_W3     |       4 |            |                 | chase4     |
+| **chase4**  | false      | SPR_HITLER_W4     |       2 | Chase      |                 | chase1     |
+|             |            |                   |         |            |                 |            |
+| **die1**    | false      | SPR_HITLER_W1     |       1 |            | Death Scream    | die2       |
+| **die2**    | false      | SPR_HITLER_W1     |      10 |            |                 | die3       |
+| **die3**    | false      | SPR_HITLER_DIE1   |      10 |            | Hitler Morph    | die4       |
+| **die4**    | false      | SPR_HITLER_DIE2   |      10 |            |                 | die5       |
+| **die5**    | false      | SPR_HITLER_DIE3   |      10 |            |                 | die6       |
+| **die6**    | false      | SPR_HITLER_DIE4   |      10 |            |                 | die7       |
+| **die7**    | false      | SPR_HITLER_DIE5   |      10 |            |                 | die8       |
+| **die8**    | false      | SPR_HITLER_DIE6   |      10 |            |                 | die9       |
+| **die9**    | false      | SPR_HITLER_DIE7   |      10 |            |                 | dead       |
+|             |            |                   |         |            |                 |            |
+| **dead**    | false      | SPR_HITLER_DEAD   |       0 |            | Start Death Cam | dead       |
+
+
+#### Mutant ####
+| State       | Can Rotate | Base Sprite    | Timeout | Thought    | Action       | Next State |
+|-------------|------------|----------------|--------:|------------|--------------|------------|
+| **stand**   | true       | SPR_MUT_S_1    |       0 | Stand      |              | stand      |
+|             |            |                |         |            |              |            |
+| **path1**   | true       | SPR_MUT_W1_1   |      20 | Path       |              | path1s     |
+| **path1s**  | true       | SPR_MUT_W1_1   |       5 |            |              | path2      |
+| **path2**   | true       | SPR_MUT_W2_1   |      15 | Path       |              | path3      |
+| **path3**   | true       | SPR_MUT_W3_1   |      20 | Path       |              | path3s     |
+| **path3s**  | true       | SPR_MUT_W3_1   |       5 |            |              | path4      |
+| **path4**   | true       | SPR_MUT_W4_1   |      15 | Path       |              | path1      |
+|             |            |                |         |            |              |            |
+| **pain**    | false      | SPR_MUT_PAIN_1 |      10 |            |              | chase1     |
+| **pain1**   | false      | SPR_MUT_PAIN_2 |      10 |            |              | chase1     |
+|             |            |                |         |            |              |            |
+| **shoot1**  | false      | SPR_MUT_SHOOT1 |       6 |            |              | shoot2     |
+| **shoot2**  | false      | SPR_MUT_SHOOT2 |      20 |            | Shoot        | shoot3     |
+| **shoot3**  | false      | SPR_MUT_SHOOT3 |      10 |            | Shoot        | shoot4     |
+| **shoot4**  | false      | SPR_MUT_SHOOT4 |      20 |            | Shoot        | shoot5     |
+| **shoot5**  | false      |                |       0 |            | Shoot        | shoot6     |
+| **shoot6**  | false      |                |       0 |            | Shoot        | chase1     |
+| **shoot7**  | false      |                |       0 |            |              | chase1     |
+| **shoot8**  | false      |                |       0 |            |              | chase1     |
+| **shoot9**  | false      |                |       0 |            |              | chase1     |
+|             |            |                |         |            |              |            |
+| **chase1**  | true       | SPR_MUT_W1_1   |      10 | Chase      |              | chase1s    |
+| **chase1s** | true       | SPR_MUT_W1_1   |       3 |            |              | chase2     |
+| **chase2**  | true       | SPR_MUT_W2_1   |       8 | Chase      |              | chase3     |
+| **chase3**  | true       | SPR_MUT_W3_1   |      10 | Chase      |              | chase3s    |
+| **chase3s** | true       | SPR_MUT_W3_1   |       3 |            |              | chase4     |
+| **chase4**  | true       | SPR_MUT_W4_1   |       8 | Chase      |              | chase1     |
+|             |            |                |         |            |              |            |
+| **die1**    | false      | SPR_MUT_DIE_1  |       7 |            | Death Scream | die2       |
+| **die2**    | false      | SPR_MUT_DIE_2  |       7 |            |              | die3       |
+| **die3**    | false      | SPR_MUT_DIE_3  |       7 |            |              | die4       |
+| **die4**    | false      | SPR_MUT_DIE_4  |       7 |            |              | dead       |
+| **die5**    | false      |                |       0 |            |              | dead       |
+| **die6**    | false      |                |       0 |            |              | dead       |
+| **die7**    | false      |                |       0 |            |              | dead       |
+| **die8**    | false      |                |       0 |            |              | dead       |
+| **die9**    | false      |                |       0 |            |              | dead       |
+|             |            |                |         |            |              |            |
+| **dead**    | false      | SPR_MUT_DEAD   |       0 |            |              | dead       |
+
+
+#### Blinky ####
+| State       | Can Rotate | Base Sprite   | Timeout | Thought | Action | Next State |
+|-------------|------------|---------------|--------:|---------|--------|------------|
+| **stand**   | false      |               |       0 |         |        | stand      |
+|             |            |               |         |         |        |            |
+| **path1**   | false      |               |       0 |         |        | path1s     |
+| **path1s**  | false      |               |       0 |         |        | path2      |
+| **path2**   | false      |               |       0 |         |        | path3      |
+| **path3**   | false      |               |       0 |         |        | path3s     |
+| **path3s**  | false      |               |       0 |         |        | path4      |
+| **path4**   | false      |               |       0 |         |        | path1      |
+|             |            |               |         |         |        |            |
+| **pain**    | false      |               |       0 |         |        | chase1     |
+| **pain1**   | false      |               |       0 |         |        | chase1     |
+|             |            |               |         |         |        |            |
+| **shoot1**  | false      |               |       0 |         |        | shoot2     |
+| **shoot2**  | false      |               |       0 |         |        | shoot3     |
+| **shoot3**  | false      |               |       0 |         |        | shoot4     |
+| **shoot4**  | false      |               |       0 |         |        | shoot5     |
+| **shoot5**  | false      |               |       0 |         |        | shoot6     |
+| **shoot6**  | false      |               |       0 |         |        | chase1     |
+| **shoot7**  | false      |               |       0 |         |        | shoot8     |
+| **shoot8**  | false      |               |       0 |         |        | shoot9     |
+| **shoot9**  | false      |               |       0 |         |        | chase1     |
+|             |            |               |         |         |        |            |
+| **chase1**  | false      | SPR_BLINKY_W1 |      10 | Ghosts  |        | chase2     |
+| **chase1s** | false      |               |       0 |         |        | chase2     |
+| **chase2**  | false      | SPR_BLINKY_W2 |      10 | Ghosts  |        | chase1     |
+| **chase3**  | false      |               |       0 |         |        | chase3s    |
+| **chase3s** | false      |               |       0 |         |        | chase4     |
+| **chase4**  | false      |               |       0 |         |        | chase1     |
+|             |            |               |         |         |        |            |
+| **die1**    | false      |               |      10 |         |        | die2       |
+| **die2**    | false      |               |      10 |         |        | die3       |
+| **die3**    | false      |               |      10 |         |        | dead       |
+| **die4**    | false      |               |       0 |         |        | dead       |
+| **die5**    | false      |               |       0 |         |        | dead       |
+| **die6**    | false      |               |       0 |         |        | dead       |
+| **die7**    | false      |               |       0 |         |        | dead       |
+| **die8**    | false      |               |       0 |         |        | dead       |
+| **die9**    | false      |               |       0 |         |        | dead       |
+|             |            |               |         |         |        |            |
+| **dead**    | false      |               |       0 |         |        | dead       |
+
+
+#### Clyde ####
+| State       | Can Rotate | Base Sprite  | Timeout | Thought | Action | Next State |
+|-------------|------------|--------------|--------:|---------|--------|------------|
+| **stand**   | false      |              |       0 |         |        | stand      |
+|             |            |              |         |         |        |            |
+| **path1**   | false      |              |       0 |         |        | path1s     |
+| **path1s**  | false      |              |       0 |         |        | path2      |
+| **path2**   | false      |              |       0 |         |        | path3      |
+| **path3**   | false      |              |       0 |         |        | path3s     |
+| **path3s**  | false      |              |       0 |         |        | path4      |
+| **path4**   | false      |              |       0 |         |        | path1      |
+|             |            |              |         |         |        |            |
+| **pain**    | false      |              |       0 |         |        | chase1     |
+| **pain1**   | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **shoot1**  | false      |              |       0 |         |        | shoot2     |
+| **shoot2**  | false      |              |       0 |         |        | shoot3     |
+| **shoot3**  | false      |              |       0 |         |        | shoot4     |
+| **shoot4**  | false      |              |       0 |         |        | shoot5     |
+| **shoot5**  | false      |              |       0 |         |        | shoot6     |
+| **shoot6**  | false      |              |       0 |         |        | chase1     |
+| **shoot7**  | false      |              |       0 |         |        | shoot8     |
+| **shoot8**  | false      |              |       0 |         |        | shoot9     |
+| **shoot9**  | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **chase1**  | false      | SPR_CLYDE_W1 |      10 | Ghosts  |        | chase2     |
+| **chase1s** | false      |              |       0 |         |        | chase2     |
+| **chase2**  | false      | SPR_CLYDE_W2 |      10 | Ghosts  |        | chase1     |
+| **chase3**  | false      |              |       0 |         |        | chase3s    |
+| **chase3s** | false      |              |       0 |         |        | chase4     |
+| **chase4**  | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **die1**    | false      |              |      10 |         |        | die2       |
+| **die2**    | false      |              |      10 |         |        | die3       |
+| **die3**    | false      |              |      10 |         |        | dead       |
+| **die4**    | false      |              |       0 |         |        | dead       |
+| **die5**    | false      |              |       0 |         |        | dead       |
+| **die6**    | false      |              |       0 |         |        | dead       |
+| **die7**    | false      |              |       0 |         |        | dead       |
+| **die8**    | false      |              |       0 |         |        | dead       |
+| **die9**    | false      |              |       0 |         |        | dead       |
+|             |            |              |         |         |        |            |
+| **dead**    | false      |              |       0 |         |        | dead       |
+
+
+#### Pinky ####
+| State       | Can Rotate | Base Sprite  | Timeout | Thought | Action | Next State |
+|-------------|------------|--------------|--------:|---------|--------|------------|
+| **stand**   | false      |              |       0 |         |        | stand      |
+|             |            |              |         |         |        |            |
+| **path1**   | false      |              |       0 |         |        | path1s     |
+| **path1s**  | false      |              |       0 |         |        | path2      |
+| **path2**   | false      |              |       0 |         |        | path3      |
+| **path3**   | false      |              |       0 |         |        | path3s     |
+| **path3s**  | false      |              |       0 |         |        | path4      |
+| **path4**   | false      |              |       0 |         |        | path1      |
+|             |            |              |         |         |        |            |
+| **pain**    | false      |              |       0 |         |        | chase1     |
+| **pain1**   | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **shoot1**  | false      |              |       0 |         |        | shoot2     |
+| **shoot2**  | false      |              |       0 |         |        | shoot3     |
+| **shoot3**  | false      |              |       0 |         |        | shoot4     |
+| **shoot4**  | false      |              |       0 |         |        | shoot5     |
+| **shoot5**  | false      |              |       0 |         |        | shoot6     |
+| **shoot6**  | false      |              |       0 |         |        | chase1     |
+| **shoot7**  | false      |              |       0 |         |        | shoot8     |
+| **shoot8**  | false      |              |       0 |         |        | shoot9     |
+| **shoot9**  | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **chase1**  | false      | SPR_PINKY_W1 |      10 | Ghosts  |        | chase2     |
+| **chase1s** | false      |              |       0 |         |        | chase2     |
+| **chase2**  | false      | SPR_PINKY_W2 |      10 | Ghosts  |        | chase1     |
+| **chase3**  | false      |              |       0 |         |        | chase3s    |
+| **chase3s** | false      |              |       0 |         |        | chase4     |
+| **chase4**  | false      |              |       0 |         |        | chase1     |
+|             |            |              |         |         |        |            |
+| **die1**    | false      |              |      10 |         |        | die2       |
+| **die2**    | false      |              |      10 |         |        | die3       |
+| **die3**    | false      |              |      10 |         |        | dead       |
+| **die4**    | false      |              |       0 |         |        | dead       |
+| **die5**    | false      |              |       0 |         |        | dead       |
+| **die6**    | false      |              |       0 |         |        | dead       |
+| **die7**    | false      |              |       0 |         |        | dead       |
+| **die8**    | false      |              |       0 |         |        | dead       |
+| **die9**    | false      |              |       0 |         |        | dead       |
+|             |            |              |         |         |        |            |
+| **dead**    | false      |              |       0 |         |        | dead       |
+
+
+#### Inky ####
+| State       | Can Rotate | Base Sprite | Timeout | Thought | Action | Next State |
+|-------------|------------|-------------|--------:|---------|--------|------------|
+| **stand**   | false      |             |       0 |         |        | stand      |
+|             |            |             |         |         |        |            |
+| **path1**   | false      |             |       0 |         |        | path1s     |
+| **path1s**  | false      |             |       0 |         |        | path2      |
+| **path2**   | false      |             |       0 |         |        | path3      |
+| **path3**   | false      |             |       0 |         |        | path3s     |
+| **path3s**  | false      |             |       0 |         |        | path4      |
+| **path4**   | false      |             |       0 |         |        | path1      |
+|             |            |             |         |         |        |            |
+| **pain**    | false      |             |       0 |         |        | chase1     |
+| **pain1**   | false      |             |       0 |         |        | chase1     |
+|             |            |             |         |         |        |            |
+| **shoot1**  | false      |             |       0 |         |        | shoot2     |
+| **shoot2**  | false      |             |       0 |         |        | shoot3     |
+| **shoot3**  | false      |             |       0 |         |        | shoot4     |
+| **shoot4**  | false      |             |       0 |         |        | shoot5     |
+| **shoot5**  | false      |             |       0 |         |        | shoot6     |
+| **shoot6**  | false      |             |       0 |         |        | chase1     |
+| **shoot7**  | false      |             |       0 |         |        | shoot8     |
+| **shoot8**  | false      |             |       0 |         |        | shoot9     |
+| **shoot9**  | false      |             |       0 |         |        | chase1     |
+|             |            |             |         |         |        |            |
+| **chase1**  | false      | SPR_INKY_W1 |      10 | Ghosts  |        | chase2     |
+| **chase1s** | false      |             |       0 |         |        | chase2     |
+| **chase2**  | false      | SPR_INKY_W2 |      10 | Ghosts  |        | chase1     |
+| **chase3**  | false      |             |       0 |         |        | chase3s    |
+| **chase3s** | false      |             |       0 |         |        | chase4     |
+| **chase4**  | false      |             |       0 |         |        | chase1     |
+|             |            |             |         |         |        |            |
+| **die1**    | false      |             |      10 |         |        | die2       |
+| **die2**    | false      |             |      10 |         |        | die3       |
+| **die3**    | false      |             |      10 |         |        | dead       |
+| **die4**    | false      |             |       0 |         |        | dead       |
+| **die5**    | false      |             |       0 |         |        | dead       |
+| **die6**    | false      |             |       0 |         |        | dead       |
+| **die7**    | false      |             |       0 |         |        | dead       |
+| **die8**    | false      |             |       0 |         |        | dead       |
+| **die9**    | false      |             |       0 |         |        | dead       |
+|             |            |             |         |         |        |            |
+| **dead**    | false      |             |       0 |         |        | dead       |
 
 
 Known bugs and limitations
