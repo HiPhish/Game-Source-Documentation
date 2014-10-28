@@ -34,10 +34,15 @@ Table of contents
 	|
 	- Part II - Game rules
 	| |- Mathematics
+	| |  |- Random numbers
+	| |
 	| |- Levels
+	| |- Doors
 	| |- Actors / Entities
-	|    |- The actor structure
-	|    |- Actor states
+	| |  |- The actor structure
+	| |  |- Actor states
+	| |
+	| |- Combat
 	|
 	- Appendix
 	  |- Tables for actors
@@ -658,7 +663,7 @@ The processor of the target hardware, the Intel 286 and 386, did not natively su
 	
 	1*2^5 + 1*2^1 + 1*2^(-3) + 1*2^(-7) = 32 + 2 + 0.125 + 0.0078125 = 34.1328125
 
-The number can be treated like an integer for the most part.
+The number can be treated like an integer for the most part. In this document I will treat these number as floating point anyway for the sake of simplicity. The decision whether to adopt floating-point numbers of stick with fixed-point is up to the implementation.
 
 
 ### Enumerations and constants ###
@@ -682,6 +687,30 @@ These are the enumerations defined in the code:
 	direction_4 = {east,             north,             west,             south            }
 
 All enumerations are mapped to integer values as defined in the C standard: the first element has value 0 and ever successive element has a value +1 greater than the previous one. In the following enumeration elements will be treated as equivalent to integers.
+
+### Random numbers ###
+Wolfenstein 3D does not have actual random numbers, instead it uses a table of 256 of predefined numbers and picks one of them. The result is good enough to feel reasonably random to the player.
+
+	  0     8   109   220   222   241   149   107    75   248   254   140    16    66    74    21
+    211    47    80   242   154    27   205   128   161    89    77    36	 95   110    85    48
+	212   140   211   249    22    79   200    50    28   188    52   140   202   120    68   145
+	 62    70   184   190    91   197   152   224   149   104    25   178   252   182   202   182
+	141   197     4    81   181   242   145    42    39   227   156   198   225   193   219    93
+	122   175   249     0   175   143    70   239    46   246   163    53   163   109   168   135
+	  2   235    25    92    20   145   138    77    69   166    78   176   173   212   166   113
+	 94   161    41    50   239    49   111   164    70    60     2    37   171    75   136   156
+	 11    56    42   146   138   229    73   146    77    61    98   196   135   106    63   197
+	195    86    96   203   113   101   170   247   181   113    80   250   108     7   255   237
+	129   226    79   107   112   166   103   241    24   223   239   120   198    58    60    82
+	128     3   184    66   143   224   145   224    81   206   163    45    63    90   168   114
+	 59    33   159    95    28   139   123    98   125   196    15    70   194   253    54    14
+	109   226    71    17   161    93   186    87   244   138    20    52   123   251    26    36
+	 17    46    52   231   232    76    31   221    84    37   216   165   212   106   197   242
+	 98    43    39   175   254   145   190    84   118   222   187   136   120   163   236   249
+
+An usigned 32-bit integer is used as the index for for picking a number from the table. Initialising the table means setting the index to a number. It can be done in two ways, fixed and randomised. Fixed means simply setting it to 0; randomised means setting it to `time(NULL) & 0xFF` where `time()` is the C standard time function. The table is always randomised and it is initialised only once when the game starts.
+
+Retrieving a random number is done by incrementing the index and then ANDing it bitwise with `0xFF`, the the corresponding number is picked from the table.
 
 ### Functions and macros ###
 There are a number of functions and macros defined. The first batch is standard stuff:
@@ -757,8 +786,8 @@ An actor is define as a structure with the following members:
 
 | Type        | Name           | Description                        |
 |-------------|----------------|------------------------------------|
-| integer     | position_x     | Horizontal position on the map     |
-| integer     | position_y     | Vertical position on the map       |
+| float       | position_x     | Horizontal position on the map     |
+| float       | position_y     | Vertical position on the map       |
 | integer     | angle          | Angle the actor is facing          |
 | integer     | type           | Class of the actor (e.g. guard)    |
 | integer     | current_health | Current health of the actor        |
@@ -1033,14 +1062,15 @@ This function spawns Pac-Man ghosts. Pseudocode
 	8) Increment level's enemy count
 
 ### Actor AI ###
+All the functions in this sub-section have an actor as a prerequisite. To save redundancy I will not list it as a prerequisite and I'll refer to it in the pseudocode as *the actor* or `actor`.
 
-#### General AI routine ####
-These AI routines are not called directly, but they are called by other functions
+#### General AI routines ####
+These AI routines are not called directly, but they are called by other functions, both AI routines and thoughts.
 
 ##### Check Sight #####
 This routine scans the line of sight of the actor for the presence of the player. Pseudocode:
 
-	constants: `MINSIGHT` = 1.1; below this distance the player is always noticed
+	constants: `MINSIGHT` = 1.1 // below this distance the player is always noticed
 	
 	1) If the actor does not have the Ambush flag set and the player is not in the same area
 		1.1) Return false
@@ -1133,10 +1163,216 @@ This function works in two ways: If the player hasn't been spotted it will keep 
 
 Note that once an actor has spotted the player it will eventually react, there is no way to quickly run into hiding or that the actor will forget about the player.
 
-####2.6Special AI routines ####
-Thes2.6 AI routines are called directly
+##### Change Direction #####
+This routine changes the direction an actor is facing, if that direction is a valid one.
+
+	prerequisites: new_direction = direction for the actor to face
+	               level_data    = data of the current level
+	
+	return: true if not facing a solid obstacle after changing direction
+	
+	 1) Make a new position variable `old` from actor's position
+	 2) Make a new position variable `new` from actor's position plus the new direction
+	 3) If `new_direction` is diagonal
+	 	3.1) If the vertically adjacent tile towards the new direction is solid
+	 	     or the horizontally adjacent tile towards the new direction is solid
+	 	     or the diagonally adjacent tile towards the new direction is solid
+	 		3.1.1) Return false
+	 	3.2) If a non-dead actor is on one of the above tiles
+	 		3.2.1) return false
+	 4) Else
+	 	4.1) If the tile towards the new direction is solid
+	 		4.1.1) Return false
+	 	4.2) If the new tile is a door
+	 		4.2.1) If the actor is either a dog or Fake Hitler
+	 			4.2.1.1) If the door is not open
+	 				4.2.1.1.1) Return false
+	 		4.2.2) Else
+	 			4.2.2.1) Set the `waitfordoor_x` and `_y` of the actor to the new tile
+	 			4.2.2.2) Go to 5)
+	 	4.3) If a non-dead guard is standing on the new tile
+	 		4.3.1) Return false
+	 5) Set the actor's tile coordinates to the new tile
+	 6) Remove the Actor flag from the old tile and add it to the new tile
+	 7) If the area number of the new tile > 0
+	 	7.1) Set the actor's `area_number` to the tile's area number
+	 8) Set the actor's `distance` to `TILEGLOBAL`
+	 9) Set the actor's `direction` to `new_direction`
+	10) Return true
+
+Checking if another actor is occupying a tile is done by comparing the actor's tile coordinates `tile_x` and `tile_y` with the coordinates of the tile in question.
+
+##### Move #####
+prerequisites: distance = the distance to move by
+
+constants: MINACTORDIST = 1.0
+
+1) If the actor's direction is No Direction or `distance` == 0
+	1.1) Return
+2) Add `distance` times the actor's distance to the actor's position
+3) If difference in coordinates of either axes between actor and plauer < `MINACTORDIST`
+	3.1) If the actor is a Pac-Man ghost or spectre
+		3.1.1) Run the Damage routine on the player from the actor for 2 damage
+	3.2) Back up the actor (subtract what we added at step 2))
+4) Subtract `distance` from the actor`s `distance`
+5) If the actor's `distance` < 0
+	5.1) Set the actor's `distance` to 0
+
+##### Advance #####
+Advances the actor.
+
+	prerequisites: thought = The thought to execute before advancing
+	
+	1) If `thought` is NULL
+		1.1) Return
+	2) Make new variable `move` as `speed` of the actor times ticks since last frame
+	3) While `move` > 0
+		3.1) If the actor is waiting for a door to open
+			3.1.1) Open the door
+			3.1.2) If the door is not open
+				3.1.2.1) Return
+			3.1.3) Set the actor's `waifordoor_x` and `waifordoo_y` to 0
+		3.2) If `move` < `distance` of the actor
+			3.2.1) Run the Move routine on the actor using `move`
+			3.2.2) Break out of the loop
+		3.2) Set the actor's position based on the tile
+		3.3) Subtract the actor's distance from `move`
+		3.4) Run the thought on the actor
+		3.5) Set the actor's angle based on its direction
+		3.6) If the actor's direction is No Direction
+			3.6.1) Return
+
+Setting the actor's position based on the tile means casting the tile coordinates to a floating point number and adding 0.1.
+
+##### Dodge #####
+This routine advances the actor towards the player while trying to sidestep to dodge attacks. It does not actually move the player, it just selects which direction to face.
+
+	 1) Make new 8-way direction variable `turnaround`
+	 2) If the actor has the Firstattack flag set
+	 	 2.1) Set `turnaround` to No Direction
+	 	 2.2) Remove the Firstattack flag from the actor
+	 3) Else
+	 	 3.1) Set `turnaround` to opposite of actor's `direction`
+	 4) Get the difference in tiles between the actor's and the player's position for both axes
+	 5) Make a new array of five 8-way directions `trydir`
+	 6) If the player-actor X-difference is > 0
+	 	 6.1) Set `trydir`[1]=East and `trydir`[3]=West
+	 7) Else
+	 	 7.1) Same as 6.1) but swapped
+	 8) Same as 6) but for Y
+	 	 8.1) Set `trydir`[2]=North and `trydir`[4]=South
+	 9) Else
+	 	 7.1) Same as 8.1) but swapped
+	10) If the absolute value of the X-delta > absolute value of theY-delta
+		10.1) Swap `trydir` 1 and 3 and swap `trydir` 2 and 4
+	11) If a random number < 128
+		11.1) Swap `trydir` 1 and 3 and swap `trydir` 2 and 4
+	12) Set `trydir`[0] to the diagonal of 1 and 2
+	13) For every direction in `trydir`
+		13.1) If the direction is No Direction or the same as `turnaround`
+			13.1.1) Skip to the next iteration of the loop
+		13.2) If running the Change Direction on the actor using the current `trydir` returns true
+			13.2.1) Return
+	14) If `turnaround` is not No Direction
+		14.1) If running the Change Direction on the actor using `turnaround` returns true
+			14.1.1) Return
+	15) Set the actor's `direction` to No Direction
+
+If the actor has only now spotted the player it will not be able to turn around, otherwise it will. The steps 4) to 9) set up the movement directions, but those directions are for when the player is east or west of the actor, so we need to swap horizontal and vertical when the difference horizontally is greater than the difference vertically. Then we randomly swap (again) to simulate a spontaneous side step. Finally we create a diagonal direction as our first choice.
+
+After the directions have been set up we iterate through them and try them out. If a direction is undefined or the opposite direction it is illegal and we move on to the next one. Otherwise we try to change to the direction and are done if everything worked out.
+
+If all directions fail attempt to turn around. Turning around was forbidden above, because other directions need to take precedence, turning around is only the last resort. If even that is not possible the direction of the actor is set to undefined.
+
+There appears to be a bug: In the original code a comment says turning around is only OK the first time noticing the player, but the implementation is the opposite: turning around is impossible on first notice. I have documented the code as it was written, since that is the behaviour the game shipped with.
+
+##### Chase #####
+This routine is similat to Dodge, but without the side stepping.
+
+	 1) Make integer variables `delta_x` and `delta_y` and assign them the
+	    difference in tiles between the actor and the player
+	 2) Make new variable `turnaround` and make it the opposite of the actor's direction
+	 3) Make new array `dir` of two 8-way directions
+	 4) If `delta_x` > 0
+	 	 4.1) Set `dir`[0] = East
+	 5) Else
+	 	 5.1) Set `dir`[0] = West
+	 4) If `delta_y` > 0
+	 	 4.1) Set `dir`[1] = North
+	 5) Else
+	 	 5.1) Set `dir`[1] = South
+	 6) If absolute value of `delta_x` > absolute value of `delta_y` 
+	 	 6.1) Swap `dir`[0] and `dir`[1]
+	 7) If either of the two == `turnaround`
+	 	 7.1) Set that one to No Direction
+	 8) If `dir`[0] != No Direction
+	 	 8.1) If the result of running Change Direction on the actor using `dir`[0] is true
+	 		 8.1.2) Return
+	 9) Same as above, except using `dir`[0]
+	10) If the original direction != No Direction
+	 	10.1) If the result of running Change Direction on the actor using the original direction is true
+	 		10.1.2) Return
+	11) If a random number > 128
+		11.1) Loop counter-clockwise through the non-diagonal directions starting East
+			11.1.1) If the direction != `turnaround`
+				11.1.1.1) If the result of running Change Direction on the actor using the direction == true
+					11.1.1.1.1) Return
+	12) Else
+		12.1) Loop clockwise through the non-diagonal directions starting South
+			12.1.1) If the direction != `turnaround`
+				12.1.1.1) If the result of running Change Direction on the actor using the direction == true
+					12.1.1.1.1) Return
+	13) If `turnaround` != No Direction
+		13.1) If the result of running Change Direction on the actor using the `turnaround` == true
+			13.1.1) Return
+	14) Set `direction` of the actor to No Direction
+
+See the dicussion of the Dodge routine above. There is no side-stepping here, so we need only two directions, but the basic idea is the same. If we can't find a proper direction we cycle through them, the cycle being randomly picked. If we still can't decide we turn the actor aroud. If even that fails the direction is undefined and the actor can't move.
+
+##### Orientate #####
+This routine will change the direction of the actor if it is standing on a waypoint. Pseudocode:
+
+	1) If the position of the actor is on a map tile that's a waypoint
+		1.1) If the tile is an East tile
+			1.1.1) Set the actor's direction to East
+		1.2) If the tile is a North-East tile
+			1.2.1) Set the actor's direction to North-East
+		...
+		1.8) If the tile is a South-East tile
+			1.8.1) Set the actor's direction to South-East
+	2) If running the Change Direction routine on the actor and the actor's direction returns false
+		2.1) Set the actor's direction to no direction
+
+
+
+#### Thinking AI routines ####
+These AI routines are called directly as part of an actor's state machine. To differentiate them from the routines above they will be called *thoughts*, since they are used by the actor state machnines.
 
 ##### Stand #####
+Run the Find Target routine on this actor. That's all there is to it for actors who are standing still.
+
+##### Path #####
+This is the thought for actors patrolling on a path. Pseudocode:
+
+	1) If the result of running Find Target is true
+		1.1) Return
+	2) If the speed of the actor is 0
+		2.1) Return
+	3) If the direction of the actor is No Direction
+		3.1) Run the Orientate routine on the actor
+		3.2) If the direction is still No Direction
+			3.2.1) Return
+	4) Run the Advance routing on the actor using the AI Path routine
+
+
+##### Ghosts #####
+Thought for ghost-type actors.
+
+1) If the `direction` of the actor is No Direction
+	1.1) Run the Chase AI routine on the actor
+	1.2) If the `direction` of the actor is still No Direction
+		1.2.1) Return
+2) Run the Advance AI routine on the actor using the Chase AI routine
 
 
 Appendix
