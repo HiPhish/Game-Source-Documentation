@@ -105,189 +105,192 @@ Codes for Wolfenstein 3D
 	0x008D    Area 8D
 	0x008E    Area 8E
 	0x008F    Area 8F
-	0x0100    Nothing
-	0x0113    Start, face N
-	0x0114    Start, face E           
-	0x0115    Start, face S          
-	0x0116    Start, face W           
-	0x0117    Water                      
-	0x0118    Oil drum                   
-	0x0119    Table & Chairs             
-	0x011A    Floor lamp                 
-	0x011B    Shandelere                 
-	0x011C    Hanging skeleton           
-	0x011D    Dog food                   
-	0x011E    Column                     
-	0x011F    Potted tree                
-	0x0120    Skeleton                   
-	0x0121    Washbasin                  
-	0x0122    Potted bush                
-	0x0123    Vase                       
-	0x0124    Table                      
-	0x0125    Overhead lamp              
-	0x0126    Pot & Pan rack             
-	0x0127    Armor                      
-	0x0128    Cage, empty                
-	0x0129    Cage, with skeleton
-	0x012A    Bones
-	0x012B    Key 1 (yellow)
-	0x012C    Key 2 (grey)
-	0x012D    Bed
-	0x012E    Pot
-	0x012F    Food
-	0x0130    First aid kit
-	0x0131    Ammunition
-	0x0132    Machine gun
-	0x0133    Huge gun
-	0x0134    Cross
-	0x0135    Cup
-	0x0136    Jewels
-	0x0137    Crown
-	0x0138    Sphere / life
-	0x0139    Bloody bones
-	0x013A    Brown barrel
-	0x013B    Well with water
-	0x013C    Well empty
-	0x013D    Blood
-	0x013E    Flag
-	0x013F    *Call Apogee
-	0x0140    *Trash 1
-	0x0141    *Trash 2
-	0x0142    *Trash 3
-	0x0143    *Pot/Pan Rack2
-	0x0144    *Oven
-	0x0145    *Spear Rack
-	0x0146    *Vines
-	0x015A    Move East
-	0x015B    Move North-East
-	0x015C    Move ^
-	0x015D    Move <\
-	0x015E    Move <
-	0x015F    Move </
-	0x0160    Move v
-	0x0161    Move \>
-	0x0162    Secret door
-	0x0163    End of game trigger
-	0x016C    Guard 1 East
-	0x016D    Guard 1 ^
-	0x016E    Guard 1 <
-	0x016F    Guard 1 v
-	0x0170    Guard 1 > moving
-	0x0171    Guard 1 ^ moving
-	0x0172    Guard 1 < moving
-	0x0173    Guard 1 v moving
-	0x0174    *W Guard 1 East
-	0x0175    *W Guard 1 ^
-	0x0176    *W Guard 1 <
-	0x0177    *W Guard 1 v
-	0x0178    *W Guard 1 > moving
-	0x0179    *W Guard 1 ^ moving
-	0x017A    *W Guard 1 < moving
-	0x017B    *W Guard 1 v moving
-	0x017C    Dead guard
-	0x017E    Officer 1  East
-	0x017F    Officer 1  ^
-	0x0180    Officer 1  <
-	0x0181    Officer 1  v
-	0x0182    Officer 1  > moving
-	0x0183    Officer 1  ^ moving
-	0x0184    Officer 1  < moving
-	0x0185    Officer 1  v moving
-	0x018A    Dog 1 East
-	0x018B    Dog 1 ^
-	0x018C    Dog 1 <
-	0x018D    Dog 1 v
-	0x0190    Guard 2 East
-	0x0191    Guard 2 ^
-	0x0192    Guard 2 <
-	0x0193    Guard 2 v
-	0x0194    Guard 2 East moving
-	0x0195    Guard 2 ^ moving
-	0x0196    Guard 2 < moving
-	0x0197    Guard 2 v moving
-	0x0198    *W Guard 2 East
-	0x0199    *W Guard 2 ^
-	0x019A    *W Guard 2 <
-	0x019B    *W Guard 2 v
-	0x019C    *W Guard 2 East moving
-	0x019D    *W Guard 2 ^ moving
-	0x019E    *W Guard 2 < moving
-	0x019F    *W Guard 2 v moving
-	0x01A0    *Floating guy
-	0x01A2    Officer 2 East
-	0x01A3    Officer 2 ^
-	0x01A4    Officer 2 <
-	0x01A5    Officer 2 v
-	0x01A6    Officer 2 > moving
-	0x01A7    Officer 2 ^ moving
-	0x01A8    Officer 2 < moving
-	0x01A9    Officer 2 v moving
-	0x01AE    Dog 2 East
-	0x01AF    Dog 2 ^
-	0x01B0    Dog 2 <
-	0x01B1    Dog 2 v
-	0x01B2    *Robo Hitler
-	0x01B3    *General
-	0x01B4    Guard 3 East
-	0x01B5    Guard 3 ^
-	0x01B6    Guard 3 <
-	0x01B7    Guard 3 v
-	0x01B8    Guard 3 East moving
-	0x01B9    Guard 3 ^ moving
-	0x01BA    Guard 3 < moving
-	0x01BB    Guard 3 v moving
-	0x01BC    *W Guard 3 East
-	0x01BD    *W Guard 3 ^
-	0x01BE    *W Guard 3 <
-	0x01BF    *W Guard 3 v
-	0x01C0    *W Guard 3 East moving
-	0x01C1    *W Guard 3 ^ moving
-	0x01C2    *W Guard 3 < moving
-	0x01C3    *W Guard 3 v moving
-	0x01C4    *Dr Schabbs
-	0x01C5    *BIG Guardet!
-	0x01C6    Officer 3 East
-	0x01C7    Officer 3 ^
-	0x01C8    Officer 3 <
-	0x01C9    Officer 3 v
-	0x01CA    Officer 3 East moving
-	0x01CB    Officer 3 ^ moving
-	0x01CC    Officer 3 < moving
-	0x01CD    Officer 3 v moving
-	0x01D2    Dog 3 >
-	0x01D3    Dog 3 ^
-	0x01D4    Dog 3 <
-	0x01D5    Dog 3 v
-	0x01D6    Hans Grösse (boss)
-	0x01D7    *Big officer
-	0x01D8    *Zombie 1 East
-	0x01D9    *Zombie 1 ^
-	0x01DA    *Zombie 1 <
-	0x01DB    *Zombie 1 v
-	0x01DC    *Zombie 1 East
-	0x01DD    *Zombie 1 ^
-	0x01DE    *Zombie 1 <
-	0x01DF    *Zombie 1 v
-	0x01E0    Blinky (red ghost)
-	0x01e1    Clyde (orange ghost
-	0x01E2    Pinky (pink ghost)
-	0x01E3    Inky (blue ghost)
-	0x01EA    *Zombie 2 East
-	0x01EB    *Zombie 2 ^
-	0x01EC    *Zombie 2 <
-	0x01ED    *Zombie 2 v
-	0x01EE    *Zombie 2 East
-	0x01EF    *Zombie 2 ^
-	0x01F0    *Zombie 2 <
-	0x01F1    *Zombie 2 v
-	0x01FC    *Zombie 3 East
-	0x01FD    *Zombie 3 ^
-	0x01FE    *Zombie 3 <
-	0x01FF    *Zombie 3 v
-	0x0200    *Zombie 3 East
-	0x0201    *Zombie 3 ^
-	0x0202    *Zombie 3 <
-	0x0203    *Zombie 3 v
+
+The objects map has the following codes:
+
+	0x0000    Nothing
+	0x0013    Start, face N
+	0x0014    Start, face E           
+	0x0015    Start, face S          
+	0x0016    Start, face W           
+	0x0017    Water                      
+	0x0018    Oil drum                   
+	0x0019    Table & Chairs             
+	0x001A    Floor lamp                 
+	0x001B    Shandelere                 
+	0x001C    Hanging skeleton           
+	0x001D    Dog food                   
+	0x001E    Column                     
+	0x001F    Potted tree                
+	0x0020    Skeleton                   
+	0x0021    Washbasin                  
+	0x0022    Potted bush                
+	0x0023    Vase                       
+	0x0024    Table                      
+	0x0025    Overhead lamp              
+	0x0026    Pot & Pan rack             
+	0x0027    Armor                      
+	0x0028    Cage, empty                
+	0x0029    Cage, with skeleton
+	0x002A    Bones
+	0x002B    Key 1 (yellow)
+	0x002C    Key 2 (grey)
+	0x002D    Bed
+	0x002E    Pot
+	0x002F    Food
+	0x0030    First aid kit
+	0x0031    Ammunition
+	0x0032    Machine gun
+	0x0033    Huge gun
+	0x0034    Cross
+	0x0035    Cup
+	0x0036    Jewels
+	0x0037    Crown
+	0x0038    Sphere / life
+	0x0039    Bloody bones
+	0x003A    Brown barrel
+	0x003B    Well with water
+	0x003C    Well empty
+	0x003D    Blood
+	0x003E    Flag
+	0x003F    *Call Apogee
+	0x0040    *Trash 1
+	0x0041    *Trash 2
+	0x0042    *Trash 3
+	0x0043    *Pot/Pan Rack2
+	0x0044    *Oven
+	0x0045    *Spear Rack
+	0x0046    *Vines
+	0x005A    Move East
+	0x005B    Move North-East
+	0x005C    Move ^
+	0x005D    Move <\
+	0x005E    Move <
+	0x005F    Move </
+	0x0060    Move v
+	0x0061    Move \>
+	0x0062    Secret door
+	0x0063    End of game trigger
+	0x006C    Guard 1 East
+	0x006D    Guard 1 ^
+	0x006E    Guard 1 <
+	0x006F    Guard 1 v
+	0x0070    Guard 1 > moving
+	0x0071    Guard 1 ^ moving
+	0x0072    Guard 1 < moving
+	0x0073    Guard 1 v moving
+	0x0074    *W Guard 1 East
+	0x0075    *W Guard 1 ^
+	0x0076    *W Guard 1 <
+	0x0077    *W Guard 1 v
+	0x0078    *W Guard 1 > moving
+	0x0079    *W Guard 1 ^ moving
+	0x007A    *W Guard 1 < moving
+	0x007B    *W Guard 1 v moving
+	0x007C    Dead guard
+	0x007E    Officer 1  East
+	0x007F    Officer 1  ^
+	0x0080    Officer 1  <
+	0x0081    Officer 1  v
+	0x0082    Officer 1  > moving
+	0x0083    Officer 1  ^ moving
+	0x0084    Officer 1  < moving
+	0x0085    Officer 1  v moving
+	0x008A    Dog 1 East
+	0x008B    Dog 1 ^
+	0x008C    Dog 1 <
+	0x008D    Dog 1 v
+	0x0090    Guard 2 East
+	0x0091    Guard 2 ^
+	0x0092    Guard 2 <
+	0x0093    Guard 2 v
+	0x0094    Guard 2 East moving
+	0x0095    Guard 2 ^ moving
+	0x0096    Guard 2 < moving
+	0x0097    Guard 2 v moving
+	0x0098    *W Guard 2 East
+	0x0099    *W Guard 2 ^
+	0x009A    *W Guard 2 <
+	0x009B    *W Guard 2 v
+	0x009C    *W Guard 2 East moving
+	0x009D    *W Guard 2 ^ moving
+	0x009E    *W Guard 2 < moving
+	0x009F    *W Guard 2 v moving
+	0x00A0    *Floating guy
+	0x00A2    Officer 2 East
+	0x00A3    Officer 2 ^
+	0x00A4    Officer 2 <
+	0x00A5    Officer 2 v
+	0x00A6    Officer 2 > moving
+	0x00A7    Officer 2 ^ moving
+	0x00A8    Officer 2 < moving
+	0x00A9    Officer 2 v moving
+	0x00AE    Dog 2 East
+	0x00AF    Dog 2 ^
+	0x00B0    Dog 2 <
+	0x00B1    Dog 2 v
+	0x00B2    *Robo Hitler
+	0x00B3    *General
+	0x00B4    Guard 3 East
+	0x00B5    Guard 3 ^
+	0x00B6    Guard 3 <
+	0x00B7    Guard 3 v
+	0x00B8    Guard 3 East moving
+	0x00B9    Guard 3 ^ moving
+	0x00BA    Guard 3 < moving
+	0x00BB    Guard 3 v moving
+	0x00BC    *W Guard 3 East
+	0x00BD    *W Guard 3 ^
+	0x00BE    *W Guard 3 <
+	0x00BF    *W Guard 3 v
+	0x00C0    *W Guard 3 East moving
+	0x00C1    *W Guard 3 ^ moving
+	0x00C2    *W Guard 3 < moving
+	0x00C3    *W Guard 3 v moving
+	0x00C4    *Dr Schabbs
+	0x00C5    *BIG Guardet!
+	0x00C6    Officer 3 East
+	0x00C7    Officer 3 ^
+	0x00C8    Officer 3 <
+	0x00C9    Officer 3 v
+	0x00CA    Officer 3 East moving
+	0x00CB    Officer 3 ^ moving
+	0x00CC    Officer 3 < moving
+	0x00CD    Officer 3 v moving
+	0x00D2    Dog 3 >
+	0x00D3    Dog 3 ^
+	0x00D4    Dog 3 <
+	0x00D5    Dog 3 v
+	0x00D6    Hans Grösse (boss)
+	0x00D7    *Big officer
+	0x00D8    *Zombie 1 East
+	0x00D9    *Zombie 1 ^
+	0x00DA    *Zombie 1 <
+	0x00DB    *Zombie 1 v
+	0x00DC    *Zombie 1 East
+	0x00DD    *Zombie 1 ^
+	0x00DE    *Zombie 1 <
+	0x00DF    *Zombie 1 v
+	0x00E0    Blinky (red ghost)
+	0x00e1    Clyde (orange ghost
+	0x00E2    Pinky (pink ghost)
+	0x00E3    Inky (blue ghost)
+	0x00EA    *Zombie 2 East
+	0x00EB    *Zombie 2 ^
+	0x00EC    *Zombie 2 <
+	0x00ED    *Zombie 2 v
+	0x00EE    *Zombie 2 East
+	0x00EF    *Zombie 2 ^
+	0x00F0    *Zombie 2 <
+	0x00F1    *Zombie 2 v
+	0x00FC    *Zombie 3 East
+	0x00FD    *Zombie 3 ^
+	0x00FE    *Zombie 3 <
+	0x00FF    *Zombie 3 v
+	0x0100    *Zombie 3 East
+	0x0101    *Zombie 3 ^
+	0x0102    *Zombie 3 <
+	0x0103    *Zombie 3 v
 
 Codes for Spear of Destiny
 --------------------------
@@ -406,199 +409,202 @@ Spear of destiny uses a slightly different table.
 	0x008D    Area 8D
 	0x008E    Area 8E
 	0x008F    Area 8F
-	0x0100    Nothing
-	0x0113    Start, face north
-	0x0114    Start, face east
-	0x0115    Start, face south
-	0x0116    Start, face west
-	0x0117    Water
-	0x0118    Oil drum
-	0x0119    Table & Chairs
-	0x011A    Floor lamp
-	0x011B    Shandelere
-	0x011C    Hanging skeleton
-	0x011D    Dog food
-	0x011E    Column
-	0x011F    Potted tree
-	0x0120    Skeleton
-	0x0121    Skulls on stick
-	0x0122    Potted bush
-	0x0123    Vase
-	0x0124    Table
-	0x0125    Overhead lamp
-	0x0126    Cage W guts
-	0x0127    Armor
-	0x0128    Cage, empty
-	0x0129    Cage, with skeleton
-	0x012A    Bones
-	0x012B    Key 1 (yellow)
-	0x012C    Key 2 (grey)
-	0x012D    Cage w skulls
-	0x012E    Pot
-	0x012F    Food
-	0x0130    First aid kit
-	0x0131    Ammunition
-	0x0132    Machine gun
-	0x0133    Huge gun
-	0x0134    Cross
-	0x0135    Cup
-	0x0136    Jewels
-	0x0137    Crown
-	0x0138    Sphere / life
-	0x0139    Bloody bones
-	0x013A    Brown barrel
-	0x013B    Well with water
-	0x013C    Well empty
-	0x013D    Blood
-	0x013E    Flag
-	0x013F    Overhead lamp2
-	0x0140    Trash 1
-	0x0141    Trash 2
-	0x0142    Trash 3
-	0x0143    Animal skull stick
-	0x0144    Pool of guts
-	0x0145    Demon statue
-	0x0146    Vines
-	0x0147    Tan pillar
-	0x0148    Ammo Box
-	0x0149    Truck
-	0x014A    Spear
-	0x015A    Move >
-	0x015B    Move />
-	0x015C    Move ^
-	0x015D    Move <\
-	0x015E    Move <
-	0x015F    Move </
-	0x0160    Move v
-	0x0161    Move \>
-	0x0162    Secret door
-	0x0163    End of game trigger
-	0x016A    WEIRD THING
-	0x016B    LAST SOD GUY
-	0x016C    Guard 1 >
-	0x016D    Guard 1 ^
-	0x016E    Guard 1 <
-	0x016F    Guard 1 v
-	0x0170    Guard 1 > moving
-	0x0171    Guard 1 ^ moving
-	0x0172    Guard 1 < moving
-	0x0173    Guard 1 v moving
-	0x0174    W Guard 1 >
-	0x0175    W Guard 1 ^
-	0x0176    W Guard 1 <
-	0x0177    W Guard 1 v
-	0x0178    W Guard 1 > moving
-	0x0179    W Guard 1 ^ moving
-	0x017A    W Guard 1 < moving
-	0x017B    W Guard 1 v moving
-	0x017C    Dead guard
-	0x017D    SOD GUY1
-	0x017E    Officer 1  >
-	0x017F    Officer 1  ^
-	0x0180    Officer 1  <
-	0x0181    Officer 1  v
-	0x0182    Officer 1  > moving
-	0x0183    Officer 1  ^ moving
-	0x0184    Officer 1  < moving
-	0x0185    Officer 1  v moving
-	0x018A    Dog 1 >
-	0x018B    Dog 1 ^
-	0x018C    Dog 1 <
-	0x018D    Dog 1 v
-	0x018E    SOD GUY4
-	0x018F    SOD GUY2
-	0x0190    Guard 2 >
-	0x0191    Guard 2 ^
-	0x0192    Guard 2 <
-	0x0193    Guard 2 v
-	0x0194    Guard 2 > moving
-	0x0195    Guard 2 ^ moving
-	0x0196    Guard 2 < moving
-	0x0197    Guard 2 v moving
-	0x0198    W Guard 2 >
-	0x0199    W Guard 2 ^
-	0x019A    W Guard 2 <
-	0x019B    W Guard 2 v
-	0x019C    W Guard 2 > moving
-	0x019D    W Guard 2 ^ moving
-	0x019E    W Guard 2 < moving
-	0x019F    W Guard 2 v moving
-	0x01A0    Floating guy
-	0x01A1    SOD GUY3
-	0x01A2    Officer 2 >
-	0x01A3    Officer 2 ^
-	0x01A4    Officer 2 <
-	0x01A5    Officer 2 v
-	0x01A6    Officer 2 > moving
-	0x01A7    Officer 2 ^ moving
-	0x01A8    Officer 2 < moving
-	0x01A9    Officer 2 v moving
-	0x01AE    Dog 2 >
-	0x01AF    Dog 2 ^
-	0x01B0    Dog 2 <
-	0x01B1    Dog 2 v
-	0x01B2    Robo Hitler
-	0x01B3    General
-	0x01B4    Guard 3 >
-	0x01B5    Guard 3 ^
-	0x01B6    Guard 3 <
-	0x01B7    Guard 3 v
-	0x01B8    Guard 3 > moving
-	0x01B9    Guard 3 ^ moving
-	0x01BA    Guard 3 < moving
-	0x01BB    Guard 3 v moving
-	0x01BC    W Guard 3 >
-	0x01BD    W Guard 3 ^
-	0x01BE    W Guard 3 <
-	0x01BF    W Guard 3 v
-	0x01C0    W Guard 3 > moving
-	0x01C1    W Guard 3 ^ moving
-	0x01C2    W Guard 3 < moving
-	0x01C3    W Guard 3 v moving
-	0x01C4    Dr Schabbs
-	0x01C5    BIG Guardet!
-	0x01C6    Officer 3 >
-	0x01C7    Officer 3 ^
-	0x01C8    Officer 3 <
-	0x01C9    Officer 3 v
-	0x01CA    Officer 3 > moving
-	0x01CB    Officer 3 ^ moving
-	0x01CC    Officer 3 < moving
-	0x01CD    Officer 3 v moving
-	0x01D2    Dog 3 >
-	0x01D3    Dog 3 ^
-	0x01D4    Dog 3 <
-	0x01D5    Dog 3 v
-	0x01D6    BIG Guard!
-	0x01D7    Big officer
-	0x01D8    Zombie 1 >
-	0x01D9    Zombie 1 ^
-	0x01DA    Zombie 1 <
-	0x01DB    Zombie 1 v
-	0x01DC    Zombie 1 > moving
-	0x01DD    Zombie 1 ^ moving
-	0x01DE    Zombie 1 < moving
-	0x01DF    Zombie 1 v moving
-	0x01E0    Red Ghost
-	0x01E1    Orange Ghost
-	0x01E2    Light red Ghost
-	0x01E3    Blue Ghost
-	0x01EA    Zombie 2 >
-	0x01EB    Zombie 2 ^
-	0x01EC    Zombie 2 <
-	0x01ED    Zombie 2 v
-	0x01EE    Zombie 2 > moving
-	0x01EF    Zombie 2 ^ moving
-	0x01F0    Zombie 2 < moving
-	0x01F1    Zombie 2 v moving
-	0x01FC    Zombie 3 >
-	0x01FD    Zombie 3 ^
-	0x01FE    Zombie 3 <
-	0x01FF    Zombie 3 v
-	0x0200    Zombie 3 > moving
-	0x0201    Zombie 3 ^ moving
-	0x0202    Zombie 3 < moving
-	0x0203    Zombie 3 v moving
+
+The objects map has the following codes:
+
+	0x0000    Nothing
+	0x0013    Start, face north
+	0x0014    Start, face east
+	0x0015    Start, face south
+	0x0016    Start, face west
+	0x0017    Water
+	0x0018    Oil drum
+	0x0019    Table & Chairs
+	0x001A    Floor lamp
+	0x001B    Shandelere
+	0x001C    Hanging skeleton
+	0x001D    Dog food
+	0x001E    Column
+	0x001F    Potted tree
+	0x0020    Skeleton
+	0x0021    Skulls on stick
+	0x0022    Potted bush
+	0x0023    Vase
+	0x0024    Table
+	0x0025    Overhead lamp
+	0x0026    Cage W guts
+	0x0027    Armor
+	0x0028    Cage, empty
+	0x0029    Cage, with skeleton
+	0x002A    Bones
+	0x002B    Key 1 (yellow)
+	0x002C    Key 2 (grey)
+	0x002D    Cage w skulls
+	0x002E    Pot
+	0x002F    Food
+	0x0030    First aid kit
+	0x0031    Ammunition
+	0x0032    Machine gun
+	0x0033    Huge gun
+	0x0034    Cross
+	0x0035    Cup
+	0x0036    Jewels
+	0x0037    Crown
+	0x0038    Sphere / life
+	0x0039    Bloody bones
+	0x003A    Brown barrel
+	0x003B    Well with water
+	0x003C    Well empty
+	0x003D    Blood
+	0x003E    Flag
+	0x003F    Overhead lamp2
+	0x0040    Trash 1
+	0x0041    Trash 2
+	0x0042    Trash 3
+	0x0043    Animal skull stick
+	0x0044    Pool of guts
+	0x0045    Demon statue
+	0x0046    Vines
+	0x0047    Tan pillar
+	0x0048    Ammo Box
+	0x0049    Truck
+	0x004A    Spear
+	0x005A    Move >
+	0x005B    Move />
+	0x005C    Move ^
+	0x005D    Move <\
+	0x005E    Move <
+	0x005F    Move </
+	0x0060    Move v
+	0x0061    Move \>
+	0x0062    Secret door
+	0x0063    End of game trigger
+	0x006A    WEIRD THING
+	0x006B    LAST SOD GUY
+	0x006C    Guard 1 >
+	0x006D    Guard 1 ^
+	0x006E    Guard 1 <
+	0x006F    Guard 1 v
+	0x0070    Guard 1 > moving
+	0x0071    Guard 1 ^ moving
+	0x0072    Guard 1 < moving
+	0x0073    Guard 1 v moving
+	0x0074    W Guard 1 >
+	0x0075    W Guard 1 ^
+	0x0076    W Guard 1 <
+	0x0077    W Guard 1 v
+	0x0078    W Guard 1 > moving
+	0x0079    W Guard 1 ^ moving
+	0x007A    W Guard 1 < moving
+	0x007B    W Guard 1 v moving
+	0x007C    Dead guard
+	0x007D    SOD GUY1
+	0x007E    Officer 1  >
+	0x007F    Officer 1  ^
+	0x0080    Officer 1  <
+	0x0081    Officer 1  v
+	0x0082    Officer 1  > moving
+	0x0083    Officer 1  ^ moving
+	0x0084    Officer 1  < moving
+	0x0085    Officer 1  v moving
+	0x008A    Dog 1 >
+	0x008B    Dog 1 ^
+	0x008C    Dog 1 <
+	0x008D    Dog 1 v
+	0x008E    SOD GUY4
+	0x008F    SOD GUY2
+	0x0090    Guard 2 >
+	0x0091    Guard 2 ^
+	0x0092    Guard 2 <
+	0x0093    Guard 2 v
+	0x0094    Guard 2 > moving
+	0x0095    Guard 2 ^ moving
+	0x0096    Guard 2 < moving
+	0x0097    Guard 2 v moving
+	0x0098    W Guard 2 >
+	0x0099    W Guard 2 ^
+	0x009A    W Guard 2 <
+	0x009B    W Guard 2 v
+	0x009C    W Guard 2 > moving
+	0x009D    W Guard 2 ^ moving
+	0x009E    W Guard 2 < moving
+	0x009F    W Guard 2 v moving
+	0x00A0    Floating guy
+	0x00A1    SOD GUY3
+	0x00A2    Officer 2 >
+	0x00A3    Officer 2 ^
+	0x00A4    Officer 2 <
+	0x00A5    Officer 2 v
+	0x00A6    Officer 2 > moving
+	0x00A7    Officer 2 ^ moving
+	0x00A8    Officer 2 < moving
+	0x00A9    Officer 2 v moving
+	0x00AE    Dog 2 >
+	0x00AF    Dog 2 ^
+	0x00B0    Dog 2 <
+	0x00B1    Dog 2 v
+	0x00B2    Robo Hitler
+	0x00B3    General
+	0x00B4    Guard 3 >
+	0x00B5    Guard 3 ^
+	0x00B6    Guard 3 <
+	0x00B7    Guard 3 v
+	0x00B8    Guard 3 > moving
+	0x00B9    Guard 3 ^ moving
+	0x00BA    Guard 3 < moving
+	0x00BB    Guard 3 v moving
+	0x00BC    W Guard 3 >
+	0x00BD    W Guard 3 ^
+	0x00BE    W Guard 3 <
+	0x00BF    W Guard 3 v
+	0x00C0    W Guard 3 > moving
+	0x00C1    W Guard 3 ^ moving
+	0x00C2    W Guard 3 < moving
+	0x00C3    W Guard 3 v moving
+	0x00C4    Dr Schabbs
+	0x00C5    BIG Guardet!
+	0x00C6    Officer 3 >
+	0x00C7    Officer 3 ^
+	0x00C8    Officer 3 <
+	0x00C9    Officer 3 v
+	0x00CA    Officer 3 > moving
+	0x00CB    Officer 3 ^ moving
+	0x00CC    Officer 3 < moving
+	0x00CD    Officer 3 v moving
+	0x00D2    Dog 3 >
+	0x00D3    Dog 3 ^
+	0x00D4    Dog 3 <
+	0x00D5    Dog 3 v
+	0x00D6    BIG Guard!
+	0x00D7    Big officer
+	0x00D8    Zombie 1 >
+	0x00D9    Zombie 1 ^
+	0x00DA    Zombie 1 <
+	0x00DB    Zombie 1 v
+	0x00DC    Zombie 1 > moving
+	0x00DD    Zombie 1 ^ moving
+	0x00DE    Zombie 1 < moving
+	0x00DF    Zombie 1 v moving
+	0x00E0    Red Ghost
+	0x00E1    Orange Ghost
+	0x00E2    Light red Ghost
+	0x00E3    Blue Ghost
+	0x00EA    Zombie 2 >
+	0x00EB    Zombie 2 ^
+	0x00EC    Zombie 2 <
+	0x00ED    Zombie 2 v
+	0x00EE    Zombie 2 > moving
+	0x00EF    Zombie 2 ^ moving
+	0x00F0    Zombie 2 < moving
+	0x00F1    Zombie 2 v moving
+	0x00FC    Zombie 3 >
+	0x00FD    Zombie 3 ^
+	0x00FE    Zombie 3 <
+	0x00FF    Zombie 3 v
+	0x0100    Zombie 3 > moving
+	0x0101    Zombie 3 ^ moving
+	0x0102    Zombie 3 < moving
+	0x0103    Zombie 3 v moving
 
 Ackgnowledgements
 -----------------

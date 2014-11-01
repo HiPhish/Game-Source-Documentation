@@ -135,7 +135,7 @@ What about the word that's identical to `tag`? It will be compressed as `(tag, 0
 ### Carmack compression ###
 The underlying idea of this compression method is that certain information patterns are going to be repeated several times. Instead of repeating the pattern each time a reference to previous instances of the pattern is stored; the already uncompressed data is referenced by the still compressed data.
 
-The compressed data consists of uncompressed words, one of two types of pointers, near pointers and far pointers, and exceptions where all four can appear in the same file depending on which is necessary. Near pointers are byte triplets and far pointers are byte quadruples. On top of this ther are special exceptions for words that might be confused for pointers. Remember that all offsets are given in *words* and that a word on the original target architecture was two bytes in size. To get the *byte* offset multiply the word offset by two.
+The compressed data consists of uncompressed words, one of two types of pointers, near pointers and far pointers, and exceptions where all four can appear in the same file depending on which is necessary. Near pointers are byte triplets and far pointers are byte quadruples. On top of this there are special exceptions for words that might be confused for pointers. Remember that all offsets are given in *words* and that a word on the original target architecture was two bytes in size. To get the *byte* offset multiply the word offset by two.
 
 #### Near pointers ####
 Near pointers are a sequence of three bytes (count, tag, offset). The first byte tells us how many words to copy, it is an usingned 8-bit integer. The second byte is the tag and always 0xA7, it is used to identify a near pointer. The third byte is the unsigned 8-bit integer offset relative from the last written word to the word to copy. Take the following example:
@@ -608,11 +608,11 @@ The sound data consists of byte quartets of the following form:
 | word | Delay          |
 
 ### Levels & Maps ###
-Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the levels's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
+Levels are laid out on a 64 x 64 tile-based square map. This size is not hard-coded into the game, so one should not make assumptions about the level's size, instead the size should be read from the map file. Although there are no official levels of any other size an engine or interpreter should be able to support custom-made maps of different size. Each level in the game actually consists for three maps overlaying each other:
 
 - **Architecture:** The first map contains information about the level's architecture, i.e. walls, doors and floors.
 - **Objects:** The second map contains the level's objects, i.e. enemies, decorations and pick-ups.
-- **Logic:** The third map contains the level's logic data, such as waypoints.
+- **Other:** The third map contains other data and is not used in this game, it's a leftover from earlier Id titles.
 
 These three individual maps together form the level the player will be playing. Usually when speaking about maps one means the entire level, but here we will maintain this distinction to avoid confusion or ambiguity.
 
@@ -627,6 +627,12 @@ The last remaining byte always appears to be be 0x00 and it's called the `tilein
 
 Note that there is no information in this file as to how many levels there are in the game. This information would have to be calculated from the file's size itself. To compute that number one would have to step through the list of header offsets until reaching the first offset that's 0x00000000 (start of the padding). The number of steps is equal to the number of levels.
 
+| Name          | Type       | Description                                    |
+|---------------|------------|------------------------------------------------|
+| Signature     | Word       | Used for RLEW decompression, usually 0xCD 0xAB |
+| Header offset | Int32[100] | Offsets into the gamemaps file                 |
+| Tile info     | Byte       | Unused, usually 0x00                           |
+
 #### GAMEMAPS ####
 This file contains the actual information about the levels and their individual maps. A level is made from a *level header*, which describes where to find the level's maps, their compressed sizes, the size of the level and finally the name of the level.
 
@@ -634,14 +640,24 @@ The header can be found using the offset from the MAPHEAD file as an absolute va
 
 The first three values are 32-bit signed integer values each. The first one is holding the offset to the level's architecture map, the next value is the offset to the level's object map and the third value is the offset to the level's logic map. All values are absolute offsets from the beginning of the file, not relative offsets from the header or relative to each other.
 
-The next three values are unsigned 16-bit integer values describing the Carmack-compressed length in bytes of each map; this is important because the maps are lumped together adjacent to each other with no seperator. Their order is again first architecture, then objects and then logic.
+The next three values are unsigned 16-bit integer values describing the Carmack-compressed length in bytes of each map; this is important because the maps are lumped together adjacent to each other with no separator. Their order is again first architecture, then objects and then logic.
 
 Next are two unsigned 16-bit integers describing the width and height of the level, in that order. The size appears to always be 64 x 64, but since it's not hardcoded it should not be assumed.
 
 Finally 16 characters, 8-bit ASCII each, form the level's name. In the original implementation the characters are stored in an array of type `char` with unspecified size. This is the standard way of storing ASCII strings in C, but the string needs to be terminated with `\0` (the null character). In the file any remaining bytes are filled with `\0`, but in the code there is nothing to ensure that the string is indeed properly terminated, leaving a possibility for an error to happen.
 
+| Name           |type      | Description                                                       |
+|----------------|----------|-------------------------------------------------------------------|
+| Map offset     |int32[3]  | Offset of the three maps, absolute from the beginning of the file |
+| Carmack length |uint16[3] | Length of the Carmack-compressed map                              |
+| Width          |uint16    | Width of the level                                                |
+| Height         |uint16    | Height of the level                                               |
+| Level name     |char[16]  | Name of the level                                                 |
+
+The first word of a map is the most north-western tile, and each column is one more tile to the east, each row one tile to the south.
+
 #### Extracting the maps ###
-Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression one can find the decompressed length encoded into the compressed map as the fist word, it is given in bytes. This means the pointer to the compressed sequence must be advanced by one before starting the decompression. For some reason the pointer to the Carmack-decompressed but still RLEW-compressed sequence must be advanced by one word as well; could be a leftover from a previouse map format. The size of the uncomperessed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
+Maps are compressed using the RLEW compression and then compressed on top of that using Carmack compression. To decompress them one has to first Carmack-decompress the data and then RLEW-decompress it. For Carmack compression one can find the decompressed length encoded into the compressed map as the fist word, it is given in bytes. This means the pointer to the compressed sequence must be advanced by one before starting the decompression. For some reason the pointer to the Carmack-decompressed but still RLEW-compressed sequence must be advanced by one word as well; could be a leftover from a previous map format. The size of the uncompressed RLEW data is hardcoded as `64*64*2` bytes or 4096 words. Since the size is also stored in the map format it might be a better idea to use that value instead and allow levels of different size for mods. The RLEW tag can be found in the MAPHEAD file as described above.
 
 --------------------------------------------------------------------------------
 
@@ -766,7 +782,7 @@ All of these numbers could be computed at runtime from one base value, but they 
 
 The first cast prevents precision loss during division, the second cast makes the result of the division itself a floating-point number.
 
-After defining these discrete angles we build tables of trigonometric values. The sine- cosine and tangens table simply hold the respective values for each angle. Finally we have a number of angle-related functions:
+After defining these discrete angles we build tables of trigonometric values. The sine- cosine and tangent table simply hold the respective values for each angle. Finally we have a number of angle-related functions:
 
 	normalize_angle(a) : convert any integer to a number between 0 and 360, in steps
 
@@ -775,10 +791,199 @@ To convert an angle to a direction we use the *floor*: an angle always correspon
 
 Levels
 ------
+As discussed in the data formats chapter, levels in Wolfenstein 3D are built from tiles. A level is usually 64x64 tiles large, but even though that number is hard-coded into the engine the level files also specify their size, so from now on the size of the level will be assumed to be variable between levels, but constant within each level. This means if the level is m x n tiles large, then all its maps are that large as well and the level will neither shrink nor grow during gameplay.
+
+Various mathematical operations a carried out on a discrete tile-based basis, but actual movement takes place in a continuous fashion. We must be able to do both interchangeably and we will often convert back and forth between tile- and world coordinates.
+
+Aside from keeping track of all the actors and providing architecture to play in, levels have three major sub-aspects as well: areas, doors and push-walls.
+
+### Anatomy of a level ###
+A level is made of two maps: the *architecture* map and the *objects* map. The architecture tells us which tiles are doors, areas and walls. The objects map lists the map objects, such as enemies, power ups or static decoration objects. Some objects only appear on harder difficulties than others.
+
+A level has the following members:
+
+| Name           | Type                     | Description                                     |
+|----------------|--------------------------|-------------------------------------------------|
+| Size X         | Integer                  | Horizontal size of the level                    |
+| Size Y         | Integer                  | Vertical size of the level                      |
+| File Name      | Char[32]                 | File name of the level                          |
+| Architecture   | Word[Size X * Size Y]    | Architecture map                                |
+| Objects        | Word[Size X * Size Y]    | Objects map                                     |
+| Other          | Word[Size X * Size Y]    | Other map                                       |
+| Tile Map       | Int32[Size X * Size Y]   | ?                                               |
+| Spotvis        | Byte[Size X * Size Y]    | Unused                                          |
+| Wall Texture X | Integer[Size X * Size Y] | Horizontal wall texture references              |
+| Wall Texture Y | Integer[Size X * Size Y] | Horizontal wall texture references              |
+| Areas          | Integer[Size X * Size Y] | Area numbers                                    |
+| Doors          | Level Doors type         | Doors of the level                              |
+| Player Spawn   | Place on Plane type      | Spawning point for the player                   |
+| Map Name       | Char[128]                | Name of the map                                 |
+| Music Name     | Char[128]                | Name of the music track to play                 |
+| Ceiling Colour | Colour3 type             | Colour of the ceiling                           |
+| Floor Colour   | Colour3 type             | Colour of the ceiling                           |
+| Tile Seen      | Byte[Size X * Size Y]    | Whether a tile has ever been seen by the player |
+
+The members *Size X* and *Size Y* are my additions. Originally the size of the level is hard-coded into the code and the arrays always have size 64 x 64. That makes it possible for the structure to have predictable size and is required for setting the size of the arrays at compile type (arrays in C are second-class objects).
+
+The *Tile Seen* member is used for the automap and was added by Id to later ports, such as the iOS port. It tells us whether the player has seen a given tile already. This might be what *Spotvis* was supposed to do.
+
+The *Level Doors* type will be discussed later when we discuss doors. For now it's enough to know that it keeps track of all the doors in the level and their status.
+
+The *Place on Plane* type is defined as follows:
+
+| Name       | Type    |
+|------------|---------|
+| Position X | Integer |
+| Position Y | Integer |
+| Angle      | Integer |
+
+### Loading a level ###
+The structure of the level head and how to extract the maps is described above in the *file formats* chapter in the *data files* section. I will now assume the header and the maps are in memory.
+
+We start by looping over the level size. It does not matter whether we process the architecture- or objects map first, they are not dependent on each other. All map elements are words, so they will be compared to their numerical value here. Remember that multi-byte numbers are stored in little-endian order, so the word `0xCD 0xAB` has the numerical value `0xABCD`.
+
+	Constants: NUMBER_OF_AREAS = 37
+	           AMBUSH_TILE     = 0x6A
+	           FIRST_AREA      = 0x6B
+	
+	For every tile do:
+	1) Read the architectural structure from the architecture map and the object from the object map
+	2) Spawn `object` on tile from objects map
+	3) If `structure` == 0x0000
+		3.1) Set level area of this tile to -3 // unknown area
+	4) Else
+		4.1) If (0x005A <= `structure` <= 0x005F) || (0x0064 <= `structure` < 0x0065) // door
+			4.1.1) Set the Door flag on the tile and spawn a door
+			4.1.2) Set level area of this tile to -2 // door
+		4.2) Else
+			4.2.1) Set the Wall flag on the tile
+			4.2.2) Set level area of this tile to -1 // wall
+			4.2.3) Assign textures
+			4.2.4) If `strucure` == 0x15
+				4.2.4.1) Set the Elevator flag on the tile
+		4.3) Else if `structure` == 0x6A
+			4.3.1) Set the Ambush flag on the tile
+			4.3.2) Set level area of this tile to -3 // unknown area
+		4.4) Else if FIRST_AREA <= `structure` < (FIRST_AREA + NUMBER_OF_AREAS)
+			4.4.1) If `structure` == FIRST_AREA
+				4.4.1.1) Set the Secret Level flag on the tile
+			4.4.2) Set level area of this tile to (`structure` - FIRST_AREA)
+		4.5) Else
+			4.5.1) Set level area of this tile to -3 // unknown area
+
+The numbers `0x0064` and `0x0065` stand for elevator doors. We also see that elevators are just special instances of walls. The index of a wall texture can be computed from the numerical value of the texture:
+
+	texture_x = (numerical_value - 1) * 2 + 1
+	texture_y = (numerical_value - 1) * 2
+
+After initiating all the tiles we need to fix the unknown ares to prevent problems from occuring. To this end we attempt to connect every unknown area to an adjacent area.
+
+	Prerequisites: area = table of tile area numbers
+	
+	1) For integer `x` = 1, while `x` < 63, iterate ++`x`
+		1.1) For integer `y` = 1, while `y` < 63, iterate ++`y`
+			1.1.1) If `area`[`x`][`y`] == -3
+				1.1.1.1) If eastern area >= 0 set `area`[`x`][`y`] to it
+				1.1.1.2) Else if western area >= 0 set `area`[`x`][`y`] to it
+				1.1.1.3) Else if southern area >= 0 set `area`[`x`][`y`] to it
+				1.1.1.4) Else if northern area >= 0 set `area`[`x`][`y`] to it
+
+Finally, we must set up the areas of the doors. We will discuss doors later, but for now it's enough to know that each door has a member that tracks the area of either side of the door.
+
+	Prerequisites: level_doors = Array of door structures for the current level
+	              level_areas = Array of the areas for the current level
+	
+	For every door in the level do:
+	1) If the door is a vertical one
+		1.1) Set the areas of the door to the areas west and east  (in that order)
+		     If the area number is less than 0 set it to 0
+	2) If the door is a horizontal one
+		2.1) Set the areas of the door to the areas north and south (in that order)
+		     If the area number is less than 0 set it to 0
+
+We can now set the ceiling colour to `0x38 0x38 0x38`, or a 32-bit RGBA colour of `(56 56 56 0)`, and the floor colour to `0x70 0x70 0x70`, or a 32-bit RGBA colour of `(112 112 112 0)`. These values are hard-coded in the original engine, but oddly enough they are included in the map format of the iOS release at offset 10, first ceiling, then floor and both four bytes in length.
+
+#### Classes of architecture tiles ####
+Each tile can have one of the following flags set. It doesn't make sense to have more than one of them per tile, and the level file format makes it even impossible, but there is nothing in the engine to prevent it either. The flags are as follows:
+
+| Flag         | Description            |
+|--------------|------------------------|
+| Wall         | Solid wall             |
+| Pushwall     | Pushable secret wall   |
+| Secret       | ?                      |
+| Dressing     | Unused                 |
+| Blocking     | Impassable obstacle    |
+| Actor        | ?                      |
+| Dead Actor   | ?                      |
+| Powerup      | Powerup to pick up     |
+| Ambush       | Ambush tile for actors |
+| Exit         | ?                      |
+| Secret Level | ?                      |
+| Elevator     | Exit from this level   |
+| East         | Waypoint east          |
+| North-East   | Waypoint north-east    |
+| North        | Waypoint north         |
+| North-West   | Waypoint north-west    |
+| West         | Waypoint west          |
+| South-West   | Waypoint south-west    |
+| South        | Waypoint south         |
+| South-East   | Waypoint south-east    |
+
+The Dressing and Dead Actor flags are not used by the game, they might be leftovers from an earlier stage in development when Wolfenstein 3D was meant to be a more stealth-oriented game.
+
+These flags can be grouped into "classes of tiles" where a tile belongs to that class if it has one of the flags set. These are the classes:
+
+- **Solid:** walls, pushwalls or blocking obstacles
+- **blocks move:** walls, pushwalls or actors
+- **waypoints:** any of the waypoints
+
+The *Blocks Move* class is unused by the game.
+
+### Areas ###
+Areas are a way of grouping what could be considered "rooms" in a level (there is no concept of a "room" in the source code, but the player perceives parts of the levels as rooms). Since areas are defined on the architecture map an area is always a free tile, never a wall or a door.
+
+Areas can be connected to each other via doors, allowing sound to travel between them, so an enemy could hear one of its friends being attacked by the player and rush in to help. Two areas are connected if and only if at least one door between them is open. The *adjacency* between areas is measured as the number of open doors directly between them. Usually there is only one door, but some areas can have multiple doors connecting them and as long as at least one door is open the areas are connected.
+
+From this we can see that the areas and door form a graph structure where the areas are vertices and the doors are edges. The original implementation used a directed graph where it would technically be possible to have one-way doors that allow sound to travel from one area to the other, but not back. Such doors don't exist in the game though, and the function for setting the degree of a node always works both way. For the sake of authenticity I will continue using a directed graph.
+
+It is also possible for a pair of vertices to have several edges connecting them; this means that multiple doors can be opened to connect them. One door could have been opened by the player and another one by an enemy. In the original source the graph is implemented as an adjacency matrix of type integer.
+
+To allow the player to hear sound we must keep track of which areas are connected to the player's current area. This is done via a list of boolean values where each list item stand for an area and the value is `true` if the area is connected to and area that's connected to the player. The player's current area is always connected and the list gets updated every time a door opens and closes.
+
+#### Connecting and disconnecting areas ####
+To connect two areas `a` and `b` increment the adjacency matrix entries `(a, b)` and `(b, a)`. We have to increment both entries because the graph is directed. To disconnect areas decrement their entries instead. If two areas are connected by multiple doors the entries get incremented for every door, allowing them to grow beyond 1. This is necessary because enemies might open other doors on their own.
+
+#### Initialisation ####
+To initialise the areas the level has to have been loaded. Then set the adjacency matrix to the zero-matrix (all doors closed), set the player area list to all-false, except for the area the player starts in.
+
+#### Update connections ####
+Whenever a door is opened or closed or the player moves to a new area we need to update the connections.
+
+	1) Set player area list to all-false, except for area of the player
+	2) Connect recursively to the player area
+
+Connecting recursively is done like this:
+
+	Prerequisites: area = area to connect to
+	
+	Constants: NUM_AREAS = number of areas in the game (hardcoded 37)
+	
+	1) For integer `i` = 0, while `i` < NUM_AREAS, iterate ++`i`
+	2) If `area` and `i` are connected and the player area list for `i` is false
+		2.1) Set the player area list for `i` to true
+		2.2) Carry out this routine recursively for area `i`
+
+This routine loops through all the areas connected to the current layer and connects them to the player. We need the second condition to avoid getting stuck in an infinite loop.
+
+### Doors ###
+
+### Push-walls ###
+
 
 
 Actors / Entities
 -----------------
+(AI is an utter mess and on hold for now)
 Actors, or entities as they can also be referred to in the code, are any in-game entities that can move around in the world. They include enemies as well as projectiles like fireballs or rockets and even BJ himself, but not static objects like weapons, food, chairs or stone columns. An actor's behaviour is modelled using a finite-state machine where each state holds information on what sprite to display, how long the state lasts, what state to transition to.
 
 ### The actor structure ###
