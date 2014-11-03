@@ -663,7 +663,9 @@ Maps are compressed using the RLEW compression and then compressed on top of tha
 
 Part II - Game rules
 ====================
-Time is measured in *ticks* from now on. In the original implementation one tick was intended to last 1/70th of a second. The game was inteded to run at one ticks per frame or 70 frames per second.
+The game rules have been derived mostly from the official iOS port by Id, which in turn is based on the *Wolfenstein 3-D Redux* port. The rules are effectively the same as for the original PC release, but the technical details might be different.
+
+Time is measured in *ticks* from now on. In the original implementation one tick was intended to last 1/70th of a second and the game was inteded to run at a rate of one ticks per frame or 70 frames per second.
 
 Mathematics
 -----------
@@ -976,10 +978,164 @@ Connecting recursively is done like this:
 This routine loops through all the areas connected to the current layer and connects them to the player. We need the second condition to avoid getting stuck in an infinite loop.
 
 ### Doors ###
+Doors have a two-fold purpose: they physically block the player from passing from one room to another, and they prevent sound from traveling from one are to another (they don't stop sound from traveling throuthout the same area though).
 
-### Push-walls ###
+There is a hard-coded limit of 64 doors per level. This limit makes it possible for the C compiler to know the size of the door array at compile time, but the array might only be filled partially if there are fewer doors in the level.
 
+#### Anatomy of a door ####
+A door is always in one of four states:
 
+| State   | Meaning                                              |
+|---------|------------------------------------------------------|
+| Closing | Has been open and is now in the process of closing   |
+| Closed  | Closed door                                          |
+| Opening | Has been closed and is now in the process of opening |
+| Open    | Open door                                            |
+
+There are several types of doors:
+
+| Name                | Description      | number |
+|---------------------|------------------|--------|
+| Normal vertical     | Normal door      |    255 |
+| Normal horizontal   | Normal door      |    254 |
+| Elevator vertical   | Elevator door    |    253 |
+| Elevator horizontal | Elevator door    |    252 |
+| Gold vertical       | Needs gold key   |    251 |
+| Gold horizontal     | Needs gold key   |    240 |
+| Silver vertical     | Needs silver key |    249 |
+| Silver horizontal   | Needs silver key |    248 |
+
+A door has the following structure:
+
+| Type       | Name       | Description                      |
+|------------|------------|----------------------------------|
+| Integer    | Position X | Horizontal tile of the door      |
+| Integer    | Position Y | Vertical tile of the door        |
+| Boolean    | Vertical   | Whether this is a vertical door  |
+| Integer    | Tic Count  | ?                                |
+| Door state | State      | Current state of the door        |
+| Integer    | Area 1     | One area connected by the door   |
+| Integer    | Area 2     | Other area connected by the door |
+| Door type  | Type       | Type of the door                 |
+| Integer    | Texture    | Texture of the door              |
+
+Door textures are stored right after the regular wall textures. They are as follows in this order:
+
+	regular_h, regular_v, plate_h, plate_v, elevator_h, elevator_v, locked_h, locked_v
+
+Plate is the plate on the walls left and right of the sliding door. These two textures are applied on top of the existing wall texture, effectively hiding it beneath.
+
+#### Preparing doors ####
+The level keeps track of the number of doors, a list of actual doors and a matrix of possible doors. The list is implemented as an array of door references with hard-coded size of 256, but there is no particular reason for this aside from how C handles arrays inside structs. The size of the matrix is 64 x 64, where every matrix item stands for a tile that might have a door.
+
+##### Spawning a door #####
+Spawning a door is straight-forward: we take in the tile coordinates and the number of the door, we use that to set the door member and then we assign the door to the level's track-keeping.
+
+	Prerequisites: x = vertical tile postion
+	               y = horizontal tile postion
+	               n = number of the door
+	               The door tracking of the level has to be set up already
+	
+	1) Register the new door in the door matrix of the level
+	2) Set the door members according to the type of the door (type, vertical and texture)
+	3) Set the postion of the door to `x` and `y`
+	4) Set the state of the door to closed
+	5) Add the door to the door list
+	6) Increment the door count for the level
+
+##### Setting door areas #####
+After the doors have been spawned their areas need to be assigned, only then can the door let sound pass through.
+
+	Prerequisites: doors = list of doors in the level
+	               areas = table of areas in the level
+	
+	1) For every door in `doors` do
+		1.1) Make variables `x` and `y` the postition of the door
+		1.2) If the door is vertical
+			1.2.1) Set Area 1 of the door to `areas`[x+1][y]
+			1.2.2) Set Area 2 of the door to `areas`[x-1][y]
+		1.3) Else
+			1.3.1) Set Area 1 of the door to `areas`[x][y+1]
+			1.3.2) Set Area 2 of the door to `areas`[x][y-1]
+		1.4) If any of the areas just set < 0, then set it to 0
+
+This functions simply uses the areas table and the postition of the door to pick the area indices east and west (or north and south) of the door.
+
+#### Managing doors ####
+Now that we have set the doors up we can get to how to use them during play time. For to following routines the variable `door` will always be a prerequisite and refer to the door we want to operate on.
+
+##### Changing the door state #####
+A door can be opened at any time unless it is already open, but a door can only close if it isn't blocked
+
+	Constants: FULLOPEN = 63
+	
+	1) If the door state is closed or closing
+		1.1) Open the door (see below)
+	2) Else if the door is open and can be closed (see below)
+		2.1) Change the door state to closing
+		2.2) Set the ticcount of the door to FULLOPEN
+
+As we can see a door can be opened at any time, even interrupting the closing process, but the opening process cannot be interrupted, the door must fully open. Manually closing the door is supported in the DOS version but was commented out in the iOS version. This was done due to the automatic using on touchscreen devices.
+
+##### Opening doors #####
+If the door is already open we reset its timer, otherwise we start opening it.
+
+	1) If the door's state is open
+		1.1) Set the door's ticcount to 0
+	2) Else
+		2.1) Set the door's state to opening
+
+If the door was already in the process of being opened this will have no effect.
+
+##### Can a door be opened? #####
+
+##### Can a door be closed? #####
+A door can only be closed if it wouldn't squish anyone in the process.
+
+	Constants: CLOSEWALL = 0x5800 // Space between wall & player
+	
+	1) If the player's tile postition is the postition of the door
+		1.1) Return false
+	2) If the door is vertical
+		2.1) If the player's vertical tile is the same as the door's
+			2.1.1) If the horizontal tile of the player's horizontal postion
+			       plus/minus CLOSEWALL is the same as the door's
+				2.1.1.1) Return false
+		2.2) For every actor in the level
+			2.2.1) If the actor's tile postition is the postition of the door
+				2.2.1.1) Return false
+			2.2.2) If the actor's vertical tile is the same as the door's
+			       and the actor's horizontal tile minus/plus 1 is the same as the door's
+			       and the horizontal tile of the actors's horizontal postiotion plus/minus CLOSEWALL 
+			       is the same as the door's
+				2.2.2.1) Return false
+	3) Else
+		3.x) Same as for vertical doors, except horizontal and vertical are swapped
+	4) Return true
+
+The easy thing to test is whether and actor or the player is standing on the door tile. The other, more complicated check is whether an actor or the player is too close to the door to close. To elaborate, every actor as well as the player have a sort of "radius" (it's really a bounding box) that prevents them from getting too close to a wall, so we need to check if the border of the entity is intesecting with the door tile.
+
+To this end we add (or subtract) the bounding radius from the entity's position on the coordinate axis in question. Then we convert this shifted postition to a tile coordinate and compare it with the door's tile coordinate. Remember that the integer value of `CLOSEWALL` is actually a fixed-point decimal number.
+
+The check for actor's is more complicated than for the player, this is to prevent doing the more expenstive check on every actor in the level. Instead we first check if the actor is even close enough for consideration and the compiler should take care that the more expensive check is optimised away if the fist one fails. Other than that the checks are the same for both the player and actors.
+
+##### Is a door open? #####
+We return a number that tells us not only whether a door is open, but also *how far* open it is. A return value of 0 means the door is closed, a value of `FULLOPEN` means the door is fully open, any value in between is partially open.
+
+	Constants: FULLOPEN = 63
+	
+	1) If the door is open
+		1.1) Return FULLOPEN
+	2) Else
+		2.1) Return ticcount of the door
+
+##### Trying to use a door #####
+
+##### Processing a door #####
+
+##### Push-walls #####
+
+### Line of sight ###
 
 Actors / Entities
 -----------------
