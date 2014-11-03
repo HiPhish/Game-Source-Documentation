@@ -1087,8 +1087,6 @@ If the door is already open we reset its timer, otherwise we start opening it.
 
 If the door was already in the process of being opened this will have no effect.
 
-##### Can a door be opened? #####
-
 ##### Can a door be closed? #####
 A door can only be closed if it wouldn't squish anyone in the process.
 
@@ -1130,10 +1128,74 @@ We return a number that tells us not only whether a door is open, but also *how 
 		2.1) Return ticcount of the door
 
 ##### Trying to use a door #####
+Regular doors and elvelator doors can always be opened, but locked doors require a key
+
+	Prerequisites: information on what keys the player has collected so far
+	
+	1) If the door is a regular- or elevator door
+		1.1) Change the door state and return true
+	2) If the door is a gold key door
+		2.1) If the player has the gold key
+			2.1.1) Change the door state and return true
+		2.2) Else
+			2.2.1) Inform the player (optional) and returns false
+	3) If the door is a silver key door
+		3.1) If the player has the silver key
+			3.1.1) Change the door state and return true
+		3.2) Else
+			3.2.1) Inform the player (optional) and returns false
 
 ##### Processing a door #####
+Doors are processed during every frame. We look at the state of each door and decide what to do. Doors are driven by time: unless the door is closed each time the `ticcount` is incremented until it has reached a certain point, and then the door does things on its own without outside input.
 
-##### Push-walls #####
+	Prerequisites: ticks = ticks since last frame
+	
+	Constants: OPENINGTIME =  63 // time it takes a door to open
+	           OPENTIME    = 300 // time a door will remain open
+	
+	Looping over every door in the level, in every iteration switch based on the state of the door
+	1) Closed
+		1.1) Skip to the next itertation of the loop
+	2) Opening
+		2.1) If the ticcount of the door >= OPENINGTIME
+			2.1.1) Set the state of the door to open
+			2.1.2) Set the ticcount of the door to 0
+		2.2) Else
+			2.2.1) If the ticcount of the door == 0
+				2.2.1.1) Connect the areas of the doors and update the connections
+				2.2.1.2) If the player's area is connected to the first area of the door
+					1.2.2.1.2.1) Play the door opening sound
+			2.2.2) Add `ticks` to the ticcount of the door
+			2.2.3) Cap the ticcount at OPENINGTIME
+		2.3) Skip to the next iteration of the loop
+	3) Closing
+		3.1) If the ticcount of the door <= 0
+			3.1.1) Disconnect the areas of the doors and update the connections
+			3.1.2) Set the state of the door to closed
+			3.1.3) Set the ticcount of the door to 0
+		3.2) Else
+			3.2.1) If the ticcount of the door == OPENINGTIME
+			           and the door's first area is connected to the player's area
+				3.2.1.1) Play the door closing sound
+			3.2.2) Subract `ticks` from the ticcount of the door
+			3.2.3) Cap the ticcount from below at 0
+		3.3) Skip to the next iteration of the loop
+	4) Open
+		4.1) If the door's ticcount >= OPENTIME
+			4.1.1) If the door can be closed
+				4.1.1.1) Set the door's state to closing and ticcount to OPENINGTIME
+		4.2) Else
+			Add `ticks` to the door's ticcount, cap at OPENTIME
+
+For the most part this is straight-forward. Closed doors don't do anything, opening doors are either still in the process of opening or they have just finished doing so. Closing doors are the same in reverse. Open doors don't do anything until the time comes to close, at which point they first check to see if it's OK.
+
+Opening and closing doors must also take care to connect and disconnect areas. An opening door establishes connections the moment it starts opening and a closing door disbands connections once it has finished closing. A door takes the same time to open as it takes to close, that's why closing doors count in reverse. It also means that when an entity interrupts one process (opening or closing) we only need to invert the direction of the counter.
+
+If a door cannot be closed after its time has passed it will stay open until it can be closed, at which point it will close without delay.
+
+All incrementations are capped to prevent the numbers from rolling over back to 0 or into the negative range. That would screw up the timers.
+
+### Push-walls ###
 
 ### Line of sight ###
 
