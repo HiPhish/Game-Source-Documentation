@@ -978,7 +978,7 @@ Connecting recursively is done like this:
 This routine loops through all the areas connected to the current layer and connects them to the player. We need the second condition to avoid getting stuck in an infinite loop.
 
 ### Doors ###
-Doors have a two-fold purpose: they physically block the player from passing from one room to another, and they prevent sound from traveling from one are to another (they don't stop sound from traveling throuthout the same area though).
+Doors have a three-fold purpose: they physically block the player from passing from one room to another, and they prevent sound from traveling from one are to another (they don't stop sound from traveling throuthout the same area though). Finally, they block or allow line of sight depending on whether they are closed or open, but LOS is discussed later.
 
 There is a hard-coded limit of 64 doors per level. This limit makes it possible for the C compiler to know the size of the door array at compile time, but the array might only be filled partially if there are fewer doors in the level.
 
@@ -1196,6 +1196,75 @@ If a door cannot be closed after its time has passed it will stay open until it 
 All incrementations are capped to prevent the numbers from rolling over back to 0 or into the negative range. That would screw up the timers.
 
 ### Push-walls ###
+Push-walls look like regular walls, but the player can interact with them to push them and reveal a secret. They are regular textured walls on the architecture map, the push-wall information is on the objects map as the word `0x0062`.
+
+Pushwalls are rendered just like normal walls as long as they are not moving. Once they start moving they are no longer regular walls, we can imagine it as the wall disappearing and being replaced with a new onject at the same position and with the same texture. This object is then moved over time and the raycaster adds the translation of the pushwall to the ray.
+
+#### Anatomy of a push-wall ####
+A push-wall has the following members:
+
+| Type            | Name         | Description                        |
+|-----------------|--------------|------------------------------------|
+| Boolean         | Active       | Is the wall moving?                |
+| Integer         | Tiles Moved  | How far have we moved (in tiles)?  |
+| Integer         | Points Moved | How far have we moved (in points)? |
+| 4-way direction | Direction    | Direction to move in               |
+| Integer         | X            | Tile of the push-wall              |
+| Integer         | Y            | Tile of the push-wall              |
+| Integer         | Delta X      | Offset in the direction            |
+| Integer         | Delta Y      | Offset in the direction            |
+| Integer         | Texture X    | Texture of the wall                |
+| Integer         | Texture Y    | Texture of the wall                |
+
+The game only keeps track of one push-wall: the wall that's currently being in the process of moving, we'll call this object the *push-wall tracker*. This means only one push-wall can be active at a time. It has its own textures because the original wall has been "destroyed" and we need them to apply them to the new wall when it stops moving.
+
+#### Resetting push-walls ####
+Resetting means setting to members of the push-wall being kept track of to zero (or false).
+
+#### Pushing push-walls ####
+This is what happens when the player tries pushing a push-wall. We check to see if the tile behind the push-wall is free, then we mark the tile as a push-wall tile, block the tile behind and get ready to start moving the wall.
+
+	Prerequisites: x   = horizontal tile of the push-wall
+	               y   = vertical tile of the push-wall
+	               dir = direction the player is facing
+	
+	 1) If there is already an active push-wall
+	 	1.1) Return
+	 2) Turn the direction of the player to tile-deltas
+	 3) If the tile behind the push-wall is a solid- or door tile
+	 	3.1) Return
+	 4) Remove the Secret- and Wall flags from the tile of the push-wall
+	 5) Add the push-wall flag
+	 6) Increment the secrets counter of the level and display a message to the player
+	 7) Play the push-wall sound
+	 8) Add the push-wall flag to the tile behind (prevents stepping on it and making things stuck)
+	 9) Set the push-wall tracker to active
+	10) Set the tracker's tiles and points moved to 0
+	11) Set the tracker's position, deltas and direction to what we have
+	12) Set the tracker's textures to the textures of the wall
+
+A tile-delta is the difference (delta) of two tiles for each axis, meaning there is a `delta_x` and `delta_y`. The postition "behind" means behind the push-wall from the player's perspective in the direction of the delta.
+
+#### Processing push-walls ####
+Push-walls are processed every frame.
+
+	1) If there is no active push-wall
+		1.1) Return
+	2) Add the ticks since the last frame to the points moved
+	3) If the points moved < 128
+		3.1) Return
+	4) Subtract the 180 from the points moved and add 1 to the tiles moved
+	5) Remove the Push-wall flag from the current tile
+	6) Add the deltas to the current tile and make that the current tile
+	7) If the tile behind the current tile is a solid tile, a door tile, an actor tile or a player tile
+	   or the tiles moved == 3
+		7.1) Remove the Push-wall flag from the current tile and add the Wall flag
+		7.2) Assign the textures from the push-wall to the newly created wall tile
+		7.3) Set the push-wall tracker to not active
+	8) Else
+		8.1) Add the Push-wall flag to the tile behind the current tile
+
+Every frame we move the wall a little bit. Once the wall has moved by one tile we unlock the tile in front of the wall and block the tile behind the wall. That is, only if the wall can actually move further, otherwise we turn the push-wall into a new regular wall.
 
 ### Line of sight ###
 
