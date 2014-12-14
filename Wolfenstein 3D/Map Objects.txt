@@ -1,11 +1,15 @@
+================
 Map object bytes
 ================
 
 The following is a list of bytes and their corresponding map objects. Some objects are walls and only used on the *Architecture* map, others are decoration objects and used on the *Objects* map. No two objects have the same byte even though they always appear on different maps. The list was adapted from the "MAPDATA.DEF" file of the *Nmap* editor by Nathan Lineback. See below for acknowledgements.
 
 Codes for Wolfenstein 3D
-------------------------
+========================
 
+	========  ====================
+	Byte      Wolf3D Architecture
+	========  ====================
 	0x0000    Nothing
 	0x0001    Grey stone 1
 	0x0002    Grey stone 2
@@ -30,32 +34,32 @@ Codes for Wolfenstein 3D
 	0x0015    Elevator <>
 	0x0016    Elevator 2 ^v
 	0x0017    Wood w/symbol
-	0x0018    *stone w/yellow stf
+	0x0018    stone w/yellow stf
 	0x0019    Purple w/blood
-	0x001a    *stone w/yellow2
+	0x001a    stone w/yellow2
 	0x001b    Grey stone 3
-	0x001c    *Grey stone w/signs
-	0x001D    *Tan design
-	0x001E    *Tan W blood
-	0x001F    *Tan W blood 2
-	0x0020    *Tan W blood 3
-	0x0021    *Wblock/Hitler
-	0x0022    *Blueblock/Face
-	0x0023    *White block
-	0x0024    *Bblock W symbol
-	0x0025    *Wblock W Bit
-	0x0026    *R/W/Y/bricks
-	0x0027    *Wbrick W crack
-	0x0028    *Blue Block
-	0x0029    *Blue stone/sign
-	0x002A    *Tan pannel
-	0x002B    *Wblock w map
-	0x002C    *Tan stone
-	0x002D    *Tan stone2
-	0x002E    *Tan pannel 2
-	0x002F    *Tan Pannel/flag
-	0x0030    *Plasterboard
-	0x0031    *Wblock w Pic
+	0x001c    Grey stone w/signs
+	0x001D    Tan design
+	0x001E    Tan W blood
+	0x001F    Tan W blood 2
+	0x0020    Tan W blood 3
+	0x0021    Wblock/Hitler
+	0x0022    Blueblock/Face
+	0x0023    White block
+	0x0024    Bblock W symbol
+	0x0025    Wblock W Bit
+	0x0026    R/W/Y/bricks
+	0x0027    Wbrick W crack
+	0x0028    Blue Block
+	0x0029    Blue stone/sign
+	0x002A    Tan pannel
+	0x002B    Wblock w map
+	0x002C    Tan stone
+	0x002D    Tan stone2
+	0x002E    Tan pannel 2
+	0x002F    Tan Pannel/flag
+	0x0030    Plasterboard
+	0x0031    Wblock w Pic
 	0x005a    Door
 	0x005b    Door
 	0x005c    Locked door
@@ -105,9 +109,13 @@ Codes for Wolfenstein 3D
 	0x008D    Area 8D
 	0x008E    Area 8E
 	0x008F    Area 8F
+	========  ====================
 
 The objects map has the following codes:
 
+	========  ====================
+	Byte      Object
+	========  ====================
 	0x0000    Nothing
 	0x0013    Start, face N
 	0x0014    Start, face E           
@@ -153,14 +161,14 @@ The objects map has the following codes:
 	0x003C    Well empty
 	0x003D    Blood
 	0x003E    Flag
-	0x003F    *Call Apogee
-	0x0040    *Trash 1
-	0x0041    *Trash 2
-	0x0042    *Trash 3
-	0x0043    *Pot/Pan Rack2
-	0x0044    *Oven
-	0x0045    *Spear Rack
-	0x0046    *Vines
+	0x003F    Call Apogee
+	0x0040    Trash 1
+	0x0041    Trash 2
+	0x0042    Trash 3
+	0x0043    Pot/Pan Rack2
+	0x0044    Oven
+	0x0045    Spear Rack
+	0x0046    Vines
 	0x005A    Move East
 	0x005B    Move North-East
 	0x005C    Move ^
@@ -179,14 +187,14 @@ The objects map has the following codes:
 	0x0071    Guard 1 ^ moving
 	0x0072    Guard 1 < moving
 	0x0073    Guard 1 v moving
-	0x0074    *W Guard 1 East
-	0x0075    *W Guard 1 ^
-	0x0076    *W Guard 1 <
-	0x0077    *W Guard 1 v
-	0x0078    *W Guard 1 > moving
-	0x0079    *W Guard 1 ^ moving
-	0x007A    *W Guard 1 < moving
-	0x007B    *W Guard 1 v moving
+	0x0074    W Guard 1 East
+	0x0075    W Guard 1 ^
+	0x0076    W Guard 1 <
+	0x0077    W Guard 1 v
+	0x0078    W Guard 1 > moving
+	0x0079    W Guard 1 ^ moving
+	0x007A    W Guard 1 < moving
+	0x007B    W Guard 1 v moving
 	0x007C    Dead guard
 	0x007E    Officer 1  East
 	0x007F    Officer 1  ^
@@ -208,15 +216,15 @@ The objects map has the following codes:
 	0x0095    Guard 2 ^ moving
 	0x0096    Guard 2 < moving
 	0x0097    Guard 2 v moving
-	0x0098    *W Guard 2 East
-	0x0099    *W Guard 2 ^
-	0x009A    *W Guard 2 <
-	0x009B    *W Guard 2 v
-	0x009C    *W Guard 2 East moving
-	0x009D    *W Guard 2 ^ moving
-	0x009E    *W Guard 2 < moving
-	0x009F    *W Guard 2 v moving
-	0x00A0    *Floating guy
+	0x0098    W Guard 2 East
+	0x0099    W Guard 2 ^
+	0x009A    W Guard 2 <
+	0x009B    W Guard 2 v
+	0x009C    W Guard 2 East moving
+	0x009D    W Guard 2 ^ moving
+	0x009E    W Guard 2 < moving
+	0x009F    W Guard 2 v moving
+	0x00A0    Floating guy
 	0x00A2    Officer 2 East
 	0x00A3    Officer 2 ^
 	0x00A4    Officer 2 <
@@ -229,8 +237,8 @@ The objects map has the following codes:
 	0x00AF    Dog 2 ^
 	0x00B0    Dog 2 <
 	0x00B1    Dog 2 v
-	0x00B2    *Robo Hitler
-	0x00B3    *General
+	0x00B2    Robo Hitler
+	0x00B3    General
 	0x00B4    Guard 3 East
 	0x00B5    Guard 3 ^
 	0x00B6    Guard 3 <
@@ -239,16 +247,16 @@ The objects map has the following codes:
 	0x00B9    Guard 3 ^ moving
 	0x00BA    Guard 3 < moving
 	0x00BB    Guard 3 v moving
-	0x00BC    *W Guard 3 East
-	0x00BD    *W Guard 3 ^
-	0x00BE    *W Guard 3 <
-	0x00BF    *W Guard 3 v
-	0x00C0    *W Guard 3 East moving
-	0x00C1    *W Guard 3 ^ moving
-	0x00C2    *W Guard 3 < moving
-	0x00C3    *W Guard 3 v moving
-	0x00C4    *Dr Schabbs
-	0x00C5    *BIG Guardet!
+	0x00BC    W Guard 3 East
+	0x00BD    W Guard 3 ^
+	0x00BE    W Guard 3 <
+	0x00BF    W Guard 3 v
+	0x00C0    W Guard 3 East moving
+	0x00C1    W Guard 3 ^ moving
+	0x00C2    W Guard 3 < moving
+	0x00C3    W Guard 3 v moving
+	0x00C4    Dr Schabbs
+	0x00C5    BIG Guardet!
 	0x00C6    Officer 3 East
 	0x00C7    Officer 3 ^
 	0x00C8    Officer 3 <
@@ -262,40 +270,44 @@ The objects map has the following codes:
 	0x00D4    Dog 3 <
 	0x00D5    Dog 3 v
 	0x00D6    Hans Grösse (boss)
-	0x00D7    *Big officer
-	0x00D8    *Zombie 1 East
-	0x00D9    *Zombie 1 ^
-	0x00DA    *Zombie 1 <
-	0x00DB    *Zombie 1 v
-	0x00DC    *Zombie 1 East
-	0x00DD    *Zombie 1 ^
-	0x00DE    *Zombie 1 <
-	0x00DF    *Zombie 1 v
+	0x00D7    Big officer
+	0x00D8    Zombie 1 East
+	0x00D9    Zombie 1 ^
+	0x00DA    Zombie 1 <
+	0x00DB    Zombie 1 v
+	0x00DC    Zombie 1 East
+	0x00DD    Zombie 1 ^
+	0x00DE    Zombie 1 <
+	0x00DF    Zombie 1 v
 	0x00E0    Blinky (red ghost)
 	0x00e1    Clyde (orange ghost
 	0x00E2    Pinky (pink ghost)
 	0x00E3    Inky (blue ghost)
-	0x00EA    *Zombie 2 East
-	0x00EB    *Zombie 2 ^
-	0x00EC    *Zombie 2 <
-	0x00ED    *Zombie 2 v
-	0x00EE    *Zombie 2 East
-	0x00EF    *Zombie 2 ^
-	0x00F0    *Zombie 2 <
-	0x00F1    *Zombie 2 v
-	0x00FC    *Zombie 3 East
-	0x00FD    *Zombie 3 ^
-	0x00FE    *Zombie 3 <
-	0x00FF    *Zombie 3 v
-	0x0100    *Zombie 3 East
-	0x0101    *Zombie 3 ^
-	0x0102    *Zombie 3 <
-	0x0103    *Zombie 3 v
+	0x00EA    Zombie 2 East
+	0x00EB    Zombie 2 ^
+	0x00EC    Zombie 2 <
+	0x00ED    Zombie 2 v
+	0x00EE    Zombie 2 East
+	0x00EF    Zombie 2 ^
+	0x00F0    Zombie 2 <
+	0x00F1    Zombie 2 v
+	0x00FC    Zombie 3 East
+	0x00FD    Zombie 3 ^
+	0x00FE    Zombie 3 <
+	0x00FF    Zombie 3 v
+	0x0100    Zombie 3 East
+	0x0101    Zombie 3 ^
+	0x0102    Zombie 3 <
+	0x0103    Zombie 3 v
+	========  ====================
 
 Codes for Spear of Destiny
 --------------------------
 Spear of destiny uses a slightly different table.
 
+	========  ====================
+	Byte      Object
+	========  ====================
 	0x0000    Nothing
 	0x0001    Grey stone 1
 	0x0002    Grey stone 2
@@ -409,9 +421,13 @@ Spear of destiny uses a slightly different table.
 	0x008D    Area 8D
 	0x008E    Area 8E
 	0x008F    Area 8F
+	========  ====================
 
 The objects map has the following codes:
 
+	========  ====================
+	Byte      Object
+	========  ====================
 	0x0000    Nothing
 	0x0013    Start, face north
 	0x0014    Start, face east
@@ -605,6 +621,7 @@ The objects map has the following codes:
 	0x0101    Zombie 3 ^ moving
 	0x0102    Zombie 3 < moving
 	0x0103    Zombie 3 v moving
+	========  ====================
 
 Ackgnowledgements
 -----------------
