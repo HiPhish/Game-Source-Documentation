@@ -2,12 +2,12 @@
 Map object codes
 ================
 
-The following is a list of words (two bytes) and their corresponding map objects.
-Some objects are walls and only used on the *Architecture* map, others are decoration
-objects and used on the *Objects* map. No two objects have the same byte even
-though they always appear on different maps. The list was adapted from the
-"MAPDATA.DEF" file of the *Nmap* editor by Nathan Lineback. See below for
-acknowledgements.
+The following is a list of words (two bytes) and their corresponding map
+objects.  Some objects are walls and only used on the *Architecture* map, others
+are decoration objects and used on the *Objects* map. No two objects have the
+same byte even though they always appear on different maps. The list was adapted
+from the "MAPDATA.DEF" file of the *Nmap* editor by Nathan Lineback. See below
+for acknowledgements.
 
 The codes are similar, but not exactly the same for Wolfenstein 3D and Spear of
 Destiny, so there are extra columns for the two of them. The SoD mission packs
