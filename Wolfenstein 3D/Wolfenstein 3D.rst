@@ -10,96 +10,43 @@ Analysing and documenting the source code workings of Wolfenstein 3D for DOS.
 .. contents:: Table of Contents
    :depth: 3
 
-Table of contents
-=================
-::
-
-	---
-	| |- Table of contents
-	| |- Conventions and nomenclature
-	| |- 2D or 3D
-	| |- Game versions and file extensions
-	|
-	- Part I - File formats
-	| |- Compression algorithms
-	| |  |- RLEW compression
-	| |  |- Carmack compression
-	| |  |- Huffman compression
-	| |
-	| |- Data files
-	|    |- Graphics
-	|    |  |- Pics
-	|    |  |- Sprites
-	|    |  |- Textures
-	|    |
-	|    |- Audio
-	|    |  |- Sound effects
-	|    |  |- Music
-	|    |
-	|    |- Maps
-	|       |- MAPHEAD
-	|       |- GAMEMAPS
-	|       |- Extracting the maps
-	|
-	- Part II - Game rules
-	| |- Mathematics
-	| |  |- Random numbers
-	| |
-	| |- Levels
-	| |- Doors
-	| |- Actors / Entities
-	| |  |- The actor structure
-	| |  |- Actor states
-	| |
-	| |- Combat
-	|
-	- Appendix
-	  |- Tables for actors
-	  |  |- List of actor classes and starting hit points
-	  |  |- List of state classes
-	  |  |- Table of actor states 
-	  |
-	  |- Known bugs and limitations
-	  |- References
-
 --------------------------------------------------------------------------------
 
 Conventions and nomenclature
 ============================
-Decimal integer numbers are given as regular numbers or rarely suffixed with
-"d", binary numbers are suffixed with *b* or prefixed with *0b*, octal numbers
-with *o* and hexadecimal numbers are either suffixed with *h* or prefixed with
-*0x* or *#*. Example::
+Decimal integer numbers are given as regular numbers, binary numbers are
+prefixed with *0b*, octal numbers with *0o* *o* and hexadecimal numbers are
+prefixed with *0x*. Example:
+.. code::
 
-	13 = 13d = 1011b = 15o = Dh = 0xD
+	13 = 0b1011 = 0o15 = 0xD
 
 All continuous numbers are written in the standard big-endian notation used in
 the English language. This means the left-most digit is the most significant one
-and a number like 1011b is computed as (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0).
+and a number like 0b1011 is computed as (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0).
 Multibyte numbers are given in little-endian notation and the bytes are
 seperated by whitespace charakters, thus the multibyte number 0x1A 0x3C
 corresponds to the hexadecimal number 0x3C1A or decimal 15386. If the endianness
-needs to be explicitly stated it will be given as (BE) for big-endian and as
+needs to be explicitly stated it will be noted as (BE) for big-endian and as
 (LE) for little-endian.
 
-Notes are written as ``//NOTE``, tasks are written as ``//TODO`` and bugs in the
-original implementation are written as ``//BUG``. This allows using the editor's
-search function to quickly jump to these points. An optional colon (:) can be
-suffixed, so make sure the editor ignores these.
+Notes are written as ``:NOTE:``, tasks are written as ``:TODO:`` and bugs in the
+original implementation are written as ``:BUG:``. This allows using the editor's
+search function to quickly jump to these points.
 
 Pseudocode is based on how C works, so if an integer is added to or subtracted
 from a pointer it means the pointer is advanced by the amount of bytes its value
-takes up. For instance, if `p` is a pointer to a word and a word is two bytes in
-size, then `p + 2` is a pointer that points four bytes (two words) further away
-from `p`. Variables in pseudocode are considered immutable, every arithmetic
-operation returns a copy. In the above example the pointer `p` would not
-advance, instead `p + 2` would be a new pointer. To mutate a variable use a verb
-such as *increment* or *advance*.
+takes up. For instance, if ``p`` is a pointer to a word and a word is two bytes
+in size, then ``p + 2`` is a pointer that points four bytes (two words) further
+away from ``p``. Variables in pseudocode are considered immutable, every
+arithmetic operation returns a copy. In the above example the pointer ``p`` would
+not advance, instead ``p + 2`` would be a new pointer. To mutate a variable use a
+verb such as *increment* or *advance*.
 
 Pointers and arrays are used more or less interchangably in the pseudocode as
 well. Usually when a pointer is described as a "sequence" of something it can be
-an array as well. Similarly, the square bracked notation `pointer[i]` means "the
-value of `pointer + i`". Whether the actual implementation uses pointers,
+an array as well. Similarly, the square bracked notation ``pointer[i]`` means "the
+value of ``pointer + i``". Whether the actual implementation uses pointers,
 arrays, vectors, linked lists of whatever is irrelevant.
 
 Data types
@@ -131,20 +78,20 @@ Game versions and file extensions
 The file extension of the data files depends on the version of the game. They
 are as follows:
 
-	=========  ================================
-	Extension  Version                         
-	=========  ================================
-	``WL1``    Shareware                       
-	``WL3``    Early three-episode full version
-	``WL6``    Six-episode full version        
-	``WJ1``    Japanese shareware?             
-	``WJ6``    Japanese full version?          
-	``SOD``    Spear of Destiny?               
-	``SDM``    ???                             
-	``SD1``    SoD M2: Return to Danger?       
-	``SD2``    SoD M3: Ultimate challenge      
-	``SD3``    ???                             
-	=========  ================================
+=========  ================================
+Extension  Version                         
+=========  ================================
+``WL1``    Shareware                       
+``WL3``    Early three-episode full version
+``WL6``    Six-episode full version        
+``WJ1``    Japanese shareware?             
+``WJ6``    Japanese full version?          
+``SOD``    Spear of Destiny?               
+``SDM``    ???                             
+``SD1``    SoD M2: Return to Danger?       
+``SD2``    SoD M3: Ultimate challenge      
+``SD3``    ???                             
+=========  ================================
 
 --------------------------------------------------------------------------------
 
@@ -160,11 +107,12 @@ the game uses them.
 RLEW compression
 ----------------
 A variant of RLE (Run Length Encoding) that uses words instead of bytes as the
-underlying unit. Repeating words are stored as a word triplet `(tag, count,
-word)` where `tag` is a constant word used to identify the triplet, `count` is
-how many times to copy the word and `word` is the word to copy. Aside from these
-triplets there are also uncompressed words that are copied verbatim. Here is the
-pseudocode::
+underlying unit. Repeating words are stored as a word triplet ``(tag, count,
+word)`` where ``tag`` is a constant word used to identify the triplet, ``count``
+is how many times to copy the word and ``word`` is the word to copy. Aside from
+these triplets there are also uncompressed words that are copied verbatim. Here
+is the pseudocode
+.. code::
 
 	Prerequisites: source      = pointer to the start of the compressed input stream
 	               destination = pointer to the start of the decompressed output stream
@@ -192,10 +140,10 @@ pseudocode::
 			2.3.2) Advance `read` and `write` by one word
 			2.3.3) Decrement `length` by one
 
-What about the word that's identical to `tag`? It will be compressed as `(tag,
-0x01 0x00, tag)`, i.e. copy the word `tag` one time. This is actually a
-threefold increase in data compared to the uncompressed version, but in practice
-this is a better solution than having special cases.
+What about the word that's identical to ``tag``? It will be compressed as
+``(tag, 0x01 0x00, tag)``, i.e. copy the word ``tag`` one time. This is actually
+a threefold increase in data compared to the uncompressed version, but in
+practice this is a better solution than having special cases.
 
 Carmack compression
 -------------------
@@ -215,26 +163,28 @@ Before we look at the pseudocode we need to understand the priciples first.
 
 Near pointers
 ~~~~~~~~~~~~~
-Near pointers are a sequence of three bytes `(count, 0xA7, offset)`. The first
+Near pointers are a sequence of three bytes ``(count, 0xA7, offset)``. The first
 byte tells us how many words to copy, it is an usingned 8-bit integer. The
 second byte is the tag and always 0xA7, it is used to identify a near pointer.
 The third byte is the unsigned 8-bit integer offset relative from the last
-written word to the word to copy. Take the following example::
+written word to the word to copy. Take the following example
+.. code::
 
 	// near pointer
 	02 A7 03
 	// already decompresssed data so far
 	0C 00 0A 00 CD AB 05 00 ??
 
-The `??` is the current position of the destination pointer; it points at memory
+The ``??`` is the current position of the destination pointer; it points at memory
 that has been allocated but not yet been written to, its content is at this
 point undefined. The near pointer tells us to copy two words (four bytes) from
-three words ago. The resulting output would then be::
+three words ago. The resulting output would then be
+.. code::
 
 	0C 00 0A 00 CD AB 05 00 0A 00 CD AB ??
 
 First a copy of the destination pointer (called *copy pointer*) is moved four
-words back, pointing at the byte `0A`. The byte pointed at by the copy pointer
+words back, pointing at the byte ``0A``. The byte pointed at by the copy pointer
 is copied to the value pointed at by the destination pointer and both pointers
 are incremented. This is repeated four times, at which point the copy pointer
 has reached the original position of the destination pointer.
@@ -242,16 +192,16 @@ has reached the original position of the destination pointer.
 Far pointers
 ~~~~~~~~~~~~
 The disadvantage of near pointers is that the offset is an 8-bit integer, so it
-can only reach 255 words back. Far pointers `(count 0xA8 low_offset
-high_offset)` use a 16-bit offset, so they take up one more bytes in memory. The
+can only reach 255 words back. Far pointers ``(count 0xA8 low_offset
+high_offset)`` use a 16-bit offset, so they take up one more bytes in memory. The
 offset is given relative to the start of the decompressed sequence, i.e. the
 first destination pointer. Aside from the offset they work the same as near
 pointers, their tag is 0xA8.
 
 Exception
 ~~~~~~~~~
-Words with a high byte (second byte) of `0xA7` or `0xA8` can be confused for
-pointers. In compressed form the low byte is replaced by the byte `0x00` and the
+Words with a high byte (second byte) of ``0xA7`` or ``0xA8`` can be confused for
+pointers. In compressed form the low byte is replaced by the byte ``0x00`` and the
 low bytes value is appened after the high byte. A count of 0 would make no sense
 for a pointer, so the algorithm can tell when an exception has occured. Since
 the low byte comes after the high byte the word is actually stored in big-endian
@@ -276,15 +226,16 @@ four for far pointers, and two for regular words.
 
 During each iteration step read a word. If the word's high byte (second byte) is
 neither the near- nor the far flag copy the word to the destination. If it's the
-near flag and the count is not 0x00 step `offset` words back through the
-decompressed data and copy `count` words from there to the decompressed data. If
-it's a far pointer and the count is not 0x00 copy `count` words `offset` words
+near flag and the count is not 0x00 step ``offset`` words back through the
+decompressed data and copy ``count`` words from there to the decompressed data. If
+it's a far pointer and the count is not 0x00 copy ``count`` words ``offset`` words
 from the start of the decompressed data. If the count is zero advance the
 pointer by one byte and copy the reversed word.
 
 Pseudocode
 ~~~~~~~~~~
-This pseudocode operates on words.::
+This pseudocode operates on words.
+.. code::
 
 	Constants: zero = 0x00
 	           near = 0xA7
@@ -343,7 +294,7 @@ Huffman tree stored as a flat array where each node consist of two words, and
 node number 255 (index 254) is always the root node. Here is how the nodes work:
 a byte called the *node value* is being kept track of, it is initially 254, the
 array position of the root node of the tree. From there the input of the
-compressed stream is being read bit-wise, if the bit is `0` the node value is
+compressed stream is being read bit-wise, if the bit is ``0`` the node value is
 set to the node's first word, otherwise to the node's second word. If the node
 value is less than 256 (i.e. within the value range of a byte) the node value
 is written as a byte and the node pointer is reset back to the root node.
@@ -358,7 +309,8 @@ as 0x01 and is bitewise ANDed with the input byte to decide which path down the
 tree to take. Afterwards the 1-bit of the masking byte is left-shifted by one to
 be able to examine the next input-bit. Once the mask byte reached 0x80 the
 masking bit is all the way to the left, so we need to reset it back to 0x01 and
-read the next input byte.::
+read the next input byte.
+.. code::
 
 	Constants: root = 254
 	
@@ -423,13 +375,13 @@ Pics
 ~~~~
 To extract pics three files are needed:
 
-	============   =========================================
-	File name      Purpose                                  
-	============   =========================================
-	``VGADICT``    Huffman-tree for decopressing the pics   
-	``VGAHEAD``    Headers describing where to find the pics
-	``VGAGRAPH``   Compressed pics lumped together          
-	============   =========================================
+============   =========================================
+File name      Purpose                                  
+============   =========================================
+``VGADICT``    Huffman-tree for decopressing the pics   
+``VGAHEAD``    Headers describing where to find the pics
+``VGAGRAPH``   Compressed pics lumped together          
+============   =========================================
 
 The pics are all Huffman-compressed, so first the Huffman tree has to be loaded.
 
@@ -475,10 +427,11 @@ compatible with multiple versions of the game at runtime.
 Using that number allocate space for an array of that many 32-bit integers and
 fill each one with the corresponding offset value. Beware that the offsets are
 stored in the file using only three bytes, not four. One exception is the number
-0x00FFFFFF or its corressponding byte sequence `FF FF FF` which gets mapped to
+0x00FFFFFF or its corressponding byte sequence ``FF FF FF`` which gets mapped to
 the offset -1. It does not appear in neither the registered six-episode release
 nor in the shareware release. I am not sure what the reason is here, but the
-original release has the following line in the `CA_FarRead` function::
+original release has the following line in the ``CA_FarRead`` function
+.. code::
 
 	if (length>0xffffl)
 		Quit ("CA_FarRead doesn't support 64K reads yet!");
@@ -490,7 +443,7 @@ Now we need to read the picture table, an array of widths and heights for the
 individual pics. Open the VGAGRAPH file and jump to the first offset. We can
 read the expanded length of the chunk in bytes as a signed 32 bit integer from
 the first four bytes. Now compute the compressed length of this first chunk in
- bytes by taking the offset to the next chunk, substracting the offset of the
+bytes by taking the offset to the next chunk, substracting the offset of the
 current chunk and subtracting four (the extpanded length). Now allocate enough
 bytes to hold that sequence and fill it with the first chunk minus the first
 four bytes. Allocate enough memory to hold the decompressed picture table and
@@ -511,9 +464,10 @@ Now we can expand the data. We need to know the expanded size of the chunk,
 which can be read from the compressed chunk: the first four bytes are a signed
 32-bit integer that tells us the size, so read it and advance the pointer by
 four bytes. There is an exception if the chumk number is greater or equal to
-`STARTTILE8` and less than `STARTEXTERNS`; I don't really understand what that
-is supposed to represent, but the size is hard coded in that case and the
-pointer is not advanced. Here it the code in question::
+``STARTTILE8`` and less than ``STARTEXTERNS``; I don't really understand what
+that is supposed to represent, but the size is hard coded in that case and the
+pointer is not advanced. Here it the code in question
+.. code::
 
 	if (chunk >= STARTTILE8 && chunk < STARTEXTERNS) {
 		// expanded sizes of tile8/16/32 are implicit
@@ -552,16 +506,17 @@ as a two-dimensional surface we also need the width and height from the picture
 table above.
 
 Given the size of the picture and a palette we can then assemble the image the
-following way::
+following way
+.. code::
 
 	rgb_pixel[i + j*width] = palette[vga_pixel[(j*(width>>2)+(i>>2))+(i&3)*(width>>2)*height]] 
 
-Here `rgb_pixel` is a linear array of output pixels starting in the top-left
-corner and growing width-first, height-second. `palette` is an array that maps a
-colpur index to an RGB colour value. `vga_pixel` is the array of picture pixels.
-The variables `i` and `j` stand for the current width and height while building
-the output image. The operators `>>` and `&` are bitwise right-shift and bitwise
-`AND` respectively.
+Here ``rgb_pixel`` is a linear array of output pixels starting in the top-left
+corner and growing width-first, height-second. ``palette`` is an array that maps
+a colpur index to an RGB colour value. ``vga_pixel`` is the array of picture
+pixels.  The variables ``i`` and ``j`` stand for the current width and height
+while building the output image. The operators ``>>`` and ``&`` are bitwise
+right-shift and bitwise ``AND`` respectively.
 
 I don't understand how or why pictures need to be "woven" in such a way, I
 assume it has to do with the way that the VGA standard works. Trying to order
@@ -607,11 +562,15 @@ non-empty column, and evey element in between belongs to the column after the
 previous one. All these offsets are relative to the beginning of the sprite, not
 the VSWAP file. method
 
-The number of instruction offsets can be computed as follows: `last_column - first_column + 1`. The index of the beginning of the pixel data within the sprite can thus be found as follows::
+The number of instruction offsets can be computed as follows: ``last_column -
+first_column + 1``. The index of the beginning of the pixel data within the
+sprite can thus be found as follows
+.. code::
 
 	(last_column - first_column + 1 + 2) * sizeof(word)
 
-Here is a schematic of a sprite chunk::
+Here is a schematic of a sprite chunk
+.. code::
 
 	W- first_column
 	|
@@ -625,29 +584,33 @@ Here is a schematic of a sprite chunk::
 	:
 	B- data
 
-A `W` means `word`, a `B` means `byte`, a `- ` means "is" and a `->` means
-"points to" or "is an offset to", offsets are relative to the beginnig of the
-chunk. The data stands to any remaing data that's in the sprite, regardless of
-what it represents. It is given in bytes, because that's how the pixels will be
-read, but the column instructions are three *words*, so take care to read three
-words or six bytes, not three bytes. method
+A ``W`` means ``word``, a ``B`` means ``byte``, a ``- `` means "is" and a ``->``
+means "points to" or "is an offset to", offsets are relative to the beginnig of
+the chunk. The data stands to any remaing data that's in the sprite, regardless
+of what it represents. It is given in bytes, because that's how the pixels will
+be read, but the column instructions are three *words*, so take care to read
+three words or six bytes, not three bytes. method
 
 To fill the image with pixels we fill the entire image with transparency (byte
-`0xFF`). Next we iterate over the non-empty columns. Here the variable `x` will
-refer to the index of the current column, it gives us the horizontal position of
-the pixel. The vertical position is derived from the drawing instructions: the
-first word divided by two is the lower starting point of the pixel sequence, the
-third word is the upper end point of the sequence (columns are drawn from bottom
-to top). If the first word is 0x0000 it means the end of the column has been
-reached and we can advance `x` to the next one. The middle word is used to
-reference which pixels to use, but oddly enough it is not necessary. method
+``0xFF``). Next we iterate over the non-empty columns. Here the variable ``x``
+will refer to the index of the current column, it gives us the horizontal
+position of the pixel. The vertical position is derived from the drawing
+instructions: the first word divided by two is the lower starting point of the
+pixel sequence, the third word is the upper end point of the sequence (columns
+are drawn from bottom to top). If the first word is 0x0000 it means the end of
+the column has been reached and we can advance ``x`` to the next one. The middle
+word is used to reference which pixels to use, but oddly enough it is not
+necessary. method
 
 All that's missing now is how which pixels to draw onto the sprite. Sprites use
 a sort of RLE-compression: in the compressed sprite data each byte after the
 instruction offsets is a pixel sequence and the n-th sequence belongs to the
 n-th instruction. The extents of the instruction tell us how many pixels from
 that sequence to draw. After an instruction has been executed move on to the
-next pixel. here is the pseudocode:: method
+next pixel. Here is the pseudocode
+
+code
+.. code::
 
 	constants: transparency = 0xFF
 	
@@ -676,7 +639,8 @@ of the word plus the current row as the offset from the beginning of the
 compressed chunk. As far as I can tell both ways yield the same result, so I
 don't know which one to prefer. If in doubt go with this one though, just in
 case that there is a weird exception somewhere out there. Here is the modified
-pseudocode from above:: method
+pseudocode from above
+.. code::
 
 	1) ...
 	1) ...
@@ -727,7 +691,8 @@ There are three types of sound effects: PC speaker, AdLib sound and digitised
 sound. Every sound effect exists in every format and they are stored in the same
 order, so the magic number of a sound effect needs to be mapped to the
 appropriate chunk. Given the number of sound effects, which is hard-coded, we
-can compute the starting offsets of a format the following way:: method
+can compute the starting offsets of a format the following way
+.. code::
 
 	start_pc    = 0 * number_of_sounds
 	start_adlib = 1 * number_of_sounds
@@ -737,14 +702,16 @@ can compute the starting offsets of a format the following way:: method
 To get the AdLib version of sound ``n`` we can thus compute its index as ``1 *
 number_of_sounds + n``. We can also see that the music chunks follow the sound
 effect chunks, and their amount is also hard-coded. We can thus compute the
-total number of chunk offsets as follows:: method
+total number of chunk offsets as follows
+.. code::
 
 	number_of_offsets = start_music + number_of_tracks + 1
 
-Where does that extra `1` come from? That's the offset to an imaginary chunk one
-past the last chunk. It does not exist, but it is necessary for computing the
-length of the last chunk. Computing the length of a chunk is done using the
-offset of the next chunk; for the i-th chunk that would be:: method
+Where does that extra ``1`` come from? That's the offset to an imaginary chunk
+one past the last chunk. It does not exist, but it is necessary for computing
+the length of the last chunk. Computing the length of a chunk is done using the
+offset of the next chunk; for the i-th chunk that would be
+.. code::
 
 	size[i] = offset[i+1] - offset[i]
 
@@ -758,8 +725,8 @@ AUDIOT
 This file is a container for various other files, stored as uncompressed chunks
 all lumped together. To find a particular chunk use its offset and size gotten
 from the *AUDIOHED* file. What to do with that chunk varies on a type-by-type
-basis. There are also tags of the form `!ID!` (`0x21 0x49 0x44 0x21`) the the
-end of each file format group, but they are skipped by the offsets anyway.
+basis. There are also tags of the form ``!ID!`` (``0x21 0x49 0x44 0x21``) the
+the end of each file format group, but they are skipped by the offsets anyway.
 method
 
 The AdLib sound effects and the music are stored in a format that has been
@@ -793,24 +760,25 @@ number of the sound effect.
 
 Each byte (unsigned 8-bit integer) of the audio data sequence represents a
 certain sound frequency measured in *Hz*. The frequency can be computed this
-way::
+way
+.. code::
 	
 	frequency = 1193181 / (value * 60)    // for value != 0
 	          = 0                         // for value == 0
 	
-The number `1193181` has the hexadecimal value `0x1234DD`. The refresh rate of
-the speaker is 140 Hz, so each instruction lasts (1/140) seconds. Also keep in
-mind that multiplying a byte value by 60 can exceed the range of an 8-bit
+The number ``1193181`` has the hexadecimal value ``0x1234DD``. The refresh rate
+of the speaker is 140 Hz, so each instruction lasts (1/140) seconds. Also keep
+in mind that multiplying a byte value by 60 can exceed the range of an 8-bit
 integer, so the computation has to be done at least using 16 bits.
 
-	============  ==========  ======================================
-	Data type     Name        Description                           
-	============  ==========  ======================================
-	Uint32        length      Length of sound data, chunk length - 7
-	Uint16        priority    Highter priority wins                 
-	Byte[length]  data        Actual audio data                     
-	Uint_8        terminator  Unused by the game                    
-	============  ==========  ======================================
+============  ==========  ======================================
+Data type     Name        Description                           
+============  ==========  ======================================
+Uint32        length      Length of sound data, chunk length - 7
+Uint16        priority    Highter priority wins                 
+Byte[length]  data        Actual audio data                     
+Uint_8        terminator  Unused by the game                    
+============  ==========  ======================================
 
 Interpreting the data
 """""""""""""""""""""
@@ -824,7 +792,8 @@ its [Wikipedia article](http://en.wikipedia.org/wiki/Pulse-width_modulation).
 
 Each byte tells us how long the the phase needs so be. First we read a byte and
 muliply its numeric value by 60 (hard-coded number). This lets us compute the
-length of the phase::
+length of the phase
+.. code::
 
 	tone         = input_byte * 60
 	phase_length = sample_rate * (tone / 1193181) * 1/2
@@ -846,7 +815,8 @@ between high and low volume at the half-point mark.
 
 Now it's time to write the sample bytes. How many samples should be written per
 byte depends on the selected sample rate as well as the original playback rate
-of 140Hz::
+of 140Hz
+.. code::
 
 	samples_per_byte = sample_rate / 140
 
@@ -857,7 +827,8 @@ the neutral sound (128) and keeps the tick counter at 0. The byte written is 128
 plus the volume level of the simulated speaker. This level can be chose
 arbitrarily, as long as it's less or equal to 127.
 
-Here is the pseudocode::
+Here is the pseudocode
+.. code::
 
 	Constants: base_timer = 1193181
 	           pcs_rate   =     140 (playback rate of PC speaker)
@@ -910,50 +881,52 @@ for the octave number and then the data bytes with the length from above.
 Finally we have a footer consisting of a terminator byte, not used by the game,
 and a null-terminated ASCII string for the file name, not used either.
 
-	============  ===========  ========================
-	Data type      Name        Description             
-	============  ===========  ========================
-	Uint32        length       Length of the sound data
-	Uint16        priority     Higher priority wins    
-	Byte[16]      instrument   Instrument settings     
-	Byte          octave       Octave to play notes at 
-	Byte[length]  data         Actual audio data       
-	Uint8         terminator   Unused by the game      
-	Char[]        file name    Null-terminated string  
-	============  ===========  ========================
+============  ===========  ========================
+Data type      Name        Description             
+============  ===========  ========================
+Uint32        length       Length of the sound data
+Uint16        priority     Higher priority wins    
+Byte[16]      instrument   Instrument settings     
+Byte          octave       Octave to play notes at 
+Byte[length]  data         Actual audio data       
+Uint8         terminator   Unused by the game      
+Char[]        file name    Null-terminated string  
+============  ===========  ========================
 
 The instrument settings are as follows:
 
-	=========  =======  ============  ==================================================
-	Data type  Name     OPL register  Description                                       
-	=========  =======  ============  ==================================================
-	Uint8      mChar    0x20          Modulator characteristics                         
-	Uint8      cChar    0x23          Carrier characteristics                           
-	Uint8      mScale   0x40          Modulator scale                                   
-	Uint8      cScale   0x43          Carrier scale                                     
-	Uint8      mAttack  0x60          Modulator attack/decay rate                       
-	Uint8      cAttack  0x63          Carrier attack/decay rate                         
-	Uint8      mSus     0x80          Modulator sustain                                 
-	Uint8      cSus     0x83          Carrier sustain                                   
-	Uint8      mWave    0xE0          Modulator waveform                                
-	Uint8      cWave    0xE3          Carrier waveform                                  
-	Uint8      nConn    0xC0          Feedback/connection (usually ignored and set to 0)
-	Uint8      voice    none          unused by game                                    
-	Uint8      mode     none          unused by game                                    
-	Uint8[3]   padding  none          pad instrument definition up to 16 bytes          
-	=========  =======  ============  ==================================================
+=========  =======  ============  ==================================================
+Data type  Name     OPL register  Description                                       
+=========  =======  ============  ==================================================
+Uint8      mChar    0x20          Modulator characteristics                         
+Uint8      cChar    0x23          Carrier characteristics                           
+Uint8      mScale   0x40          Modulator scale                                   
+Uint8      cScale   0x43          Carrier scale                                     
+Uint8      mAttack  0x60          Modulator attack/decay rate                       
+Uint8      cAttack  0x63          Carrier attack/decay rate                         
+Uint8      mSus     0x80          Modulator sustain                                 
+Uint8      cSus     0x83          Carrier sustain                                   
+Uint8      mWave    0xE0          Modulator waveform                                
+Uint8      cWave    0xE3          Carrier waveform                                  
+Uint8      nConn    0xC0          Feedback/connection (usually ignored and set to 0)
+Uint8      voice    none          unused by game                                    
+Uint8      mode     none          unused by game                                    
+Uint8[3]   padding  none          pad instrument definition up to 16 bytes          
+=========  =======  ============  ==================================================
 
 Sound effects are played on channel *0* because the other channels of the sound
 card are reserved for music; the replay rate is 140Hz. The octave value is
 written to AdLib register *0xB0* and it must be computed to following way to
-prevent it from interfering with other bits stored in the register::
+prevent it from interfering with other bits stored in the register
+.. code::
 
 	block = (octave & 7) << 2       // 7=00000111b
 	regB0 = block | other_fields
 
 The audio data consists oft he raw bytes to send to register *0xA0* and the byte
 *0x00* means silence. Silence can be achieved by setting the fifth bit
-(hexadecimal 0x20) to 0 in register 0xB0. Here is the pseudocode for playback::
+(hexadecimal 0x20) to 0 in register 0xB0. Here is the pseudocode for playback
+.. code::
 
 	Constants: `block`   = (octave & 7) << 2
 	           `note_on` = 0x20
@@ -1007,26 +980,38 @@ the list, i.e. the list is the very last chunk of the file.
 
 Music tracks
 ~~~~~~~~~~~~
-The music format is `WLF`, which is essentially type-1 `IMF` whith a playback
-rate of 700Hz instead of 560Hz. Here is a *WLF* file is composed:
+The music format is ``WLF``, which is essentially type-1 ``IMF`` whith a
+playback rate of 700Hz instead of 560Hz. Here is how a *WLF* file is composed:
 
-	============  ==========  ======================================
-	Type          Name        Description                           
-	============  ==========  ======================================
-	Uint16        length      Length of the sound data              
-	Byte[length]  sound data  The sound data to play                
-	Byte[]        metadata    Arbitrary metadata, unused by the game
-	============  ==========  ======================================
+============  ==========  ======================================
+Type          Name        Description                           
+============  ==========  ======================================
+Uint16        Length      Length of the sound data              
+Byte[length]  Sound data  The sound data to play                
+Byte[]        Metadata    Arbitrary metadata, unused by the game
+============  ==========  ======================================
 
 The sound data consists of byte quartets of the following form:
 
-	====  ==============
-	Type  Description   
-	====  ==============
-	Byte  AdLib register
-	Byte  AdLib data    
-	Word  Delay         
-	====  ==============
+====  ==============
+Type  Description   
+====  ==============
+Byte  AdLib register
+Byte  AdLib data    
+Word  Delay         
+====  ==============
+
+There is also an optional footer that contains metadata that will not be used
+for playback but can be used by an audio editor:
+
+========  =======  ==================================
+Type      Name     Description
+========  =======  ==================================
+Unint16	  ???      Unknown
+Char[16]  Title    Title of the song
+Char[64]  Remarks  Comments, usually source file name
+Char[6]   cProg    Unknown, maybe from the compiler
+========  =======  ==================================
 
 Levels & Maps
 -------------
@@ -1060,7 +1045,7 @@ MAPHEAD
 The file starts with the signature 16-bit integer 0xABCD (represented as 0xCD
 0xAB bytes in the file). This signature appears always to be the same, but we
 should not make any assumptions; it is used as the signature for the RLEW
-compression algorithm. The file is described by the structure `mapfiletype` in
+compression algorithm. The file is described by the structure ``mapfiletype`` in
 the original source code.
 
 Next are exactly 100 32-bit (4 Byte) signed integer values containing the header
@@ -1072,11 +1057,11 @@ as their value. This means the level offsets are stored in a 0-terminated 4-byte
 array with a fixed length of 100.
 
 The last remaining byte always appears to be be 0x00 and it's called the
-`tileinfo` in the original source code and is declared as an array of
-unspecified size of type `byte`. The type `byte`is a typedef for `unsigned char`
-and equal to an 8-bit integer on the target architecture of Wolfenstein 3D's
-original code. It appears to be a leftover from the map format of previous Id
-Software games that did use it.
+``tileinfo`` in the original source code and is declared as an array of
+unspecified size of type ``byte``. The type ``byte`` is a typedef for ``unsigned
+char`` and equal to an 8-bit integer on the target architecture of Wolfenstein
+3D's original code. It appears to be a leftover from the map format of previous
+Id Software games that did use it.
 
 Note that there is no information in this file as to how many levels there are
 in the game. This information would have to be calculated from the file's size
@@ -1084,13 +1069,13 @@ itself. To compute that number one would have to step through the list of header
 offsets until reaching the first offset that's 0x00000000 (start of the
 padding). The number of steps is equal to the number of levels.
 
-	=============  ==========  ==============================================
-	Name           Type        Description                                   
-	=============  ==========  ==============================================
-	Signature      Word        Used for RLEW decompression, usually 0xCD 0xAB
-	Header offset  Int32[100]  Offsets into the gamemaps file                
-	Tile info      Byte        Unused, usually 0x00                          
-	=============  ==========  ==============================================
+=============  ==========  ==============================================
+Name           Type        Description                                   
+=============  ==========  ==============================================
+Signature      Word        Used for RLEW decompression, usually 0xCD 0xAB
+Header offset  Int32[100]  Offsets into the gamemaps file                
+Tile info      Byte        Unused, usually 0x00                          
+=============  ==========  ==============================================
 
 GAMEMAPS
 ~~~~~~~~
@@ -1119,22 +1104,22 @@ level, in that order. The size appears to always be 64 x 64, but since it's not
 hardcoded it should not be assumed.
 
 Finally 16 characters, 8-bit ASCII each, form the level's name. In the original
-implementation the characters are stored in an array of type `char` with
+implementation the characters are stored in an array of type ``char`` with
 unspecified size. This is the standard way of storing ASCII strings in C, but
-the string needs to be terminated with `\0` (the null character). In the file
-any remaining bytes are filled with `\0`, but in the code there is nothing to
+the string needs to be terminated with ``\0`` (the null character). In the file
+any remaining bytes are filled with ``\0``, but in the code there is nothing to
 ensure that the string is indeed properly terminated, leaving a possibility for
 an error to happen.
 
-	==============  =========  =================================================================
-	Name            Type       Description                                                      
-	==============  =========  =================================================================
-	Map offset      Int32[3]   Offset of the three maps, absolute from the beginning of the file
-	Carmack length  Uint16[3]  Length of the Carmack-compressed map                             
-	Width           Uint16     Width of the level                                               
-	Height          Uint16     Height of the level                                              
-	Level name      Char[16]   Name of the level                                                
-	==============  =========  =================================================================
+==============  =========  =================================================================
+Name            Type       Description                                                      
+==============  =========  =================================================================
+Map offset      Int32[3]   Offset of the three maps, absolute from the beginning of the file
+Carmack length  Uint16[3]  Length of the Carmack-compressed map                             
+Width           Uint16     Width of the level                                               
+Height          Uint16     Height of the level                                              
+Level name      Char[16]   Name of the level                                                
+==============  =========  =================================================================
 
 The first word of a map is the most north-western tile, and each column is one
 more tile to the east, each row one tile to the south.
@@ -1149,7 +1134,7 @@ word, it is given in bytes. This means the pointer to the compressed sequence
 must be advanced by one before starting the decompression. For some reason the
 pointer to the Carmack-decompressed but still RLEW-compressed sequence must be
 advanced by one word as well; could be a leftover from a previous map format.
-The size of the uncompressed RLEW data is hardcoded as `64*64*2` bytes or 4096
+The size of the uncompressed RLEW data is hardcoded as ``64*64*2`` bytes or 4096
 words. Since the size is also stored in the map format it might be a better idea
 to use that value instead and allow levels of different size for mods. The RLEW
 tag can be found in the MAPHEAD file as described above.
@@ -1170,7 +1155,7 @@ rate of one ticks per frame or 70 frames per second.
 
 Mathematics
 ===========
-//TODO This whole section might be superfluous
+:TODO: This whole section might be superfluous
 To faithfully recreate the gameplay of Wolfenstein 3D one has to understand how
 the developers worked around the technical limitations of the original hardware.
 Even if we were to use proper modern techniques we should at least know under
@@ -1184,7 +1169,8 @@ which would have been too slow for gameplay. The solution was to use fixed-point
 arithmetic by using integers. That would give the programmers half the bits on
 both sides of the radix point. Truncating the fractional part of such a number
 can be done by right-shifting by half the type's size. Here is an example using
-a 32-bit integer::
+a 32-bit integer
+.. code::
 
 	| 2^n | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | -1 | -2 | -3 | -4 | -5 | -6 | -7 | -8 |
 	|-----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|----|
@@ -1202,21 +1188,22 @@ Enumerations and constants
 --------------------------
 The game has a number of hard-coded constants for gameplay.
 
-	==========  =======  ============  =====================================
-	Name        Type     Value         Description                          
-	==========  =======  ============  =====================================
-	FLOATTILE   Float    65536.0f      ???                                  
-	TILEGLOBAL  Integer  0x10000       ???                                  
-	HALFTILE    Integer  0x08000       0.5 as fixed-point decimal           
-	MINDIST     Integer  0x05800       ???                                  
-	STEP        Float    0.0078125f    How many degrees are one step        
-	STEPRAD     Float    0.000136354f  How many radians are one step        
-	MAX_GUARDS  Integer  255           Maximum number of enemies in the game
-	SPDPATROL   Integer  512           Patrolling speed of humans           
-	SPDDOG      Integer  1500          Patrolling speed of dogs              
-	==========  =======  ============  =====================================
+==========  =======  ============  =====================================
+Name        Type     Value         Description                          
+==========  =======  ============  =====================================
+FLOATTILE   Float    65536.0f      ???                                  
+TILEGLOBAL  Integer  0x10000       ???                                  
+HALFTILE    Integer  0x08000       0.5 as fixed-point decimal           
+MINDIST     Integer  0x05800       ???                                  
+STEP        Float    0.0078125f    How many degrees are one step        
+STEPRAD     Float    0.000136354f  How many radians are one step        
+MAX_GUARDS  Integer  255           Maximum number of enemies in the game
+SPDPATROL   Integer  512           Patrolling speed of humans           
+SPDDOG      Integer  1500          Patrolling speed of dogs              
+==========  =======  ============  =====================================
 
-These are the enumerations defined in the code::
+These are the enumerations defined in the code
+.. code::
 
 	quadrant    = {first, second, third, fourth}
 	direction_8 = {east, north_east, north, north_west, west, south_west, south, south_east}
@@ -1231,7 +1218,8 @@ Random numbers
 --------------
 Wolfenstein 3D does not have actual random numbers, instead it uses a table of
 256 of predefined numbers and picks one of them. The result is good enough to
-feel reasonably random to the player.::
+feel reasonably random to the player.
+.. code::
 
 	  0     8   109   220   222   241   149   107    75   248   254   140    16    66    74    21
  	211    47    80   242   154    27   205   128   161    89    77    36	 95   110    85    48
@@ -1253,25 +1241,27 @@ feel reasonably random to the player.::
 An usigned 32-bit integer is used as the index for for picking a number from the
 table. Initialising the table means setting the index to a number. It can be
 done in two ways, fixed and randomised. Fixed means simply setting it to 0;
-randomised means setting it to `time(NULL) & 0xFF` where `time()` is the C
+randomised means setting it to ``time(NULL) & 0xFF`` where ``time()`` is the C
 standard time function. The table is always randomised and it is initialised
 only once when the game starts.
 
 Retrieving a random number is done by incrementing the index and then ANDing it
-bitwise with `0xFF`, the the corresponding number is picked from the table.
+bitwise with ``0xFF``, the the corresponding number is picked from the table.
 
 Functions and macros
 --------------------
 There are a number of functions and macros defined. The first batch is standard
-stuff::
+stuff
+.. code::
 
 	max(x, y) : maximum of two numbers
 	abs(x)    : absolute value of a number
 
 The following are converting between world-space and tile-space; to understand
 them we need to know that positions are stored as 32-bit integers representing
-fixed-point decimals. Shifting a number by `TILESHIFT` (=16) left turns an
-integer into a decimal and shifting right turns a decimal into an integer.::
+fixed-point decimals. Shifting a number by ``TILESHIFT`` (=16) left turns an
+integer into a decimal and shifting right turns a decimal into an integer.
+.. code::
 
 	tile_to_pos(a) : converters tile coordinate to world coordinate
 	                 Make `a` into fixed-point, add `HALFTILE`
@@ -1288,35 +1278,36 @@ work around it. Angles are given in *steps* and can be converted to degree and
 radians. See the table of constatns for the conversion ratios. Here is the list
 of pre-defined angles in steps:
 
-	=======  =====
-	Degrees  Steps
-	=======  =====
-	    5        0
-	    1      128
-	    6      768
-	   15     1920
-	   22.5   2880
-	   30     3840
-	   45     5760
-	   67.5   8640
-	   90    11520
-	  112.5  14400
-	  135    17280
-	  157.5  20160
-	  180    32040
-	  202.5  25920
-	  225    28800
-	  247.5  31680
-	  270    34560
-	  292.5  37440
-	  315    40320
-	  337.5  43200
-	  360    46080
-	=======  =====
+=======  =====
+Degrees  Steps
+=======  =====
+    5        0
+    1      128
+    6      768
+   15     1920
+   22.5   2880
+   30     3840
+   45     5760
+   67.5   8640
+   90    11520
+  112.5  14400
+  135    17280
+  157.5  20160
+  180    32040
+  202.5  25920
+  225    28800
+  247.5  31680
+  270    34560
+  292.5  37440
+  315    40320
+  337.5  43200
+  360    46080
+=======  =====
 
 All of these numbers could be computed at runtime from one base value, but they
 were manually pre-computed and hard-coded. Conversion between steps and angles
-works as follows::
+works as follows
+.. code::
 
 	step_to_radian(a) = (`a` * PI) / `angle_180`
 	radian_to_step(a) = (`a` * `angle_180`) / PI
@@ -1330,7 +1321,8 @@ the result of the division itself a floating-point number.
 
 After defining these discrete angles we build tables of trigonometric values.
 The sine- cosine and tangent table simply hold the respective values for each
-angle. Finally we have a number of angle-related functions::
+angle. Finally we have a number of angle-related functions
+.. code::
 
 	normalize_angle(a) : convert any integer to a number between 0 and 360, in steps
 
@@ -1365,28 +1357,28 @@ Some objects only appear on harder difficulties than others.
 
 A level has the following members:
 
-	==============  ========================  ===============================================
-	Name            Type                      Description                                    
-	==============  ========================  ===============================================
-	Size X          Integer                   Horizontal size of the level                   
-	Size Y          Integer                   Vertical size of the level                     
-	File Name       Char[32]                  File name of the level                         
-	Architecture    Word[Size X * Size Y]     Architecture map                               
-	Objects         Word[Size X * Size Y]     Objects map                                    
-	Other           Word[Size X * Size Y]     Other map                                      
-	Tile Map        Int32[Size X * Size Y]    ?                                              
-	Spotvis         Byte[Size X * Size Y]     Unused                                         
-	Wall Texture X  Integer[Size X * Size Y]  Horizontal wall texture references             
-	Wall Texture Y  Integer[Size X * Size Y]  Horizontal wall texture references             
-	Areas           Integer[Size X * Size Y]  Area numbers                                   
-	Doors           Level Doors type          Doors of the level                             
-	Player Spawn    Place on Plane type       Spawning point for the player                  
-	Map Name        Char[128]                 Name of the map                                
-	Music Name      Char[128]                 Name of the music track to play                
-	Ceiling Colour  Colour3 type              Colour of the ceiling                          
-	Floor Colour    Colour3 type              Colour of the ceiling                          
-	Tile Seen       Byte[Size X * Size Y]     Whether a tile has ever been seen by the player
-	==============  ========================  ===============================================
+==============  ========================  ===============================================
+Name            Type                      Description                                    
+==============  ========================  ===============================================
+Size X          Integer                   Horizontal size of the level                   
+Size Y          Integer                   Vertical size of the level                     
+File Name       Char[32]                  File name of the level                         
+Architecture    Word[Size X * Size Y]     Architecture map                               
+Objects         Word[Size X * Size Y]     Objects map                                    
+Other           Word[Size X * Size Y]     Other map                                      
+Tile Map        Int32[Size X * Size Y]    ?                                              
+Spotvis         Byte[Size X * Size Y]     Unused                                         
+Wall Texture X  Integer[Size X * Size Y]  Horizontal wall texture references             
+Wall Texture Y  Integer[Size X * Size Y]  Horizontal wall texture references             
+Areas           Integer[Size X * Size Y]  Area numbers                                   
+Doors           Level Doors type          Doors of the level                             
+Player Spawn    Place on Plane type       Spawning point for the player                  
+Map Name        Char[128]                 Name of the map                                
+Music Name      Char[128]                 Name of the music track to play                
+Ceiling Colour  Colour3 type              Colour of the ceiling                          
+Floor Colour    Colour3 type              Colour of the ceiling                          
+Tile Seen       Byte[Size X * Size Y]     Whether a tile has ever been seen by the player
+==============  ========================  ===============================================
 
 The members *Size X* and *Size Y* are my additions. Originally the size of the
 level is hard-coded into the code and the arrays always have size 64 x 64. That
@@ -1404,13 +1396,13 @@ status.
 
 The *Place on Plane* type is defined as follows:
 
-	==========  =======
-	Name        Type   
-	==========  =======
-	Position X  Integer
-	Position Y  Integer
-	Angle       Integer
-	==========  =======
+==========  =======
+Name        Type   
+==========  =======
+Position X  Integer
+Position Y  Integer
+Angle       Integer
+==========  =======
 
 Loading a level
 ---------------
@@ -1422,7 +1414,8 @@ We start by looping over the level size. It does not matter whether we process
 the architecture- or objects map first, they are not dependent on each other.
 All map elements are words, so they will be compared to their numerical value
 here. Remember that multi-byte numbers are stored in little-endian order, so the
-word `0xCD 0xAB` has the numerical value `0xABCD`.::
+word ``0xCD 0xAB`` has the numerical value ``0xABCD``.
+.. code::
 
 	Constants: NUMBER_OF_AREAS = 37
 	           AMBUSH_TILE     = 0x6A
@@ -1453,16 +1446,18 @@ word `0xCD 0xAB` has the numerical value `0xABCD`.::
 		4.5) Else
 			4.5.1) Set level area of this tile to -3 // unknown area
 
-The numbers `0x0064` and `0x0065` stand for elevator doors. We also see that
+The numbers ``0x0064`` and ``0x0065`` stand for elevator doors. We also see that
 elevators are just special instances of walls. The index of a wall texture can
-be computed from the numerical value of the texture::
+be computed from the numerical value of the texture
+.. code::
 
 	texture_x = (numerical_value - 1) * 2 + 1
 	texture_y = (numerical_value - 1) * 2
 
 After initiating all the tiles we need to fix the unknown ares to prevent
 problems from occuring. To this end we attempt to connect every unknown area to
-an adjacent area.::
+an adjacent area.
+.. code::
 
 	Prerequisites: area = table of tile area numbers
 	
@@ -1476,7 +1471,8 @@ an adjacent area.::
 
 Finally, we must set up the areas of the doors. We will discuss doors later, but
 for now it's enough to know that each door has a member that tracks the area of
-either side of the door.::
+either side of the door.
+.. code::
 
 	Prerequisites: level_doors = Array of door structures for the current level
 	               level_areas = Array of the areas for the current level
@@ -1489,9 +1485,9 @@ either side of the door.::
 		2.1) Set the areas of the door to the areas north and south (in that order)
 		     If the area number is less than 0 set it to 0
 
-We can now set the ceiling colour to `0x38 0x38 0x38`, or a 32-bit RGBA colour
-of `(56 56 56 0)`, and the floor colour to `0x70 0x70 0x70`, or a 32-bit RGBA
-colour of `(112 112 112 0)`. These values are hard-coded in the original engine,
+We can now set the ceiling colour to ``0x38 0x38 0x38``, or a 32-bit RGBA colour
+of ``(56 56 56 0)``, and the floor colour to ``0x70 0x70 0x70``, or a 32-bit RGBA
+colour of ``(112 112 112 0)``. These values are hard-coded in the original engine,
 but oddly enough they are included in the map format of the iOS release at
 offset 10, first ceiling, then floor and both four bytes in length.
 
@@ -1502,30 +1498,30 @@ more than one of them per tile, and the level file format makes it even
 impossible, but there is nothing in the engine to prevent it either. The flags
 are as follows:
 
-	============  ======================
-	Flag          Description           
-	============  ======================
-	Wall          Solid wall            
-	Pushwall      Pushable secret wall  
-	Secret        ?                     
-	Dressing      Unused                
-	Blocking      Impassable obstacle   
-	Actor         ?                     
-	Dead Actor    ?                     
-	Powerup       Powerup to pick up    
-	Ambush        Ambush tile for actors
-	Exit          ?                     
-	Secret Level  ?                     
-	Elevator      Exit from this level  
-	East          Waypoint east         
-	North-East    Waypoint north-east   
-	North         Waypoint north        
-	North-West    Waypoint north-west   
-	West          Waypoint west         
-	South-West    Waypoint south-west   
-	South         Waypoint south        
-	South-East    Waypoint south-east   
-	============  ======================
+============  ======================
+Flag          Description           
+============  ======================
+Wall          Solid wall            
+Pushwall      Pushable secret wall  
+Secret        ?                     
+Dressing      Unused                
+Blocking      Impassable obstacle   
+Actor         ?                     
+Dead Actor    ?                     
+Powerup       Powerup to pick up    
+Ambush        Ambush tile for actors
+Exit          ?                     
+Secret Level  ?                     
+Elevator      Exit from this level  
+East          Waypoint east         
+North-East    Waypoint north-east   
+North         Waypoint north        
+North-West    Waypoint north-west   
+West          Waypoint west         
+South-West    Waypoint south-west   
+South         Waypoint south        
+South-East    Waypoint south-east   
+============  ======================
 
 The Dressing and Dead Actor flags are not used by the game, they might be
 leftovers from an earlier stage in development when Wolfenstein 3D was meant to
@@ -1578,15 +1574,15 @@ original source the graph is implemented as an adjacency matrix of type integer.
 
 To allow the player to hear sound we must keep track of which areas are
 connected to the player's current area. This is done via a list of boolean
-values where each list item stand for an area and the value is `true` if the
+values where each list item stand for an area and the value is ``true`` if the
 area is connected to and area that's connected to the player. The player's
 current area is always connected and the list gets updated every time a door
 opens and closes.
 
 Connecting and disconnecting areas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To connect two areas `a` and `b` increment the adjacency matrix entries `(a, b)`
-and `(b, a)`. We have to increment both entries because the graph is directed.
+To connect two areas ``a`` and ``b`` increment the adjacency matrix entries ``(a, b)``
+and ``(b, a)``. We have to increment both entries because the graph is directed.
 To disconnect areas decrement their entries instead. If two areas are connected
 by multiple doors the entries get incremented for every door, allowing them to
 grow beyond 1. This is necessary because enemies might open other doors on their
@@ -1601,12 +1597,14 @@ to all-false, except for the area the player starts in.
 Update connections
 ~~~~~~~~~~~~~~~~~~
 Whenever a door is opened or closed or the player moves to a new area we need to
-update the connections.::
+update the connections.
+.. code::
 
 	1) Set player area list to all-false, except for area of the player
 	2) Connect recursively to the player area
 
-Connecting recursively is done like this::
+Connecting recursively is done like this
+.. code::
 
 	Prerequisites: area = area to connect to
 	
@@ -1637,29 +1635,29 @@ Anatomy of a door
 ~~~~~~~~~~~~~~~~~
 A door is always in one of four states:
 
-	=======  ====================================================
-	State    Meaning                                             
-	=======  ====================================================
-	Closing  Has been open and is now in the process of closing  
-	Closed   Closed door                                         
-	Opening  Has been closed and is now in the process of opening
-	Open     Open door                                           
-	=======  ====================================================
+=======  ====================================================
+State    Meaning                                             
+=======  ====================================================
+Closing  Has been open and is now in the process of closing  
+Closed   Closed door                                         
+Opening  Has been closed and is now in the process of opening
+Open     Open door                                           
+=======  ====================================================
 
 There are several types of doors:
 
-	===================  ================  ======
-	Name                 Description       Number
-	===================  ================  ======
-	Normal vertical      Normal door          255
-	Normal horizontal    Normal door          254
-	Elevator vertical    Elevator door        253
-	Elevator horizontal  Elevator door        252
-	Gold vertical        Needs gold key       251
-	Gold horizontal      Needs gold key       240
-	Silver vertical      Needs silver key     249
-	Silver horizontal    Needs silver key     248
-	===================  ================  ======
+===================  ================  ======
+Name                 Description       Number
+===================  ================  ======
+Normal vertical      Normal door          255
+Normal horizontal    Normal door          254
+Elevator vertical    Elevator door        253
+Elevator horizontal  Elevator door        252
+Gold vertical        Needs gold key       251
+Gold horizontal      Needs gold key       240
+Silver vertical      Needs silver key     249
+Silver horizontal    Needs silver key     248
+===================  ================  ======
 
 A door has the following structure:
 
@@ -1678,7 +1676,8 @@ Integer     Texture     Texture of the door
 ==========  ==========  ================================
 
 Door textures are stored right after the regular wall textures. They are as
-follows in this order::
+follows in this order
+.. code::
 
 	regular_h, regular_v, plate_h, plate_v, elevator_h, elevator_v, locked_h, locked_v
 
@@ -1698,7 +1697,8 @@ Spawning a door
 ^^^^^^^^^^^^^^^
 Spawning a door is straight-forward: we take in the tile coordinates and the
 number of the door, we use that to set the door member and then we assign the
-door to the level's track-keeping.::
+door to the level's track-keeping.
+.. code::
 
 	Prerequisites: x = vertical tile postion
 	               y = horizontal tile postion
@@ -1715,7 +1715,8 @@ door to the level's track-keeping.::
 Setting door areas
 ^^^^^^^^^^^^^^^^^^
 After the doors have been spawned their areas need to be assigned, only then can
-the door let sound pass through.::
+the door let sound pass through.
+.. code::
 
 	Prerequisites: doors = list of doors in the level
 	               areas = table of areas in the level
@@ -1736,13 +1737,14 @@ the area indices east and west (or north and south) of the door.
 Managing doors
 ~~~~~~~~~~~~~~
 Now that we have set the doors up we can get to how to use them during play
-time. For to following routines the variable `door` will always be a
+time. For to following routines the variable ``door`` will always be a
 prerequisite and refer to the door we want to operate on.
 
 Changing the door state
 ^^^^^^^^^^^^^^^^^^^^^^^
 A door can be opened at any time unless it is already open, but a door can only
-close if it isn't blocked::
+close if it isn't blocked
+.. code::
 
 	Constants: FULLOPEN = 63
 	
@@ -1760,7 +1762,8 @@ touchscreen devices.
 
 Opening doors
 ^^^^^^^^^^^^^
-If the door is already open we reset its timer, otherwise we start opening it.::
+If the door is already open we reset its timer, otherwise we start opening it.
+.. code::
 
 	1) If the door's state is open
 		1.1) Set the door's ticcount to 0
@@ -1771,7 +1774,8 @@ If the door was already in the process of being opened this will have no effect.
 
 Can a door be closed?
 ^^^^^^^^^^^^^^^^^^^^^
-A door can only be closed if it wouldn't squish anyone in the process.::
+A door can only be closed if it wouldn't squish anyone in the process.
+.. code::
 
 	Constants: CLOSEWALL = 0x5800 // Space between wall & player
 	
@@ -1804,7 +1808,7 @@ entity is intesecting with the door tile.
 To this end we add (or subtract) the bounding radius from the entity's position
 on the coordinate axis in question. Then we convert this shifted postition to a
 tile coordinate and compare it with the door's tile coordinate. Remember that
-the integer value of `CLOSEWALL` is actually a fixed-point decimal number.
+the integer value of ``CLOSEWALL`` is actually a fixed-point decimal number.
 
 The check for actor's is more complicated than for the player, this is to
 prevent doing the more expenstive check on every actor in the level. Instead we
@@ -1816,8 +1820,9 @@ Is a door open?
 ^^^^^^^^^^^^^^^
 We return a number that tells us not only whether a door is open, but also *how
 far* open it is. A return value of 0 means the door is closed, a value of
-`FULLOPEN` means the door is fully open, any value in between is partially
-open.::
+``FULLOPEN`` means the door is fully open, any value in between is partially
+open.
+.. code::
 
 	Constants: FULLOPEN = 63
 	
@@ -1829,7 +1834,8 @@ open.::
 Trying to use a door
 ^^^^^^^^^^^^^^^^^^^^
 Regular doors and elvelator doors can always be opened, but locked doors require
-a key::
+a key
+.. code::
 
 	Prerequisites: information on what keys the player has collected so far
 	
@@ -1850,8 +1856,9 @@ Processing a door
 ^^^^^^^^^^^^^^^^^
 Doors are processed during every frame. We look at the state of each door and
 decide what to do. Doors are driven by time: unless the door is closed each time
-the `ticcount` is incremented until it has reached a certain point, and then the
-door does things on its own without outside input.::
+the ``ticcount`` is incremented until it has reached a certain point, and then the
+door does things on its own without outside input.
+.. code::
 
 	Prerequisites: ticks = ticks since last frame
 	
@@ -1916,7 +1923,7 @@ Push-walls
 Push-walls look like regular walls, but the player can interact with them to
 push them and reveal a secret. They are regular textured walls on the
 architecture map, the push-wall information is on the objects map as the word
-`0x0062`.
+``0x0062``.
 
 Pushwalls are rendered just like normal walls as long as they are not moving.
 Once they start moving they are no longer regular walls, we can imagine it as
@@ -1928,20 +1935,20 @@ Anatomy of a push-wall
 ~~~~~~~~~~~~~~~~~~~~~~
 A push-wall has the following members:
 
-	===============  ============  ==================================
-	Type             Name          Description                       
-	===============  ============  ==================================
-	Boolean          Active        Is the wall moving?               
-	Integer          Tiles Moved   How far have we moved (in tiles)? 
-	Integer          Points Moved  How far have we moved (in points)?
-	4-way direction  Direction     Direction to move in              
-	Integer          X             Tile of the push-wall             
-	Integer          Y             Tile of the push-wall             
-	Integer          Delta X       Offset in the direction           
-	Integer          Delta Y       Offset in the direction           
-	Integer          Texture X     Texture of the wall               
-	Integer          Texture Y     Texture of the wall               
-	===============  ============  ==================================
+===============  ============  ==================================
+Type             Name          Description                       
+===============  ============  ==================================
+Boolean          Active        Is the wall moving?               
+Integer          Tiles Moved   How far have we moved (in tiles)? 
+Integer          Points Moved  How far have we moved (in points)?
+4-way direction  Direction     Direction to move in              
+Integer          X             Tile of the push-wall             
+Integer          Y             Tile of the push-wall             
+Integer          Delta X       Offset in the direction           
+Integer          Delta Y       Offset in the direction           
+Integer          Texture X     Texture of the wall               
+Integer          Texture Y     Texture of the wall               
+===============  ============  ==================================
 
 The game only keeps track of one push-wall: the wall that's currently being in
 the process of moving, we'll call this object the *push-wall tracker*. This
@@ -1958,7 +1965,8 @@ Pushing push-walls
 ~~~~~~~~~~~~~~~~~~
 This is what happens when the player tries pushing a push-wall. We check to see
 if the tile behind the push-wall is free, then we mark the tile as a push-wall
-tile, block the tile behind and get ready to start moving the wall.::
+tile, block the tile behind and get ready to start moving the wall.
+.. code::
 
 	Prerequisites: x   = horizontal tile of the push-wall
 	               y   = vertical tile of the push-wall
@@ -1980,12 +1988,13 @@ tile, block the tile behind and get ready to start moving the wall.::
 	12) Set the tracker's textures to the textures of the wall
 
 A tile-delta is the difference (delta) of two tiles for each axis, meaning there
-is a `delta_x` and `delta_y`. The postition "behind" means behind the push-wall
+is a ``delta_x`` and ``delta_y``. The postition "behind" means behind the push-wall
 from the player's perspective in the direction of the delta.
 
 Processing push-walls
 ~~~~~~~~~~~~~~~~~~~~~
-Push-walls are processed every frame.::
+Push-walls are processed every frame.
+.. code::
 
 	1) If there is no active push-wall
 		1.1) Return
@@ -2027,67 +2036,67 @@ The actor structure
 -------------------
 An actor is define as a structure with the following members:
 
-	===========  ==============  ==================================
-	Type         Name            Description                       
-	===========  ==============  ==================================
-	Float        position_x      Horizontal position on the map    
-	Float        position_y      Vertical position on the map      
-	Integer      angle           Angle the actor is facing         
-	Integer      type            Class of the actor (e.g. guard)   
-	Integer      current_health  Current health of the actor       
-	Integer      maximum_health  Maximum health of the actor       
-	Integer      speed           Walking speed                     
-	Integer      tic_count       Timer driving the actions         
-	Integer      reaction        Reaction time for noticing player?
-	Integer      distance;       ???                               
-	Character    tile_x          Tile the actor is standing on     
-	Character    tile_y          Tile the actor is standing on     
-	Character    area_number     Area on the map                   
-	Integer      waitfordoor_x   // waiting on this door if non 0  
-	Integer      waitfordoor_y                                     
-	Actor_flags  flags 	         Various flags for game rules      
-	Actor_state  state           Currents state                    
-	Dir8type     direction       Direction to move into            
-	Integer      sprite          Sprite to display                 
-	===========  ==============  ==================================
+===========  ==============  ==================================
+Type         Name            Description                       
+===========  ==============  ==================================
+Float        position_x      Horizontal position on the map    
+Float        position_y      Vertical position on the map      
+Integer      angle           Angle the actor is facing         
+Integer      type            Class of the actor (e.g. guard)   
+Integer      current_health  Current health of the actor       
+Integer      maximum_health  Maximum health of the actor       
+Integer      speed           Walking speed                     
+Integer      tic_count       Timer driving the actions         
+Integer      reaction        Reaction time for noticing player?
+Integer      distance;       ???                               
+Character    tile_x          Tile the actor is standing on     
+Character    tile_y          Tile the actor is standing on     
+Character    area_number     Area on the map                   
+Integer      waitfordoor_x   // waiting on this door if non 0  
+Integer      waitfordoor_y                                     
+Actor_flags  flags 	         Various flags for game rules      
+Actor_state  state           Currents state                    
+Dir8type     direction       Direction to move into            
+Integer      sprite          Sprite to display                 
+===========  ==============  ==================================
 
-The type `actor_flags` is a combination of various options which can be either
+The type ``actor_flags`` is a combination of various options which can be either
 on or off.
 
-	===========  =======
-	Option       Meaning
-	===========  =======
-	Shootable    ?      
-	Bonus        ?      
-	Nevermark    ?      
-	Visable      ?      
-	Attackmode   ?      
-	Firstattack  ?      
-	Ambush       ?      
-	Nonmark      ?      
-	===========  =======
+===========  =======
+Option       Meaning
+===========  =======
+Shootable    ?      
+Bonus        ?      
+Nevermark    ?      
+Visable      ?      
+Attackmode   ?      
+Firstattack  ?      
+Ambush       ?      
+Nonmark      ?      
+===========  =======
 
 Starting hit points
 ~~~~~~~~~~~~~~~~~~~
 The starting hit points of an actor depend on the chosen game difficuly. The
 list can be found in the appendix, since it would be too large for this section.
-(//TODO)
+:TODO:
 
 
 Actor states
 ------------
 Each actor state uses the same basic state structure:
 
-	=======  ===========  =======================================================
-	Type     Name         Description                                            
-	=======  ===========  =======================================================
-	Boolean  can_rotate   ``true`` if actor has unique sprites for every rotation
-	Int      base_sprite  Base sprite for when facing the player                 
-	Int      timeout      Duration of the state until transiotiong to next state 
-	Think    thought      Function to call every frame during this state         
-	Think    action       Function to call when changing state                   
-	State    next_state   Next state to transition to naturally                  
-	=======  ===========  =======================================================
+=======  ===========  =======================================================
+Type     Name         Description                                            
+=======  ===========  =======================================================
+Boolean  can_rotate   ``true`` if actor has unique sprites for every rotation
+Int      base_sprite  Base sprite for when facing the player                 
+Int      timeout      Duration of the state until transiotiong to next state 
+Think    thought      Function to call every frame during this state         
+Think    action       Function to call when changing state                   
+State    next_state   Next state to transition to naturally                  
+=======  ===========  =======================================================
 
 The first member tells us wheter the actor has different sprites for rotation or
 if it is always facing the player; for example, guards have different directions
@@ -2101,8 +2110,9 @@ found using the base sprite and adding an appropiate offset to get the index of
 the proper sprite. The offset depends on the rotation of the actor relative to
 the player.
 
-The `think` type is a function pointer to a function that takes one actor as its
-argument, usually the actor calling it, and returns nothing::
+The ``think`` type is a function pointer to a function that takes one actor as its
+argument, usually the actor calling it, and returns nothing
+.. code::
 
 	typedef void (*think_t)( entity_t *self )
 
@@ -2150,8 +2160,9 @@ re-purposed.
 Changing state
 ~~~~~~~~~~~~~~
 To change the state of an actor set its state to the target state. If the state
-is the `remove` state set the `tic_count` to `0`, otherwise set it to the
-`timeout` of the target state.::
+is the ``remove`` state set the ``tic_count`` to ``0``, otherwise set it to the
+``timeout`` of the target state.
+.. code::
 
 	prerequisites: `actor`       = existing actor
 	               `target`      = target state
@@ -2168,8 +2179,9 @@ is the `remove` state set the `tic_count` to `0`, otherwise set it to the
 Actor routine
 ~~~~~~~~~~~~~
 The following routine if called every frame on every actor when processing
-actors (see below). The variable `ticks` measures the number of ticks that have
-passed since the last frame; for a 30 FPS game that wuld be two ticks.::
+actors (see below). The variable ``ticks`` measures the number of ticks that have
+passed since the last frame; for a 30 FPS game that wuld be two ticks.
+.. code::
 
 	prerequisites: `actor` = the actor to run the routine on
 	               `tics`  = ticks passed since last time
@@ -2218,7 +2230,8 @@ a corpse sprite in the game.
 
 Processing actors
 ~~~~~~~~~~~~~~~~~
-Pseudocode::
+Pseudocode
+.. code::
 
 	1) For each living (i.e. not dead) actor do the following
 		1.1) Run the actor routine on the current actor
@@ -2232,7 +2245,8 @@ Pseudocode::
 Rotating a sprite means taking the actor's angle and computing the closest
 direction. Each direction can be mapped to an integer number and this number is
 added to the index of the base sprite texture (the one facing the player). The
-mapping is as follows::
+mapping is as follows
+.. code::
 
 	r_add8dir[ 9 ] = { 4, 7, 6, 5, 0, 1, 2, 3, 0 };  // for rockets and hrockets
 	a_add8dir[ 9 ] = { 4, 5, 6, 7, 0, 1, 2, 3, 0 };  // for every other actor
@@ -2260,7 +2274,8 @@ sort of table and only one spawning function.
 Spawn general actor
 ^^^^^^^^^^^^^^^^^^^
 This function is called by other functions to spawn an actor in the world.
-Pseudocode::
+Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2281,7 +2296,8 @@ Pseudocode::
 Spawning standing actor
 ^^^^^^^^^^^^^^^^^^^^^^^
 This function spawns a regular still-standing actor. The actor can be either on
-guard or in ambush mode (deaf) Pseudocode::
+guard or in ambush mode (deaf) Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2302,7 +2318,8 @@ guard or in ambush mode (deaf) Pseudocode::
 
 Spawning patrolling actor
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-This function spawns a patrolling actor, dogs always patrol. Pseudocode::
+This function spawns a patrolling actor, dogs always patrol. Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2324,7 +2341,8 @@ This function spawns a patrolling actor, dogs always patrol. Pseudocode::
 
 Spawning dead actor
 ^^^^^^^^^^^^^^^^^^^
-Dead actors are special in that they have no direction to look at. Pseudocode::
+Dead actors are special in that they have no direction to look at. Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2341,7 +2359,8 @@ Dead actors are special in that they have no direction to look at. Pseudocode::
 
 Spawning boss actor
 ^^^^^^^^^^^^^^^^^^^
-The direction of bosses depend on the particular boss. Pseudocode::
+The direction of bosses depend on the particular boss. Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2366,7 +2385,8 @@ The direction of bosses depend on the particular boss. Pseudocode::
 
 Spawning ghost actor
 ^^^^^^^^^^^^^^^^^^^^
-This function spawns Pac-Man ghosts. Pseudocode::
+This function spawns Pac-Man ghosts. Pseudocode
+.. code::
 
 	prerequisites: `class` = actor class of the new actor
 	               `x`     = tile X-coordinate of the actor
@@ -2387,7 +2407,7 @@ Actor AI
 --------
 All the functions in this sub-section have an actor as a prerequisite. To save
 redundancy I will not list it as a prerequisite and I'll refer to it in the
-pseudocode as *the actor* or `actor`.
+pseudocode as *the actor* or ``actor``.
 
 General AI routines
 ~~~~~~~~~~~~~~~~~~~
@@ -2397,7 +2417,8 @@ functions, both AI routines and thoughts.
 Check Sight
 ^^^^^^^^^^^
 This routine scans the line of sight of the actor for the presence of the
-player. Pseudocode::
+player. Pseudocode
+.. code::
 
 	constants: `MINSIGHT` = 1.1 // below this distance the player is always noticed
 	
@@ -2419,7 +2440,8 @@ behind a door like in the title screen.
 First Sighting
 ^^^^^^^^^^^^^^
 This routine puts the actor into an attack state and makes it face the player.
-Pseudocode::
+Pseudocode
+.. code::
 
 	1) Play a sound and multiply the actor's `speed` by a factor
 	   Both depend on the actor's class, there is a table below
@@ -2434,35 +2456,35 @@ waiting is canacelled since the actor is now primarily concerned with killing
 the player, not opening a door. Here is the table with the sound effects and
 speed factors for the individual actor classes.
 
-	===========  =============  ===============
-	Actor class  Sound Number   Factor         
-	===========  =============  ===============
-	Guard                   1               * 3
-	Officer                71               * 5
-	SS                     15               * 4
-	Dog                     2               * 2
-	Hans                   71   = SPDPATROL * 3
-	Schabbs                65               * 3
-	Fake                   54               * 3
-	Mecha                  40               * 3
-	Hitler                 40               * 5
-	Mutant                                  * 3
-	Blinky                                  * 2
-	Clyde                                   * 2
-	Pinky                                   * 2
-	Inky                                    * 2
-	Gretel                112               * 3
-	Gift                   96               * 3
-	Fat                   102               * 3
-	                                           
-	Officer                43                  
-	Spectre                 3            =  800
-	Angel                  95            = 1536
-	Trans                  66            = 1536
-	Uber                                 = 3000
-	Will                   73            = 2048
-	Death                  85            = 2048
-	===========  =============  ===============
+===========  =============  ===============
+Actor class  Sound Number   Factor         
+===========  =============  ===============
+Guard                   1               * 3
+Officer                71               * 5
+SS                     15               * 4
+Dog                     2               * 2
+Hans                   71   = SPDPATROL * 3
+Schabbs                65               * 3
+Fake                   54               * 3
+Mecha                  40               * 3
+Hitler                 40               * 5
+Mutant                                  * 3
+Blinky                                  * 2
+Clyde                                   * 2
+Pinky                                   * 2
+Inky                                    * 2
+Gretel                112               * 3
+Gift                   96               * 3
+Fat                   102               * 3
+                                           
+Officer                43                  
+Spectre                 3            =  800
+Angel                  95            = 1536
+Trans                  66            = 1536
+Uber                                 = 3000
+Will                   73            = 2048
+Death                  85            = 2048
+===========  =============  ===============
 
 The officer has a different sound for Spear of Destiny, but the same speed.
 Speeds prepended with '=' are set to a fixed value. The ghosts and the
@@ -2472,7 +2494,8 @@ Find Target
 ^^^^^^^^^^^
 This routine is scanning the surroundings of the actor for the player. After the
 player has been spotted the actor will act surprised for a while and actios will
-be delayed; this is achieved by the actor's `reaction` member. Pseudocode::
+be delayed; this is achieved by the actor's ``reaction`` member. Pseudocode
+.. code::
 
 	returns: true if the player was detected, false otherwise
 	
@@ -2517,7 +2540,8 @@ player.
 Change Direction
 ^^^^^^^^^^^^^^^^
 This routine changes the direction an actor is facing, if that direction is a
-valid one.::
+valid one.
+.. code::
 
 	prerequisites: new_direction = direction for the actor to face
 	               level_data    = data of the current level
@@ -2554,12 +2578,13 @@ valid one.::
 	10) Return true
 
 Checking if another actor is occupying a tile is done by comparing the actor's
-tile coordinates `tile_x` and `tile_y` with the coordinates of the tile in
+tile coordinates ``tile_x`` and ``tile_y`` with the coordinates of the tile in
 question.
 
 Move
 ^^^^
-Pseudocode::
+Pseudocode
+.. code::
 
 	prerequisites: distance = the distance to move by
 	
@@ -2578,7 +2603,8 @@ Pseudocode::
 
 Advance
 ^^^^^^^
-Advances the actor. Pseudocode::
+Advances the actor. Pseudocode
+.. code::
 
 	prerequisites: thought = The thought to execute before advancing
 	
@@ -2608,7 +2634,8 @@ Dodge
 ^^^^^
 This routine advances the actor towards the player while trying to sidestep to
 dodge attacks. It does not actually move the player, it just selects which
-direction to face. Pseudocode::
+direction to face. Pseudocode
+.. code::
 
 	 1) Make new 8-way direction variable `turnaround`
 	 2) If the actor has the Firstattack flag set
@@ -2666,7 +2693,8 @@ code as it was written, since that is the behaviour the game shipped with.
 
 Chase
 ^^^^^
-This routine is similat to Dodge, but without the side stepping. Pseudocode::
+This routine is similat to Dodge, but without the side stepping. Pseudocode
+.. code::
 
 	 1) Make integer variables `delta_x` and `delta_y` and assign them the
 	    difference in tiles between the actor and the player
@@ -2714,7 +2742,8 @@ undefined and the actor can't move.
 
 Orientate
 ^^^^^^^^^
-This routine will change the direction of the actor if it is standing on a waypoint. Pseudocode::
+This routine will change the direction of the actor if it is standing on a waypoint. Pseudocode
+.. code::
 
 	1) If the position of the actor is on a map tile that's a waypoint
 		1.1) If the tile is an East tile
@@ -2742,7 +2771,8 @@ who are standing still.
 
 Path
 ^^^^
-This is the thought for actors patrolling on a path. Pseudocode::
+This is the thought for actors patrolling on a path. Pseudocode
+.. code::
 
 	1) If the result of running Find Target is true
 		1.1) Return
@@ -2757,7 +2787,8 @@ This is the thought for actors patrolling on a path. Pseudocode::
 
 Ghosts
 ^^^^^^
-Thought for ghost-type actors. Pseudocode::
+Thought for ghost-type actors. Pseudocode
+.. code::
 
 	1) If the `direction` of the actor is No Direction
 		1.1) Run the Chase AI routine on the actor
@@ -2778,54 +2809,55 @@ The following is a list of all types of actors defined in Wolfenstein 3D and
 their description, as well as their starting hit points for every dificulty.
 They are ordered by their appearance in the game.
 
-	=======  =================================  ====  ====  ======  ====
-	Name     Description                        Baby  Easy  Normal  Hard
-	=======  =================================  ====  ====  ======  ====
-	Guard    Brown guards                         25    25      25    25
-	Officer  White soldiers                       50    50      50    50
-	SS       Blue soldiers                       100   100     100   100
-	Dog      Shepherd dogs                         1     1       1     1
-	Hans     Hans Grosse                         850   950    1050  1200
-	Schabbs  Dr. Schabbs                         850   950    1550  2400
-	Fake     Fake Hitler                         200   300     400   500
-	Mecha    Mecha Hitler                        800   950    1050  1200
-	Hitler   Real Hitler                         500   700     800   900
-	Mutant   Mutant soldier                       45    55      55    65
-	Blinky   Red Pac-Man ghost                    25    25      25    25
-	Clyde    Orange Pac-Man ghost                 25    25      25    25
-	Pinky    Pink Pac-Man ghost                   25    25      25    25
-	Inky     Cyan Pac-Man ghost                   25    25      25    25
-	Gretel   Gretel Grosse                       850   950    1050  1200
-	Gift     Otto Gifmacher                      850   950    1050  1200
-	Fat      General Fettgesicht                 850   950    1050  1200
-	                                                                    
-	Needle   Syringe thrown by Schabbs             0     0       0     0
-	Fire     Fireball from Fake Hitler             0     0       0     0
-	Rocket   Some bosses have rocket launchers     0     0       0     0
-	Smoke    Smoke from rockets                    0     0       0     0
-	                                                                    
-	BJ       BJ doing the victory jump           100   100     100   100
-	=======  =================================  ====  ====  ======  ====
+=======  =================================  ====  ====  ======  ====
+Name     Description                        Baby  Easy  Normal  Hard
+=======  =================================  ====  ====  ======  ====
+Guard    Brown guards                         25    25      25    25
+Officer  White soldiers                       50    50      50    50
+SS       Blue soldiers                       100   100     100   100
+Dog      Shepherd dogs                         1     1       1     1
+Hans     Hans Grosse                         850   950    1050  1200
+Schabbs  Dr. Schabbs                         850   950    1550  2400
+Fake     Fake Hitler                         200   300     400   500
+Mecha    Mecha Hitler                        800   950    1050  1200
+Hitler   Real Hitler                         500   700     800   900
+Mutant   Mutant soldier                       45    55      55    65
+Blinky   Red Pac-Man ghost                    25    25      25    25
+Clyde    Orange Pac-Man ghost                 25    25      25    25
+Pinky    Pink Pac-Man ghost                   25    25      25    25
+Inky     Cyan Pac-Man ghost                   25    25      25    25
+Gretel   Gretel Grosse                       850   950    1050  1200
+Gift     Otto Gifmacher                      850   950    1050  1200
+Fat      General Fettgesicht                 850   950    1050  1200
+                                                                    
+Needle   Syringe thrown by Schabbs             0     0       0     0
+Fire     Fireball from Fake Hitler             0     0       0     0
+Rocket   Some bosses have rocket launchers     0     0       0     0
+Smoke    Smoke from rockets                    0     0       0     0
+                                                                    
+BJ       BJ doing the victory jump           100   100     100   100
+=======  =================================  ====  ====  ======  ====
 
 Spear of destiny adds the following actors as well:
 
-	=======  ================  ====  ====  ======  ====
-	Name     Description       Baby  Easy  Normal  Hard
-	=======  ================  ====  ====  ======  ====
-	Spark    ???                  0     0       0     0
-	hrocket  ???                  0     0       0     0
-	hsmoke   ???                  0     0       0     0
-	                                                   
-	Spectre  Spectre enemy       10    10      15    25
-	Angel    Angle of Death    1550  1550    1650  2000
-	Trans    Trans Grosse       950   950    1050  1200
-	Uber     Ubermutant        1150  1150    1250  1400
-	Will     Barnacle Wilhelm  1050  1050    1150  1300
-	Death    Death Knight      1350  1350    1450  1600
-	=======  ================  ====  ====  ======  ====
+=======  ================  ====  ====  ======  ====
+Name     Description       Baby  Easy  Normal  Hard
+=======  ================  ====  ====  ======  ====
+Spark    ???                  0     0       0     0
+hrocket  ???                  0     0       0     0
+hsmoke   ???                  0     0       0     0
+                                                   
+Spectre  Spectre enemy       10    10      15    25
+Angel    Angle of Death    1550  1550    1650  2000
+Trans    Trans Grosse       950   950    1050  1200
+Uber     Ubermutant        1150  1150    1250  1400
+Will     Barnacle Wilhelm  1050  1050    1150  1300
+Death    Death Knight      1350  1350    1450  1600
+=======  ================  ====  ====  ======  ====
 
 The mission packs introduce the following enemies:
 
+=====  =====================  ====  ====  ======  ====
 Name   Description            Baby  Easy  Normal  Hard
 =====  =====================  ====  ====  ======  ====
 Bat    Bats, replace mutants    10    10      15    25
@@ -2834,6 +2866,7 @@ Quark  Dr. Quarkblitz          950   950    1050  1200
 Axe    The Axe                1150  1150    1250  1400
 Robot  The Robot              1050  1050    1150  1300
 Devil  Devil Incarnate        1350  1350    1450  1600
+=====  =====================  ====  ====  ======  ====
 
 Due to the hardcoded nature of the Wolfenstein 3D engine all the enemies in the
 mission packs are just re-skins of enemies from Spear of Destiny, so their
@@ -2847,777 +2880,778 @@ necessary, but one has to make sure to keep the mapping scorrect.
 
 Standing still
 ~~~~~~~~~~~~~~
-	=====  =====
-	State  Index
-	=====  =====
-	stand      0
-	=====  =====
+=====  =====
+State  Index
+=====  =====
+stand      0
+=====  =====
 	
 Patrolling
 ~~~~~~~~~~
-	======  =====
-	State   Index
-	======  =====
-	path1       1
-	path1s      2
-	path2       3
-	path3       4
-	path3s      5
-	path4       6
-	======  =====
+======  =====
+State   Index
+======  =====
+path1       1
+path1s      2
+path2       3
+path3       4
+path3s      5
+path4       6
+======  =====
 	
 Paralysed in pain
 ~~~~~~~~~~~~~~~~~
-	=====  =====
-	State  Index
-	=====  =====
-	pain       7
-	pain1      8
-	=====  =====
+=====  =====
+State  Index
+=====  =====
+pain       7
+pain1      8
+=====  =====
 	
 Shooting
 ~~~~~~~~
-	======  =====
-	State   Index
-	======  =====
-	shoot1      9
-	shoot2     10
-	shoot3     11
-	shoot4     12
-	shoot5     13
-	shoot6     14
-	shoot7     15
-	shoot8     16
-	shoot9     17
-	======  =====
+======  =====
+State   Index
+======  =====
+shoot1      9
+shoot2     10
+shoot3     11
+shoot4     12
+shoot5     13
+shoot6     14
+shoot7     15
+shoot8     16
+shoot9     17
+======  =====
 	
 Chasing the player
 ~~~~~~~~~~~~~~~~~~
-	=======  =====
-	State    Index
-	=======  =====
-	chase1      18
-	chase1s     19
-	chase2      20
-	chase3      21
-	chase3s     22
-	chase4      23
-	=======  =====
+=======  =====
+State    Index
+=======  =====
+chase1      18
+chase1s     19
+chase2      20
+chase3      21
+chase3s     22
+chase4      23
+=======  =====
 	
 Dying
 ~~~~~
-	=====  =====
-	State  Index
-	=====  =====
-	die1      24
-	die2      25
-	die3      26
-	die4      27
-	die5      28
-	die6      29
-	die7      30
-	die8      31
-	die9      32
-	=====  =====
+=====  =====
+State  Index
+=====  =====
+die1      24
+die2      25
+die3      26
+die4      27
+die5      28
+die6      29
+die7      30
+die8      31
+die9      32
+=====  =====
 
 Being dead
 ~~~~~~~~~~
-	======  =====
-	State   Index
-	======  =====
-	dead       33
-	remove     34
-	======  =====
+======  =====
+State   Index
+======  =====
+dead       33
+remove     34
+======  =====
 
 A list of all actor states for each actor would be too large for this document,
-so it will have its own file. (//TODO)
+so it will have its own file.
+:TODO:
 
 Table of actor states
 ---------------------
 The following tables list the states for every actor class and state class. If a
 field is empty, then there is nothing defined for it. In the case of a function
-pointer it means the pointer is `NULL` and in the case of a sprite the sprite is
+pointer it means the pointer is ``NULL`` and in the case of a sprite the sprite is
 just some useless junk sprite.
 
 Guard
 ~~~~~
-	===========  ==========  ==============  =======  =======  ============  ==========
-	State        Can Rotate  Base Sprite     Timeout  Thought  Action        Next State
-	===========  ==========  ==============  =======  =======  ============  ==========
-	**stand**    true        SPR_GRD_S_1           0  Stand                  stand     
-	                                                                                   
-	**path1**    true        SPR_GRD_W1_1         20  Path                   path1s    
-	**path1s**   true        SPR_GRD_W1_1          5                         path2     
-	**path2**    true        SPR_GRD_W2_1         15  Path                   path3     
-	**path3**    true        SPR_GRD_W3_1         20  Path                   path3s    
-	**path3s**   true        SPR_GRD_W3_1          5                         path4     
-	**path4**    true        SPR_GRD_W4_1         15  Path                   path1     
-	                                                                                   
-	**pain**     false       SPR_GRD_PAIN_1       10                         chase1    
-	**pain1**    false       SPR_GRD_PAIN_2       10                         chase1    
-	                                                                                   
-	**shoot1**   false       SPR_GRD_SHOOT1       20                         shoot2    
-	**shoot2**   false       SPR_GRD_SHOOT2       20           Shoot         shoot3    
-	**shoot3**   false       SPR_GRD_SHOOT3       20                         chase1    
-	**shoot4**   false                             0                         chase1    
-	**shoot5**   false                             0                         chase1    
-	**shoot6**   false                             0                         chase1    
-	**shoot7**   false                             0                         chase1    
-	**shoot8**   false                             0                         chase1    
-	**shoot9**   false                             0                         chase1    
-	                                                                                   
-	**chase1**   true        SPR_GRD_W1_1         10  Chase                  chase1s   
-	**chase1s**  true        SPR_GRD_W1_1          3                         chase2    
-	**chase2**   true        SPR_GRD_W2_1          8  Chase                  chase3    
-	**chase3**   true        SPR_GRD_W3_1         10  Chase                  chase3s   
-	**chase3s**  true        SPR_GRD_W3_1          3                         chase4    
-	**chase4**   true        SPR_GRD_W4_1          8  Chase                  chase1    
-	                                                                                   
-	**die1**     false       SPR_GRD_DIE_1        15           Death Scream  die2      
-	**die2**     false       SPR_GRD_DIE_2        15                         die3      
-	**die3**     false       SPR_GRD_DIE_3        15                         dead      
-	**die4**     false                             0                         dead      
-	**die5**     false                             0                         dead      
-	**die6**     false                             0                         dead      
-	**die7**     false                             0                         dead      
-	**die8**     false                             0                         dead      
-	**die9**     false                             0                         dead      
-	                                                                                   
-	**dead**     false       SPR_GRD_DEAD          0                         dead      
-	===========  ==========  ==============  =======  =======  ============  ==========
+===========  ==========  ==============  =======  =======  ============  ==========
+State        Can Rotate  Base Sprite     Timeout  Thought  Action        Next State
+===========  ==========  ==============  =======  =======  ============  ==========
+**stand**    true        SPR_GRD_S_1           0  Stand                  stand     
+                                                                                   
+**path1**    true        SPR_GRD_W1_1         20  Path                   path1s    
+**path1s**   true        SPR_GRD_W1_1          5                         path2     
+**path2**    true        SPR_GRD_W2_1         15  Path                   path3     
+**path3**    true        SPR_GRD_W3_1         20  Path                   path3s    
+**path3s**   true        SPR_GRD_W3_1          5                         path4     
+**path4**    true        SPR_GRD_W4_1         15  Path                   path1     
+                                                                                   
+**pain**     false       SPR_GRD_PAIN_1       10                         chase1    
+**pain1**    false       SPR_GRD_PAIN_2       10                         chase1    
+                                                                                   
+**shoot1**   false       SPR_GRD_SHOOT1       20                         shoot2    
+**shoot2**   false       SPR_GRD_SHOOT2       20           Shoot         shoot3    
+**shoot3**   false       SPR_GRD_SHOOT3       20                         chase1    
+**shoot4**   false                             0                         chase1    
+**shoot5**   false                             0                         chase1    
+**shoot6**   false                             0                         chase1    
+**shoot7**   false                             0                         chase1    
+**shoot8**   false                             0                         chase1    
+**shoot9**   false                             0                         chase1    
+                                                                                   
+**chase1**   true        SPR_GRD_W1_1         10  Chase                  chase1s   
+**chase1s**  true        SPR_GRD_W1_1          3                         chase2    
+**chase2**   true        SPR_GRD_W2_1          8  Chase                  chase3    
+**chase3**   true        SPR_GRD_W3_1         10  Chase                  chase3s   
+**chase3s**  true        SPR_GRD_W3_1          3                         chase4    
+**chase4**   true        SPR_GRD_W4_1          8  Chase                  chase1    
+                                                                                   
+**die1**     false       SPR_GRD_DIE_1        15           Death Scream  die2      
+**die2**     false       SPR_GRD_DIE_2        15                         die3      
+**die3**     false       SPR_GRD_DIE_3        15                         dead      
+**die4**     false                             0                         dead      
+**die5**     false                             0                         dead      
+**die6**     false                             0                         dead      
+**die7**     false                             0                         dead      
+**die8**     false                             0                         dead      
+**die9**     false                             0                         dead      
+                                                                                   
+**dead**     false       SPR_GRD_DEAD          0                         dead      
+===========  ==========  ==============  =======  =======  ============  ==========
 
 
 Officer
 ~~~~~~~
-	===========  ==========  ==============  =======  =======  ============  ========
-	State        Can Rotate  Base Sprite     Timeout  Thought  Action        Next State
-	===========  ==========  ==============  =======  =======  ============  ========
-	**stand**    true        SPR_OFC_S_1           0  Stand                  stand     
-	                                                                                   
-	**path1**    true        SPR_OFC_W1_1         20  Path                   path1s    
-	**path1s**   true        SPR_OFC_W1_1          5                         path2     
-	**path2**    true        SPR_OFC_W2_1         15  Path                   path3     
-	**path3**    true        SPR_OFC_W3_1         20  Path                   path3s    
-	**path3s**   true        SPR_OFC_W3_1          5                         path4     
-	**path4**    true        SPR_OFC_W4_1         15  Path                   path1     
-	                                                                                   
-	**pain**     false       SPR_GRD_PAIN_1       10                         chase1    
-	**pain1**    false       SPR_GRD_PAIN_2       10                         chase1    
-	                                                                                   
-	**shoot1**   false       SPR_GRD_SHOOT1        6                         shoot2    
-	**shoot2**   false       SPR_GRD_SHOOT2       20           Shoot         shoot3    
-	**shoot3**   false       SPR_GRD_SHOOT3       10                         chase1    
-	**shoot4**   false                             0                         chase1    
-	**shoot5**   false                             0                         chase1    
-	**shoot6**   false                             0                         chase1    
-	**shoot7**   false                             0                         chase1    
-	**shoot8**   false                             0                         chase1    
-	**shoot9**   false                             0                         chase1    
-	                                                                                   
-	**chase1**   true        SPR_OFC_W1_1         10  Chase                  chase1s   
-	**chase1s**  true        SPR_OFC_W1_1          3                         chase2    
-	**chase2**   true        SPR_OFC_W2_1          8  Chase                  chase3    
-	**chase3**   true        SPR_OFC_W3_1         10  Chase                  chase3s   
-	**chase3s**  true        SPR_OFC_W3_1          3                         chase4    
-	**chase4**   true        SPR_OFC_W4_1          8  Chase                  chase1    
-	                                                                                   
-	**die1**     false       SPR_OFC_DIE_1        11           Death Scream  die2      
-	**die2**     false       SPR_OFC_DIE_2        11                         die3      
-	**die3**     false       SPR_OFC_DIE_3        11                         dead      
-	**die4**     false                             0                         dead      
-	**die5**     false                             0                         dead      
-	**die6**     false                             0                         dead      
-	**die7**     false                             0                         dead      
-	**die8**     false                             0                         dead      
-	**die9**     false                             0                         dead      
-	                                                                                   
-	**dead**     false       SPR_OFC_DEAD          0                         dead      
-	===========  ==========  ==============  =======  =======  ============  ========
+===========  ==========  ==============  =======  =======  ============  ========
+State        Can Rotate  Base Sprite     Timeout  Thought  Action        Next State
+===========  ==========  ==============  =======  =======  ============  ========
+**stand**    true        SPR_OFC_S_1           0  Stand                  stand     
+                                                                                   
+**path1**    true        SPR_OFC_W1_1         20  Path                   path1s    
+**path1s**   true        SPR_OFC_W1_1          5                         path2     
+**path2**    true        SPR_OFC_W2_1         15  Path                   path3     
+**path3**    true        SPR_OFC_W3_1         20  Path                   path3s    
+**path3s**   true        SPR_OFC_W3_1          5                         path4     
+**path4**    true        SPR_OFC_W4_1         15  Path                   path1     
+                                                                                   
+**pain**     false       SPR_GRD_PAIN_1       10                         chase1    
+**pain1**    false       SPR_GRD_PAIN_2       10                         chase1    
+                                                                                   
+**shoot1**   false       SPR_GRD_SHOOT1        6                         shoot2    
+**shoot2**   false       SPR_GRD_SHOOT2       20           Shoot         shoot3    
+**shoot3**   false       SPR_GRD_SHOOT3       10                         chase1    
+**shoot4**   false                             0                         chase1    
+**shoot5**   false                             0                         chase1    
+**shoot6**   false                             0                         chase1    
+**shoot7**   false                             0                         chase1    
+**shoot8**   false                             0                         chase1    
+**shoot9**   false                             0                         chase1    
+                                                                                   
+**chase1**   true        SPR_OFC_W1_1         10  Chase                  chase1s   
+**chase1s**  true        SPR_OFC_W1_1          3                         chase2    
+**chase2**   true        SPR_OFC_W2_1          8  Chase                  chase3    
+**chase3**   true        SPR_OFC_W3_1         10  Chase                  chase3s   
+**chase3s**  true        SPR_OFC_W3_1          3                         chase4    
+**chase4**   true        SPR_OFC_W4_1          8  Chase                  chase1    
+                                                                                   
+**die1**     false       SPR_OFC_DIE_1        11           Death Scream  die2      
+**die2**     false       SPR_OFC_DIE_2        11                         die3      
+**die3**     false       SPR_OFC_DIE_3        11                         dead      
+**die4**     false                             0                         dead      
+**die5**     false                             0                         dead      
+**die6**     false                             0                         dead      
+**die7**     false                             0                         dead      
+**die8**     false                             0                         dead      
+**die9**     false                             0                         dead      
+                                                                                   
+**dead**     false       SPR_OFC_DEAD          0                         dead      
+===========  ==========  ==============  =======  =======  ============  ========
 
 
 SS
 ~~~~
-	===========  ==========  =============  =======  =======  ============  ==========
-	State        Can Rotate  Base Sprite    Timeout  Thought  Action        Next State
-	===========  ==========  =============  =======  =======  ============  ==========
-	**stand**    true        SPR_SS_S_1           0  Stand                  stand     
-	                                                                                  
-	**path1**    true        SPR_SS_W1_1         20  Path                   path1s    
-	**path1s**   true        SPR_SS_W1_1          5                         path2     
-	**path2**    true        SPR_SS_W2_1         15  Path                   path3     
-	**path3**    true        SPR_SS_W3_1         20  Path                   path3s    
-	**path3s**   true        SPR_SS_W3_1          5                         path4     
-	**path4**    true        SPR_SS_W4_1         15  Path                   path1     
-	                                                                                  
-	**pain**     false       SPR_SS_PAIN_1       10                         chase1    
-	**pain1**    false       SPR_SS_PAIN_2       10                         chase1    
-	                                                                                  
-	**shoot1**   false       SPR_SS_SHOOT1       20                         shoot2    
-	**shoot2**   false       SPR_SS_SHOOT2       20           Shoot         shoot3    
-	**shoot3**   false       SPR_SS_SHOOT3       10                         chase1    
-	**shoot4**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
-	**shoot5**   false       SPR_SS_SHOOT3       10                         chase1    
-	**shoot6**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
-	**shoot7**   false       SPR_SS_SHOOT3       10                         chase1    
-	**shoot8**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
-	**shoot9**   false       SPR_SS_SHOOT3       10                         chase1    
-	                                                                                  
-	**chase1**   true        SPR_SS_W1_1         10  Chase                  chase1s   
-	**chase1s**  true        SPR_SS_W1_1          3                         chase2    
-	**chase2**   true        SPR_SS_W2_1          8  Chase                  chase3    
-	**chase3**   true        SPR_SS_W3_1         10  Chase                  chase3s   
-	**chase3s**  true        SPR_SS_W3_1          3                         chase4    
-	**chase4**   true        SPR_SS_W4_1          8  Chase                  chase1    
-	                                                                                  
-	**die1**     false       SPR_SS_DIE_1        15           Death Scream  die2      
-	**die2**     false       SPR_SS_DIE_2        15                         die3      
-	**die3**     false       SPR_SS_DIE_3        15                         dead      
-	**die4**     false                            0                         dead      
-	**die5**     false                            0                         dead      
-	**die6**     false                            0                         dead      
-	**die7**     false                            0                         dead      
-	**die8**     false                            0                         dead      
-	**die9**     false                            0                         dead      
-	                                                                                  
-	**dead**     false       SPR_SS_DEAD          0                         dead      
-	===========  ==========  =============  =======  =======  ============  ==========
+===========  ==========  =============  =======  =======  ============  ==========
+State        Can Rotate  Base Sprite    Timeout  Thought  Action        Next State
+===========  ==========  =============  =======  =======  ============  ==========
+**stand**    true        SPR_SS_S_1           0  Stand                  stand     
+                                                                                  
+**path1**    true        SPR_SS_W1_1         20  Path                   path1s    
+**path1s**   true        SPR_SS_W1_1          5                         path2     
+**path2**    true        SPR_SS_W2_1         15  Path                   path3     
+**path3**    true        SPR_SS_W3_1         20  Path                   path3s    
+**path3s**   true        SPR_SS_W3_1          5                         path4     
+**path4**    true        SPR_SS_W4_1         15  Path                   path1     
+                                                                                  
+**pain**     false       SPR_SS_PAIN_1       10                         chase1    
+**pain1**    false       SPR_SS_PAIN_2       10                         chase1    
+                                                                                  
+**shoot1**   false       SPR_SS_SHOOT1       20                         shoot2    
+**shoot2**   false       SPR_SS_SHOOT2       20           Shoot         shoot3    
+**shoot3**   false       SPR_SS_SHOOT3       10                         chase1    
+**shoot4**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
+**shoot5**   false       SPR_SS_SHOOT3       10                         chase1    
+**shoot6**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
+**shoot7**   false       SPR_SS_SHOOT3       10                         chase1    
+**shoot8**   false       SPR_SS_SHOOT2       10           Shoot         chase1    
+**shoot9**   false       SPR_SS_SHOOT3       10                         chase1    
+                                                                                  
+**chase1**   true        SPR_SS_W1_1         10  Chase                  chase1s   
+**chase1s**  true        SPR_SS_W1_1          3                         chase2    
+**chase2**   true        SPR_SS_W2_1          8  Chase                  chase3    
+**chase3**   true        SPR_SS_W3_1         10  Chase                  chase3s   
+**chase3s**  true        SPR_SS_W3_1          3                         chase4    
+**chase4**   true        SPR_SS_W4_1          8  Chase                  chase1    
+                                                                                  
+**die1**     false       SPR_SS_DIE_1        15           Death Scream  die2      
+**die2**     false       SPR_SS_DIE_2        15                         die3      
+**die3**     false       SPR_SS_DIE_3        15                         dead      
+**die4**     false                            0                         dead      
+**die5**     false                            0                         dead      
+**die6**     false                            0                         dead      
+**die7**     false                            0                         dead      
+**die8**     false                            0                         dead      
+**die9**     false                            0                         dead      
+                                                                                  
+**dead**     false       SPR_SS_DEAD          0                         dead      
+===========  ==========  =============  =======  =======  ============  ==========
 
 
 Dog
 ~~~~
 Dogs have no pain because they have only one hit point.
 
-	===========  ==========  =============  =======  =======  ============  ==========
-	State        Can Rotate  Base Sprite    Timeout  Thought  Action        Next State
-	===========  ==========  =============  =======  =======  ============  ==========
-	**stand**    false                            0                         stand     
-	                                                                                  
-	**path1**    true        SPR_DOG_W1_1        20  Path                   path1s    
-	**path1s**   true        SPR_DOG_W1_1         5                         path2     
-	**path2**    true        SPR_DOG_W2_1        15  Path                   path3     
-	**path3**    true        SPR_DOG_W3_1        20  Path                   path3s    
-	**path3s**   true        SPR_DOG_W3_1         5                         path4     
-	**path4**    true        SPR_DOG_W4_1        15  Path                   path1     
-	                                                                                  
-	**pain**     false                           10                         chase1    
-	**pain1**    false                           10                         chase1    
-	                                                                                  
-	**shoot1**   false       SPR_DOG_JUMP1       20                         shoot2    
-	**shoot2**   false       SPR_DOG_JUMP2       20           Shoot         shoot3    
-	**shoot3**   false       SPR_DOG_JUMP3       10                         chase1    
-	**shoot4**   false       SPR_DOG_JUMP2       10           Shoot         chase1    
-	**shoot5**   false       SPR_DOG_W1_1        10                         chase1    
-	**shoot6**   false                           10           Shoot         chase1    
-	**shoot7**   false                           10                         chase1    
-	**shoot8**   false                           10           Shoot         chase1    
-	**shoot9**   false                           10                         chase1    
-	                                                                                  
-	**chase1**   true        SPR_DOG_W1_1        10  Chase                  chase1s   
-	**chase1s**  true        SPR_DOG_W1_1         3                         chase2    
-	**chase2**   true        SPR_DOG_W2_1         8  Chase                  chase3    
-	**chase3**   true        SPR_DOG_W3_1        10  Chase                  chase3s   
-	**chase3s**  true        SPR_DOG_W3_1         3                         chase4    
-	**chase4**   true        SPR_DOG_W4_1         8  Chase                  chase1    
-	                                                                                  
-	**die1**     false       SPR_DOG_DIE_1       15           Death Scream  die2      
-	**die2**     false       SPR_DOG_DIE_2       15                         die3      
-	**die3**     false       SPR_DOG_DIE_3       15                         dead      
-	**die4**     false                            0                         dead      
-	**die5**     false                            0                         dead      
-	**die6**     false                            0                         dead      
-	**die7**     false                            0                         dead      
-	**die8**     false                            0                         dead      
-	**die9**     false                            0                         dead      
-	                                                                                  
-	**dead**     false       SPR_DOG_DEAD         0                         dead      
-	===========  ==========  =============  =======  =======  ============  ==========
+===========  ==========  =============  =======  =======  ============  ==========
+State        Can Rotate  Base Sprite    Timeout  Thought  Action        Next State
+===========  ==========  =============  =======  =======  ============  ==========
+**stand**    false                            0                         stand     
+                                                                                  
+**path1**    true        SPR_DOG_W1_1        20  Path                   path1s    
+**path1s**   true        SPR_DOG_W1_1         5                         path2     
+**path2**    true        SPR_DOG_W2_1        15  Path                   path3     
+**path3**    true        SPR_DOG_W3_1        20  Path                   path3s    
+**path3s**   true        SPR_DOG_W3_1         5                         path4     
+**path4**    true        SPR_DOG_W4_1        15  Path                   path1     
+                                                                                  
+**pain**     false                           10                         chase1    
+**pain1**    false                           10                         chase1    
+                                                                                  
+**shoot1**   false       SPR_DOG_JUMP1       20                         shoot2    
+**shoot2**   false       SPR_DOG_JUMP2       20           Shoot         shoot3    
+**shoot3**   false       SPR_DOG_JUMP3       10                         chase1    
+**shoot4**   false       SPR_DOG_JUMP2       10           Shoot         chase1    
+**shoot5**   false       SPR_DOG_W1_1        10                         chase1    
+**shoot6**   false                           10           Shoot         chase1    
+**shoot7**   false                           10                         chase1    
+**shoot8**   false                           10           Shoot         chase1    
+**shoot9**   false                           10                         chase1    
+                                                                                  
+**chase1**   true        SPR_DOG_W1_1        10  Chase                  chase1s   
+**chase1s**  true        SPR_DOG_W1_1         3                         chase2    
+**chase2**   true        SPR_DOG_W2_1         8  Chase                  chase3    
+**chase3**   true        SPR_DOG_W3_1        10  Chase                  chase3s   
+**chase3s**  true        SPR_DOG_W3_1         3                         chase4    
+**chase4**   true        SPR_DOG_W4_1         8  Chase                  chase1    
+                                                                                  
+**die1**     false       SPR_DOG_DIE_1       15           Death Scream  die2      
+**die2**     false       SPR_DOG_DIE_2       15                         die3      
+**die3**     false       SPR_DOG_DIE_3       15                         dead      
+**die4**     false                            0                         dead      
+**die5**     false                            0                         dead      
+**die6**     false                            0                         dead      
+**die7**     false                            0                         dead      
+**die8**     false                            0                         dead      
+**die9**     false                            0                         dead      
+                                                                                  
+**dead**     false       SPR_DOG_DEAD         0                         dead      
+===========  ==========  =============  =======  =======  ============  ==========
 
 Hans Grosse
 ~~~~~~~~~~~
 Hans has no pain and no patrol.
 
-	===========  ==========  ===============  =======  =======  ===============  ==========
-	State        Can Rotate  Base Sprite      Timeout  Thought  Action           Next State
-	===========  ==========  ===============  =======  =======  ===============  ==========
-	**stand**    true        SPR_BOSS_W1            0  Stand                     stand     
-	                                                                                       
-	**path1**    true                               0  Path                      path1s    
-	**path1s**   true                               0                            path2     
-	**path2**    true                               0  Path                      path3     
-	**path3**    true                               0  Path                      path3s    
-	**path3s**   true                               0                            path4     
-	**path4**    true                               0  Path                      path1     
-	                                                                                       
-	**pain**     false                              0                            chase1    
-	**pain1**    false                              0                            chase1    
-	                                                                                       
-	**shoot1**   false       SPR_BOSS_SHOOT1       30                            shoot2    
-	**shoot2**   false       SPR_BOSS_SHOOT2       10           Shoot            shoot3    
-	**shoot3**   false       SPR_BOSS_SHOOT3       10           Shoot            chase4    
-	**shoot4**   false       SPR_BOSS_SHOOT2       10           Shoot            chase5    
-	**shoot5**   false       SPR_BOSS_SHOOT3       10           Shoot            chase6    
-	**shoot6**   false       SPR_BOSS_SHOOT2       10           Shoot            chase7    
-	**shoot7**   false       SPR_BOSS_SHOOT3       10           Shoot            chase8    
-	**shoot8**   false       SPR_BOSS_SHOOT1       10                            chase1    
-	**shoot9**   false                              0                            chase1    
-	                                                                                       
-	**chase1**   true        SPR_BOSS_W1           10  Chase                     chase1s   
-	**chase1s**  true        SPR_BOSS_W1            3                            chase2    
-	**chase2**   true        SPR_BOSS_W2            8  Chase                     chase3    
-	**chase3**   true        SPR_BOSS_W3           10  Chase                     chase3s   
-	**chase3s**  true        SPR_BOSS_W3            3                            chase4    
-	**chase4**   true        SPR_BOSS_W4            8  Chase                     chase1    
-	                                                                                       
-	**die1**     false       SPR_BOSS_DIE_1        15           Death Scream     die2      
-	**die2**     false       SPR_BOSS_DIE_2        15                            die3      
-	**die3**     false       SPR_BOSS_DIE_3        15                            dead      
-	**die4**     false                              0                            dead      
-	**die5**     false                              0                            dead      
-	**die6**     false                              0                            dead      
-	**die7**     false                              0                            dead      
-	**die8**     false                              0                            dead      
-	**die9**     false                              0                            dead      
-	                                                                                       
-	**dead**     false       SPR_BOSS_DEAD          0           Start Death Cam  dead      
-	===========  ==========  ===============  =======  =======  ===============  ==========
+===========  ==========  ===============  =======  =======  ===============  ==========
+State        Can Rotate  Base Sprite      Timeout  Thought  Action           Next State
+===========  ==========  ===============  =======  =======  ===============  ==========
+**stand**    true        SPR_BOSS_W1            0  Stand                     stand     
+                                                                                       
+**path1**    true                               0  Path                      path1s    
+**path1s**   true                               0                            path2     
+**path2**    true                               0  Path                      path3     
+**path3**    true                               0  Path                      path3s    
+**path3s**   true                               0                            path4     
+**path4**    true                               0  Path                      path1     
+                                                                                       
+**pain**     false                              0                            chase1    
+**pain1**    false                              0                            chase1    
+                                                                                       
+**shoot1**   false       SPR_BOSS_SHOOT1       30                            shoot2    
+**shoot2**   false       SPR_BOSS_SHOOT2       10           Shoot            shoot3    
+**shoot3**   false       SPR_BOSS_SHOOT3       10           Shoot            chase4    
+**shoot4**   false       SPR_BOSS_SHOOT2       10           Shoot            chase5    
+**shoot5**   false       SPR_BOSS_SHOOT3       10           Shoot            chase6    
+**shoot6**   false       SPR_BOSS_SHOOT2       10           Shoot            chase7    
+**shoot7**   false       SPR_BOSS_SHOOT3       10           Shoot            chase8    
+**shoot8**   false       SPR_BOSS_SHOOT1       10                            chase1    
+**shoot9**   false                              0                            chase1    
+                                                                                       
+**chase1**   true        SPR_BOSS_W1           10  Chase                     chase1s   
+**chase1s**  true        SPR_BOSS_W1            3                            chase2    
+**chase2**   true        SPR_BOSS_W2            8  Chase                     chase3    
+**chase3**   true        SPR_BOSS_W3           10  Chase                     chase3s   
+**chase3s**  true        SPR_BOSS_W3            3                            chase4    
+**chase4**   true        SPR_BOSS_W4            8  Chase                     chase1    
+                                                                                       
+**die1**     false       SPR_BOSS_DIE_1        15           Death Scream     die2      
+**die2**     false       SPR_BOSS_DIE_2        15                            die3      
+**die3**     false       SPR_BOSS_DIE_3        15                            dead      
+**die4**     false                              0                            dead      
+**die5**     false                              0                            dead      
+**die6**     false                              0                            dead      
+**die7**     false                              0                            dead      
+**die8**     false                              0                            dead      
+**die9**     false                              0                            dead      
+                                                                                       
+**dead**     false       SPR_BOSS_DEAD          0           Start Death Cam  dead      
+===========  ==========  ===============  =======  =======  ===============  ==========
 
 
 Dr. Schabbs
 ~~~~~~~~~~~
-	===========  ==========  ======================  =======  ==========  ===============  ==========
-	State        Can Rotate  Base Sprite             Timeout  Thought     Action           Next State
-	===========  ==========  ======================  =======  ==========  ===============  ==========
-	**stand**    false       SPR_SCHABB_W1                 0  Stand                        stand     
-	                                                                                                 
-	**path1**    false                                     0                               path1s    
-	**path1s**   false                                     0                               path2     
-	**path2**    false                                     0                               path3     
-	**path3**    false                                     0                               path3s    
-	**path3s**   false                                     0                               path4     
-	**path4**    false                                     0                               path1     
-	                                                                                                 
-	**pain**     false                                     0                               chase1    
-	**pain1**    false                                     0                               chase1    
-	                                                                                                 
-	**shoot1**   false       SPR_SCHABB_SHOOT1            30                               shoot2    
-	**shoot2**   false       SPR_SCHABB_SHOOT2            10              Launch           chase1    
-	**shoot3**   false                                    10                               chase1    
-	**shoot4**   false                                    10                               chase1    
-	**shoot5**   false                                    10                               chase1    
-	**shoot6**   false                                    10                               chase1    
-	**shoot7**   false                                    10                               chase1    
-	**shoot8**   false                                    10                               chase1    
-	**shoot9**   false                                     0                               chase1    
-	                                                                                                 
-	**chase1**   false       SPR_SCHABB_W1                10  Boss Chase                   chase1s   
-	**chase1s**  false       SPR_SCHABB_W1                 3                               chase2    
-	**chase2**   false       SPR_SCHABB_W2                 8  Boss Chase                   chase3    
-	**chase3**   false       SPR_SCHABB_W3                10  Boss Chase                   chase3s   
-	**chase3s**  false       SPR_SCHABB_W3                 3                               chase4    
-	**chase4**   false       SPR_SCHABB_W4                 8  Boss Chase                   chase1    
-	                                                                                                 
-	**die1**     false       SPR_SCHABB_SCHABB_W1         10              Death Scream     die2      
-	**die2**     false       SPR_SCHABB_SCHABB_W1         10                               die3      
-	**die3**     false       SPR_SCHABB_SCHABB_DIE1       10                               die4      
-	**die4**     false       SPR_SCHABB_SCHABB_DIE2       10                               die5      
-	**die5**     false       SPR_SCHABB_SCHABB_DIE3       10                               die6      
-	**die6**     false                                     0                               dead      
-	**die7**     false                                     0                               dead      
-	**die8**     false                                     0                               dead      
-	**die9**     false                                     0                               dead      
-	                                                                                                 
-	**dead**     false       SPR_SCHABB_DEAD               0              Start Death Cam  dead      
-	===========  ==========  ======================  =======  ==========  ===============  ==========
+===========  ==========  ======================  =======  ==========  ===============  ==========
+State        Can Rotate  Base Sprite             Timeout  Thought     Action           Next State
+===========  ==========  ======================  =======  ==========  ===============  ==========
+**stand**    false       SPR_SCHABB_W1                 0  Stand                        stand     
+                                                                                                 
+**path1**    false                                     0                               path1s    
+**path1s**   false                                     0                               path2     
+**path2**    false                                     0                               path3     
+**path3**    false                                     0                               path3s    
+**path3s**   false                                     0                               path4     
+**path4**    false                                     0                               path1     
+                                                                                                 
+**pain**     false                                     0                               chase1    
+**pain1**    false                                     0                               chase1    
+                                                                                                 
+**shoot1**   false       SPR_SCHABB_SHOOT1            30                               shoot2    
+**shoot2**   false       SPR_SCHABB_SHOOT2            10              Launch           chase1    
+**shoot3**   false                                    10                               chase1    
+**shoot4**   false                                    10                               chase1    
+**shoot5**   false                                    10                               chase1    
+**shoot6**   false                                    10                               chase1    
+**shoot7**   false                                    10                               chase1    
+**shoot8**   false                                    10                               chase1    
+**shoot9**   false                                     0                               chase1    
+                                                                                                 
+**chase1**   false       SPR_SCHABB_W1                10  Boss Chase                   chase1s   
+**chase1s**  false       SPR_SCHABB_W1                 3                               chase2    
+**chase2**   false       SPR_SCHABB_W2                 8  Boss Chase                   chase3    
+**chase3**   false       SPR_SCHABB_W3                10  Boss Chase                   chase3s   
+**chase3s**  false       SPR_SCHABB_W3                 3                               chase4    
+**chase4**   false       SPR_SCHABB_W4                 8  Boss Chase                   chase1    
+                                                                                                 
+**die1**     false       SPR_SCHABB_SCHABB_W1         10              Death Scream     die2      
+**die2**     false       SPR_SCHABB_SCHABB_W1         10                               die3      
+**die3**     false       SPR_SCHABB_SCHABB_DIE1       10                               die4      
+**die4**     false       SPR_SCHABB_SCHABB_DIE2       10                               die5      
+**die5**     false       SPR_SCHABB_SCHABB_DIE3       10                               die6      
+**die6**     false                                     0                               dead      
+**die7**     false                                     0                               dead      
+**die8**     false                                     0                               dead      
+**die9**     false                                     0                               dead      
+                                                                                                 
+**dead**     false       SPR_SCHABB_DEAD               0              Start Death Cam  dead      
+===========  ==========  ======================  =======  ==========  ===============  ==========
 
 
 Fake Hitler
 ~~~~~~~~~~~
-	===========  ==========  ==============  =======  ==========  ============  ==========
-	State        Can Rotate  Base Sprite     Timeout  Thought     Action        Next State
-	===========  ==========  ==============  =======  ==========  ============  ==========
-	**stand**    false       SPR_FAKE_W1           0  Stand                     stand     
-	                                                                                      
-	**path1**    false                             0                            path1s    
-	**path1s**   false                             0                            path2     
-	**path2**    false                             0                            path3     
-	**path3**    false                             0                            path3s    
-	**path3s**   false                             0                            path4     
-	**path4**    false                             0                            path1     
-	                                                                                      
-	**pain**     false                             0                            chase1    
-	**pain1**    false                             0                            chase1    
-	                                                                                      
-	**shoot1**   false       SPR_FAKE_SHOOT        8              Launch        shoot2    
-	**shoot2**   false       SPR_FAKE_SHOOT        8              Launch        shoot3    
-	**shoot3**   false       SPR_FAKE_SHOOT        8              Launch        shoot4    
-	**shoot4**   false       SPR_FAKE_SHOOT        8              Launch        shoot5    
-	**shoot5**   false       SPR_FAKE_SHOOT        8              Launch        shoot6    
-	**shoot6**   false       SPR_FAKE_SHOOT        8              Launch        shoot7    
-	**shoot7**   false       SPR_FAKE_SHOOT        8              Launch        shoot8    
-	**shoot8**   false       SPR_FAKE_SHOOT        8              Launch        shoot9    
-	**shoot9**   false       SPR_FAKE_SHOOT        8                            chase1    
-	                                                                                      
-	**chase1**   false       SPR_FAKE_W1          10  Fake                      chase1s   
-	**chase1s**  false       SPR_FAKE_W1           3                            chase2    
-	**chase2**   false       SPR_FAKE_W2           8  Fake                      chase3    
-	**chase3**   false       SPR_FAKE_W3          10  Fake                      chase3s   
-	**chase3s**  false       SPR_FAKE_W3           3                            chase4    
-	**chase4**   false       SPR_FAKE_W4           8  Fake                      chase1    
-	                                                                                      
-	**die1**     false       SPR_FAKE_DIE1        10              Death Scream  die2      
-	**die2**     false       SPR_FAKE_DIE2        10                            die3      
-	**die3**     false       SPR_FAKE_DIE3        10                            die4      
-	**die4**     false       SPR_FAKE_DIE4        10                            die5      
-	**die5**     false       SPR_FAKE_DIE5        10                            dead      
-	**die6**     false                             0                            dead      
-	**die7**     false                             0                            dead      
-	**die8**     false                             0                            dead      
-	**die9**     false                             0                            dead      
-	                                                                                      
-	**dead**     false       SPR_FAKE_DEAD         0                            dead      
-	===========  ==========  ==============  =======  ==========  ============  ==========
+===========  ==========  ==============  =======  ==========  ============  ==========
+State        Can Rotate  Base Sprite     Timeout  Thought     Action        Next State
+===========  ==========  ==============  =======  ==========  ============  ==========
+**stand**    false       SPR_FAKE_W1           0  Stand                     stand     
+                                                                                      
+**path1**    false                             0                            path1s    
+**path1s**   false                             0                            path2     
+**path2**    false                             0                            path3     
+**path3**    false                             0                            path3s    
+**path3s**   false                             0                            path4     
+**path4**    false                             0                            path1     
+                                                                                      
+**pain**     false                             0                            chase1    
+**pain1**    false                             0                            chase1    
+                                                                                      
+**shoot1**   false       SPR_FAKE_SHOOT        8              Launch        shoot2    
+**shoot2**   false       SPR_FAKE_SHOOT        8              Launch        shoot3    
+**shoot3**   false       SPR_FAKE_SHOOT        8              Launch        shoot4    
+**shoot4**   false       SPR_FAKE_SHOOT        8              Launch        shoot5    
+**shoot5**   false       SPR_FAKE_SHOOT        8              Launch        shoot6    
+**shoot6**   false       SPR_FAKE_SHOOT        8              Launch        shoot7    
+**shoot7**   false       SPR_FAKE_SHOOT        8              Launch        shoot8    
+**shoot8**   false       SPR_FAKE_SHOOT        8              Launch        shoot9    
+**shoot9**   false       SPR_FAKE_SHOOT        8                            chase1    
+                                                                                      
+**chase1**   false       SPR_FAKE_W1          10  Fake                      chase1s   
+**chase1s**  false       SPR_FAKE_W1           3                            chase2    
+**chase2**   false       SPR_FAKE_W2           8  Fake                      chase3    
+**chase3**   false       SPR_FAKE_W3          10  Fake                      chase3s   
+**chase3s**  false       SPR_FAKE_W3           3                            chase4    
+**chase4**   false       SPR_FAKE_W4           8  Fake                      chase1    
+                                                                                      
+**die1**     false       SPR_FAKE_DIE1        10              Death Scream  die2      
+**die2**     false       SPR_FAKE_DIE2        10                            die3      
+**die3**     false       SPR_FAKE_DIE3        10                            die4      
+**die4**     false       SPR_FAKE_DIE4        10                            die5      
+**die5**     false       SPR_FAKE_DIE5        10                            dead      
+**die6**     false                             0                            dead      
+**die7**     false                             0                            dead      
+**die8**     false                             0                            dead      
+**die9**     false                             0                            dead      
+                                                                                      
+**dead**     false       SPR_FAKE_DEAD         0                            dead      
+===========  ==========  ==============  =======  ==========  ============  ==========
 
 
 Mecha Hitler
 ~~~~~~~~~~~~
-	===========  ==========  ================  =======  ==========  ============  ==========
-	State        Can Rotate  Base Sprite       Timeout  Thought     Action        Next State
-	===========  ==========  ================  =======  ==========  ============  ==========
-	**stand**    false       SPR_MECHA_W1            0  Stand                     stand     
-	                                                                                        
-	**path1**    false                               0                            path1s    
-	**path1s**   false                               0                            path2     
-	**path2**    false                               0                            path3     
-	**path3**    false                               0                            path3s    
-	**path3s**   false                               0                            path4     
-	**path4**    false                               0                            path1     
-	                                                                                        
-	**pain**     false                               0                            chase1    
-	**pain1**    false                               0                            chase1    
-	                                                                                        
-	**shoot1**   false       SPR_MECHA_SHOOT1       30                            shoot2    
-	**shoot2**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot3    
-	**shoot3**   false       SPR_MECHA_SHOOT3       10              Shoot         shoot4    
-	**shoot4**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot5    
-	**shoot5**   false       SPR_MECHA_SHOOT3       10              Shoot         shoot6    
-	**shoot6**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot7    
-	**shoot7**   false                               0                            shoot8    
-	**shoot8**   false                               0                            shoot9    
-	**shoot9**   false                               0                            chase1    
-	                                                                                        
-	**chase1**   false       SPR_MECHA_W1           10  Chase       Mecha Sound   chase1s   
-	**chase1s**  false       SPR_MECHA_W1            6                            chase2    
-	**chase2**   false       SPR_MECHA_W2            8  Chase                     chase3    
-	**chase3**   false       SPR_MECHA_W3           10  Chase       Mecha Sound   chase3s   
-	**chase3s**  false       SPR_MECHA_W3            6                            chase4    
-	**chase4**   false       SPR_MECHA_W4            8  Chase                     chase1    
-	                                                                                        
-	**die1**     false       SPR_MECHA_DIE1         10              Death Scream  die2      
-	**die2**     false       SPR_MECHA_DIE2         10                            die3      
-	**die3**     false       SPR_MECHA_DIE3         10              Hitler Morph  dead      
-	**die4**     false                               0                            dead      
-	**die5**     false                               0                            dead      
-	**die6**     false                               0                            dead      
-	**die7**     false                               0                            dead      
-	**die8**     false                               0                            dead      
-	**die9**     false                               0                            dead      
-	                                                                                        
-	**dead**     false       SPR_MECHA_DEAD          0                            dead      
-	===========  ==========  ================  =======  ==========  ============  ==========
+===========  ==========  ================  =======  ==========  ============  ==========
+State        Can Rotate  Base Sprite       Timeout  Thought     Action        Next State
+===========  ==========  ================  =======  ==========  ============  ==========
+**stand**    false       SPR_MECHA_W1            0  Stand                     stand     
+                                                                                        
+**path1**    false                               0                            path1s    
+**path1s**   false                               0                            path2     
+**path2**    false                               0                            path3     
+**path3**    false                               0                            path3s    
+**path3s**   false                               0                            path4     
+**path4**    false                               0                            path1     
+                                                                                        
+**pain**     false                               0                            chase1    
+**pain1**    false                               0                            chase1    
+                                                                                        
+**shoot1**   false       SPR_MECHA_SHOOT1       30                            shoot2    
+**shoot2**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot3    
+**shoot3**   false       SPR_MECHA_SHOOT3       10              Shoot         shoot4    
+**shoot4**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot5    
+**shoot5**   false       SPR_MECHA_SHOOT3       10              Shoot         shoot6    
+**shoot6**   false       SPR_MECHA_SHOOT2       10              Shoot         shoot7    
+**shoot7**   false                               0                            shoot8    
+**shoot8**   false                               0                            shoot9    
+**shoot9**   false                               0                            chase1    
+                                                                                        
+**chase1**   false       SPR_MECHA_W1           10  Chase       Mecha Sound   chase1s   
+**chase1s**  false       SPR_MECHA_W1            6                            chase2    
+**chase2**   false       SPR_MECHA_W2            8  Chase                     chase3    
+**chase3**   false       SPR_MECHA_W3           10  Chase       Mecha Sound   chase3s   
+**chase3s**  false       SPR_MECHA_W3            6                            chase4    
+**chase4**   false       SPR_MECHA_W4            8  Chase                     chase1    
+                                                                                        
+**die1**     false       SPR_MECHA_DIE1         10              Death Scream  die2      
+**die2**     false       SPR_MECHA_DIE2         10                            die3      
+**die3**     false       SPR_MECHA_DIE3         10              Hitler Morph  dead      
+**die4**     false                               0                            dead      
+**die5**     false                               0                            dead      
+**die6**     false                               0                            dead      
+**die7**     false                               0                            dead      
+**die8**     false                               0                            dead      
+**die9**     false                               0                            dead      
+                                                                                        
+**dead**     false       SPR_MECHA_DEAD          0                            dead      
+===========  ==========  ================  =======  ==========  ============  ==========
 
 Adolf Hitler
 ~~~~~~~~~~~~
-	===========  ==========  =================  =======  ==========  ===============  ==========
-	State        Can Rotate  Base Sprite        Timeout  Thought     Action           Next State
-	===========  ==========  =================  =======  ==========  ===============  ==========
-	**stand**    false                                0  Stand                        stand     
-	                                                                                            
-	**path1**    false                                0                               path1s    
-	**path1s**   false                                0                               path2     
-	**path2**    false                                0                               path3     
-	**path3**    false                                0                               path3s    
-	**path3s**   false                                0                               path4     
-	**path4**    false                                0                               path1     
-	                                                                                            
-	**pain**     false                                0                               chase1    
-	**pain1**    false                                0                               chase1    
-	                                                                                            
-	**shoot1**   false       SPR_HITLER_SHOOT1       30                               shoot2    
-	**shoot2**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot3    
-	**shoot3**   false       SPR_HITLER_SHOOT3       10              Shoot            shoot4    
-	**shoot4**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot5    
-	**shoot5**   false       SPR_HITLER_SHOOT3       10              Shoot            shoot6    
-	**shoot6**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot7    
-	**shoot7**   false                                0                               shoot8    
-	**shoot8**   false                                0                               shoot9    
-	**shoot9**   false                                0                               chase1    
-	                                                                                            
-	**chase1**   false       SPR_HITLER_W1            6  Chase                        chase1s   
-	**chase1s**  false       SPR_HITLER_W1            4                               chase2    
-	**chase2**   false       SPR_HITLER_W2            2  Chase                        chase3    
-	**chase3**   false       SPR_HITLER_W3            6  Chase                        chase3s   
-	**chase3s**  false       SPR_HITLER_W3            4                               chase4    
-	**chase4**   false       SPR_HITLER_W4            2  Chase                        chase1    
-	                                                                                            
-	**die1**     false       SPR_HITLER_W1            1              Death Scream     die2      
-	**die2**     false       SPR_HITLER_W1           10                               die3      
-	**die3**     false       SPR_HITLER_DIE1         10              Hitler Morph     die4      
-	**die4**     false       SPR_HITLER_DIE2         10                               die5      
-	**die5**     false       SPR_HITLER_DIE3         10                               die6      
-	**die6**     false       SPR_HITLER_DIE4         10                               die7      
-	**die7**     false       SPR_HITLER_DIE5         10                               die8      
-	**die8**     false       SPR_HITLER_DIE6         10                               die9      
-	**die9**     false       SPR_HITLER_DIE7         10                               dead      
-	                                                                                            
-	**dead**     false       SPR_HITLER_DEAD          0              Start Death Cam  dead      
-	===========  ==========  =================  =======  ==========  ===============  ==========
+===========  ==========  =================  =======  ==========  ===============  ==========
+State        Can Rotate  Base Sprite        Timeout  Thought     Action           Next State
+===========  ==========  =================  =======  ==========  ===============  ==========
+**stand**    false                                0  Stand                        stand     
+                                                                                            
+**path1**    false                                0                               path1s    
+**path1s**   false                                0                               path2     
+**path2**    false                                0                               path3     
+**path3**    false                                0                               path3s    
+**path3s**   false                                0                               path4     
+**path4**    false                                0                               path1     
+                                                                                            
+**pain**     false                                0                               chase1    
+**pain1**    false                                0                               chase1    
+                                                                                            
+**shoot1**   false       SPR_HITLER_SHOOT1       30                               shoot2    
+**shoot2**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot3    
+**shoot3**   false       SPR_HITLER_SHOOT3       10              Shoot            shoot4    
+**shoot4**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot5    
+**shoot5**   false       SPR_HITLER_SHOOT3       10              Shoot            shoot6    
+**shoot6**   false       SPR_HITLER_SHOOT2       10              Shoot            shoot7    
+**shoot7**   false                                0                               shoot8    
+**shoot8**   false                                0                               shoot9    
+**shoot9**   false                                0                               chase1    
+                                                                                            
+**chase1**   false       SPR_HITLER_W1            6  Chase                        chase1s   
+**chase1s**  false       SPR_HITLER_W1            4                               chase2    
+**chase2**   false       SPR_HITLER_W2            2  Chase                        chase3    
+**chase3**   false       SPR_HITLER_W3            6  Chase                        chase3s   
+**chase3s**  false       SPR_HITLER_W3            4                               chase4    
+**chase4**   false       SPR_HITLER_W4            2  Chase                        chase1    
+                                                                                            
+**die1**     false       SPR_HITLER_W1            1              Death Scream     die2      
+**die2**     false       SPR_HITLER_W1           10                               die3      
+**die3**     false       SPR_HITLER_DIE1         10              Hitler Morph     die4      
+**die4**     false       SPR_HITLER_DIE2         10                               die5      
+**die5**     false       SPR_HITLER_DIE3         10                               die6      
+**die6**     false       SPR_HITLER_DIE4         10                               die7      
+**die7**     false       SPR_HITLER_DIE5         10                               die8      
+**die8**     false       SPR_HITLER_DIE6         10                               die9      
+**die9**     false       SPR_HITLER_DIE7         10                               dead      
+                                                                                            
+**dead**     false       SPR_HITLER_DEAD          0              Start Death Cam  dead      
+===========  ==========  =================  =======  ==========  ===============  ==========
 
 
 Mutant
 ~~~~~~
-	===========  ==========  ==============  =======  ==========  ============  ==========
-	State        Can Rotate  Base Sprite     Timeout  Thought     Action        Next State
-	===========  ==========  ==============  =======  ==========  ============  ==========
-	**stand**    true        SPR_MUT_S_1           0  Stand                     stand     
-	                                                                                      
-	**path1**    true        SPR_MUT_W1_1         20  Path                      path1s    
-	**path1s**   true        SPR_MUT_W1_1          5                            path2     
-	**path2**    true        SPR_MUT_W2_1         15  Path                      path3     
-	**path3**    true        SPR_MUT_W3_1         20  Path                      path3s    
-	**path3s**   true        SPR_MUT_W3_1          5                            path4     
-	**path4**    true        SPR_MUT_W4_1         15  Path                      path1     
-	                                                                                      
-	**pain**     false       SPR_MUT_PAIN_1       10                            chase1    
-	**pain1**    false       SPR_MUT_PAIN_2       10                            chase1    
-	                                                                                      
-	**shoot1**   false       SPR_MUT_SHOOT1        6                            shoot2    
-	**shoot2**   false       SPR_MUT_SHOOT2       20              Shoot         shoot3    
-	**shoot3**   false       SPR_MUT_SHOOT3       10              Shoot         shoot4    
-	**shoot4**   false       SPR_MUT_SHOOT4       20              Shoot         shoot5    
-	**shoot5**   false                             0              Shoot         shoot6    
-	**shoot6**   false                             0              Shoot         chase1    
-	**shoot7**   false                             0                            chase1    
-	**shoot8**   false                             0                            chase1    
-	**shoot9**   false                             0                            chase1    
-	                                                                                      
-	**chase1**   true        SPR_MUT_W1_1         10  Chase                     chase1s   
-	**chase1s**  true        SPR_MUT_W1_1          3                            chase2    
-	**chase2**   true        SPR_MUT_W2_1          8  Chase                     chase3    
-	**chase3**   true        SPR_MUT_W3_1         10  Chase                     chase3s   
-	**chase3s**  true        SPR_MUT_W3_1          3                            chase4    
-	**chase4**   true        SPR_MUT_W4_1          8  Chase                     chase1    
-	                                                                                      
-	**die1**     false       SPR_MUT_DIE_1         7              Death Scream  die2      
-	**die2**     false       SPR_MUT_DIE_2         7                            die3      
-	**die3**     false       SPR_MUT_DIE_3         7                            die4      
-	**die4**     false       SPR_MUT_DIE_4         7                            dead      
-	**die5**     false                             0                            dead      
-	**die6**     false                             0                            dead      
-	**die7**     false                             0                            dead      
-	**die8**     false                             0                            dead      
-	**die9**     false                             0                            dead      
-	                                                                                      
-	**dead**     false       SPR_MUT_DEAD          0                            dead      
-	===========  ==========  ==============  =======  ==========  ============  ==========
+===========  ==========  ==============  =======  ==========  ============  ==========
+State        Can Rotate  Base Sprite     Timeout  Thought     Action        Next State
+===========  ==========  ==============  =======  ==========  ============  ==========
+**stand**    true        SPR_MUT_S_1           0  Stand                     stand     
+                                                                                      
+**path1**    true        SPR_MUT_W1_1         20  Path                      path1s    
+**path1s**   true        SPR_MUT_W1_1          5                            path2     
+**path2**    true        SPR_MUT_W2_1         15  Path                      path3     
+**path3**    true        SPR_MUT_W3_1         20  Path                      path3s    
+**path3s**   true        SPR_MUT_W3_1          5                            path4     
+**path4**    true        SPR_MUT_W4_1         15  Path                      path1     
+                                                                                      
+**pain**     false       SPR_MUT_PAIN_1       10                            chase1    
+**pain1**    false       SPR_MUT_PAIN_2       10                            chase1    
+                                                                                      
+**shoot1**   false       SPR_MUT_SHOOT1        6                            shoot2    
+**shoot2**   false       SPR_MUT_SHOOT2       20              Shoot         shoot3    
+**shoot3**   false       SPR_MUT_SHOOT3       10              Shoot         shoot4    
+**shoot4**   false       SPR_MUT_SHOOT4       20              Shoot         shoot5    
+**shoot5**   false                             0              Shoot         shoot6    
+**shoot6**   false                             0              Shoot         chase1    
+**shoot7**   false                             0                            chase1    
+**shoot8**   false                             0                            chase1    
+**shoot9**   false                             0                            chase1    
+                                                                                      
+**chase1**   true        SPR_MUT_W1_1         10  Chase                     chase1s   
+**chase1s**  true        SPR_MUT_W1_1          3                            chase2    
+**chase2**   true        SPR_MUT_W2_1          8  Chase                     chase3    
+**chase3**   true        SPR_MUT_W3_1         10  Chase                     chase3s   
+**chase3s**  true        SPR_MUT_W3_1          3                            chase4    
+**chase4**   true        SPR_MUT_W4_1          8  Chase                     chase1    
+                                                                                      
+**die1**     false       SPR_MUT_DIE_1         7              Death Scream  die2      
+**die2**     false       SPR_MUT_DIE_2         7                            die3      
+**die3**     false       SPR_MUT_DIE_3         7                            die4      
+**die4**     false       SPR_MUT_DIE_4         7                            dead      
+**die5**     false                             0                            dead      
+**die6**     false                             0                            dead      
+**die7**     false                             0                            dead      
+**die8**     false                             0                            dead      
+**die9**     false                             0                            dead      
+                                                                                      
+**dead**     false       SPR_MUT_DEAD          0                            dead      
+===========  ==========  ==============  =======  ==========  ============  ==========
 
 
 Blinky
 ~~~~~~
-	===========  ==========  =============  =======  =======  ======  ==========
-	State        Can Rotate  Base Sprite    Timeout  Thought  Action  Next State
-	===========  ==========  =============  =======  =======  ======  ==========
-	**stand**    false                            0                   stand     
-	                                                                            
-	**path1**    false                            0                   path1s    
-	**path1s**   false                            0                   path2     
-	**path2**    false                            0                   path3     
-	**path3**    false                            0                   path3s    
-	**path3s**   false                            0                   path4     
-	**path4**    false                            0                   path1     
-	                                                                            
-	**pain**     false                            0                   chase1    
-	**pain1**    false                            0                   chase1    
-	                                                                            
-	**shoot1**   false                            0                   shoot2    
-	**shoot2**   false                            0                   shoot3    
-	**shoot3**   false                            0                   shoot4    
-	**shoot4**   false                            0                   shoot5    
-	**shoot5**   false                            0                   shoot6    
-	**shoot6**   false                            0                   chase1    
-	**shoot7**   false                            0                   shoot8    
-	**shoot8**   false                            0                   shoot9    
-	**shoot9**   false                            0                   chase1    
-	                                                                            
-	**chase1**   false       SPR_BLINKY_W1       10  Ghosts           chase2    
-	**chase1s**  false                            0                   chase2    
-	**chase2**   false       SPR_BLINKY_W2       10  Ghosts           chase1    
-	**chase3**   false                            0                   chase3s   
-	**chase3s**  false                            0                   chase4    
-	**chase4**   false                            0                   chase1    
-	                                                                            
-	**die1**     false                           10                   die2      
-	**die2**     false                           10                   die3      
-	**die3**     false                           10                   dead      
-	**die4**     false                            0                   dead      
-	**die5**     false                            0                   dead      
-	**die6**     false                            0                   dead      
-	**die7**     false                            0                   dead      
-	**die8**     false                            0                   dead      
-	**die9**     false                            0                   dead      
-	                                                                            
-	**dead**     false                            0                   dead      
-	===========  ==========  =============  =======  =======  ======  ==========
+===========  ==========  =============  =======  =======  ======  ==========
+State        Can Rotate  Base Sprite    Timeout  Thought  Action  Next State
+===========  ==========  =============  =======  =======  ======  ==========
+**stand**    false                            0                   stand     
+                                                                            
+**path1**    false                            0                   path1s    
+**path1s**   false                            0                   path2     
+**path2**    false                            0                   path3     
+**path3**    false                            0                   path3s    
+**path3s**   false                            0                   path4     
+**path4**    false                            0                   path1     
+                                                                            
+**pain**     false                            0                   chase1    
+**pain1**    false                            0                   chase1    
+                                                                            
+**shoot1**   false                            0                   shoot2    
+**shoot2**   false                            0                   shoot3    
+**shoot3**   false                            0                   shoot4    
+**shoot4**   false                            0                   shoot5    
+**shoot5**   false                            0                   shoot6    
+**shoot6**   false                            0                   chase1    
+**shoot7**   false                            0                   shoot8    
+**shoot8**   false                            0                   shoot9    
+**shoot9**   false                            0                   chase1    
+                                                                            
+**chase1**   false       SPR_BLINKY_W1       10  Ghosts           chase2    
+**chase1s**  false                            0                   chase2    
+**chase2**   false       SPR_BLINKY_W2       10  Ghosts           chase1    
+**chase3**   false                            0                   chase3s   
+**chase3s**  false                            0                   chase4    
+**chase4**   false                            0                   chase1    
+                                                                            
+**die1**     false                           10                   die2      
+**die2**     false                           10                   die3      
+**die3**     false                           10                   dead      
+**die4**     false                            0                   dead      
+**die5**     false                            0                   dead      
+**die6**     false                            0                   dead      
+**die7**     false                            0                   dead      
+**die8**     false                            0                   dead      
+**die9**     false                            0                   dead      
+                                                                            
+**dead**     false                            0                   dead      
+===========  ==========  =============  =======  =======  ======  ==========
 
 
 Clyde
 ~~~~~
-	===========  ==========  ============  =======  =======  ======  ==========
-	State        Can Rotate  Base Sprite   Timeout  Thought  Action  Next State
-	===========  ==========  ============  =======  =======  ======  ==========
-	**stand**    false                           0                   stand     
-	                                                                           
-	**path1**    false                           0                   path1s    
-	**path1s**   false                           0                   path2     
-	**path2**    false                           0                   path3     
-	**path3**    false                           0                   path3s    
-	**path3s**   false                           0                   path4     
-	**path4**    false                           0                   path1     
-	                                                                           
-	**pain**     false                           0                   chase1    
-	**pain1**    false                           0                   chase1    
-	                                                                           
-	**shoot1**   false                           0                   shoot2    
-	**shoot2**   false                           0                   shoot3    
-	**shoot3**   false                           0                   shoot4    
-	**shoot4**   false                           0                   shoot5    
-	**shoot5**   false                           0                   shoot6    
-	**shoot6**   false                           0                   chase1    
-	**shoot7**   false                           0                   shoot8    
-	**shoot8**   false                           0                   shoot9    
-	**shoot9**   false                           0                   chase1    
-	                                                                           
-	**chase1**   false       SPR_CLYDE_W1       10  Ghosts           chase2    
-	**chase1s**  false                           0                   chase2    
-	**chase2**   false       SPR_CLYDE_W2       10  Ghosts           chase1    
-	**chase3**   false                           0                   chase3s   
-	**chase3s**  false                           0                   chase4    
-	**chase4**   false                           0                   chase1    
-	                                                                           
-	**die1**     false                          10                   die2      
-	**die2**     false                          10                   die3      
-	**die3**     false                          10                   dead      
-	**die4**     false                           0                   dead      
-	**die5**     false                           0                   dead      
-	**die6**     false                           0                   dead      
-	**die7**     false                           0                   dead      
-	**die8**     false                           0                   dead      
-	**die9**     false                           0                   dead      
-	                                                                           
-	**dead**     false                           0                   dead      
-	===========  ==========  ============  =======  =======  ======  ==========
+===========  ==========  ============  =======  =======  ======  ==========
+State        Can Rotate  Base Sprite   Timeout  Thought  Action  Next State
+===========  ==========  ============  =======  =======  ======  ==========
+**stand**    false                           0                   stand     
+                                                                           
+**path1**    false                           0                   path1s    
+**path1s**   false                           0                   path2     
+**path2**    false                           0                   path3     
+**path3**    false                           0                   path3s    
+**path3s**   false                           0                   path4     
+**path4**    false                           0                   path1     
+                                                                           
+**pain**     false                           0                   chase1    
+**pain1**    false                           0                   chase1    
+                                                                           
+**shoot1**   false                           0                   shoot2    
+**shoot2**   false                           0                   shoot3    
+**shoot3**   false                           0                   shoot4    
+**shoot4**   false                           0                   shoot5    
+**shoot5**   false                           0                   shoot6    
+**shoot6**   false                           0                   chase1    
+**shoot7**   false                           0                   shoot8    
+**shoot8**   false                           0                   shoot9    
+**shoot9**   false                           0                   chase1    
+                                                                           
+**chase1**   false       SPR_CLYDE_W1       10  Ghosts           chase2    
+**chase1s**  false                           0                   chase2    
+**chase2**   false       SPR_CLYDE_W2       10  Ghosts           chase1    
+**chase3**   false                           0                   chase3s   
+**chase3s**  false                           0                   chase4    
+**chase4**   false                           0                   chase1    
+                                                                           
+**die1**     false                          10                   die2      
+**die2**     false                          10                   die3      
+**die3**     false                          10                   dead      
+**die4**     false                           0                   dead      
+**die5**     false                           0                   dead      
+**die6**     false                           0                   dead      
+**die7**     false                           0                   dead      
+**die8**     false                           0                   dead      
+**die9**     false                           0                   dead      
+                                                                           
+**dead**     false                           0                   dead      
+===========  ==========  ============  =======  =======  ======  ==========
 
 Pinky
 ~~~~~
-	===========  ==========  ============  =======  =======  ======  ==========
-	State        Can Rotate  Base Sprite   Timeout  Thought  Action  Next State
-	===========  ==========  ============  =======  =======  ======  ==========
-	**stand**    false                           0                   stand     
-	                                                                           
-	**path1**    false                           0                   path1s    
-	**path1s**   false                           0                   path2     
-	**path2**    false                           0                   path3     
-	**path3**    false                           0                   path3s    
-	**path3s**   false                           0                   path4     
-	**path4**    false                           0                   path1     
-	                                                                           
-	**pain**     false                           0                   chase1    
-	**pain1**    false                           0                   chase1    
-	                                                                           
-	**shoot1**   false                           0                   shoot2    
-	**shoot2**   false                           0                   shoot3    
-	**shoot3**   false                           0                   shoot4    
-	**shoot4**   false                           0                   shoot5    
-	**shoot5**   false                           0                   shoot6    
-	**shoot6**   false                           0                   chase1    
-	**shoot7**   false                           0                   shoot8    
-	**shoot8**   false                           0                   shoot9    
-	**shoot9**   false                           0                   chase1    
-	                                                                           
-	**chase1**   false       SPR_PINKY_W1       10  Ghosts           chase2    
-	**chase1s**  false                           0                   chase2    
-	**chase2**   false       SPR_PINKY_W2       10  Ghosts           chase1    
-	**chase3**   false                           0                   chase3s   
-	**chase3s**  false                           0                   chase4    
-	**chase4**   false                           0                   chase1    
-	                                                                           
-	**die1**     false                          10                   die2      
-	**die2**     false                          10                   die3      
-	**die3**     false                          10                   dead      
-	**die4**     false                           0                   dead      
-	**die5**     false                           0                   dead      
-	**die6**     false                           0                   dead      
-	**die7**     false                           0                   dead      
-	**die8**     false                           0                   dead      
-	**die9**     false                           0                   dead      
-	                                                                           
-	**dead**     false                           0                   dead      
-	===========  ==========  ============  =======  =======  ======  ==========
+===========  ==========  ============  =======  =======  ======  ==========
+State        Can Rotate  Base Sprite   Timeout  Thought  Action  Next State
+===========  ==========  ============  =======  =======  ======  ==========
+**stand**    false                           0                   stand     
+                                                                           
+**path1**    false                           0                   path1s    
+**path1s**   false                           0                   path2     
+**path2**    false                           0                   path3     
+**path3**    false                           0                   path3s    
+**path3s**   false                           0                   path4     
+**path4**    false                           0                   path1     
+                                                                           
+**pain**     false                           0                   chase1    
+**pain1**    false                           0                   chase1    
+                                                                           
+**shoot1**   false                           0                   shoot2    
+**shoot2**   false                           0                   shoot3    
+**shoot3**   false                           0                   shoot4    
+**shoot4**   false                           0                   shoot5    
+**shoot5**   false                           0                   shoot6    
+**shoot6**   false                           0                   chase1    
+**shoot7**   false                           0                   shoot8    
+**shoot8**   false                           0                   shoot9    
+**shoot9**   false                           0                   chase1    
+                                                                           
+**chase1**   false       SPR_PINKY_W1       10  Ghosts           chase2    
+**chase1s**  false                           0                   chase2    
+**chase2**   false       SPR_PINKY_W2       10  Ghosts           chase1    
+**chase3**   false                           0                   chase3s   
+**chase3s**  false                           0                   chase4    
+**chase4**   false                           0                   chase1    
+                                                                           
+**die1**     false                          10                   die2      
+**die2**     false                          10                   die3      
+**die3**     false                          10                   dead      
+**die4**     false                           0                   dead      
+**die5**     false                           0                   dead      
+**die6**     false                           0                   dead      
+**die7**     false                           0                   dead      
+**die8**     false                           0                   dead      
+**die9**     false                           0                   dead      
+                                                                           
+**dead**     false                           0                   dead      
+===========  ==========  ============  =======  =======  ======  ==========
 
 
 Inky
 ~~~~
-	===========  ==========  ===========  =======  =======  ======  ==========
-	State        Can Rotate  Base Sprite  Timeout  Thought  Action  Next State
-	===========  ==========  ===========  =======  =======  ======  ==========
-	**stand**    false                          0                   stand     
-	                                                                          
-	**path1**    false                          0                   path1s    
-	**path1s**   false                          0                   path2     
-	**path2**    false                          0                   path3     
-	**path3**    false                          0                   path3s    
-	**path3s**   false                          0                   path4     
-	**path4**    false                          0                   path1     
-	                                                                          
-	**pain**     false                          0                   chase1    
-	**pain1**    false                          0                   chase1    
-	                                                                          
-	**shoot1**   false                          0                   shoot2    
-	**shoot2**   false                          0                   shoot3    
-	**shoot3**   false                          0                   shoot4    
-	**shoot4**   false                          0                   shoot5    
-	**shoot5**   false                          0                   shoot6    
-	**shoot6**   false                          0                   chase1    
-	**shoot7**   false                          0                   shoot8    
-	**shoot8**   false                          0                   shoot9    
-	**shoot9**   false                          0                   chase1    
-	                                                                          
-	**chase1**   false       SPR_INKY_W1       10  Ghosts           chase2    
-	**chase1s**  false                          0                   chase2    
-	**chase2**   false       SPR_INKY_W2       10  Ghosts           chase1    
-	**chase3**   false                          0                   chase3s   
-	**chase3s**  false                          0                   chase4    
-	**chase4**   false                          0                   chase1    
-	                                                                          
-	**die1**     false                         10                   die2      
-	**die2**     false                         10                   die3      
-	**die3**     false                         10                   dead      
-	**die4**     false                          0                   dead      
-	**die5**     false                          0                   dead      
-	**die6**     false                          0                   dead      
-	**die7**     false                          0                   dead      
-	**die8**     false                          0                   dead      
-	**die9**     false                          0                   dead      
-	                                                                          
-	**dead**     false                          0                   dead      
-	===========  ==========  ===========  =======  =======  ======  ==========
+===========  ==========  ===========  =======  =======  ======  ==========
+State        Can Rotate  Base Sprite  Timeout  Thought  Action  Next State
+===========  ==========  ===========  =======  =======  ======  ==========
+**stand**    false                          0                   stand     
+                                                                          
+**path1**    false                          0                   path1s    
+**path1s**   false                          0                   path2     
+**path2**    false                          0                   path3     
+**path3**    false                          0                   path3s    
+**path3s**   false                          0                   path4     
+**path4**    false                          0                   path1     
+                                                                          
+**pain**     false                          0                   chase1    
+**pain1**    false                          0                   chase1    
+                                                                          
+**shoot1**   false                          0                   shoot2    
+**shoot2**   false                          0                   shoot3    
+**shoot3**   false                          0                   shoot4    
+**shoot4**   false                          0                   shoot5    
+**shoot5**   false                          0                   shoot6    
+**shoot6**   false                          0                   chase1    
+**shoot7**   false                          0                   shoot8    
+**shoot8**   false                          0                   shoot9    
+**shoot9**   false                          0                   chase1    
+                                                                          
+**chase1**   false       SPR_INKY_W1       10  Ghosts           chase2    
+**chase1s**  false                          0                   chase2    
+**chase2**   false       SPR_INKY_W2       10  Ghosts           chase1    
+**chase3**   false                          0                   chase3s   
+**chase3s**  false                          0                   chase4    
+**chase4**   false                          0                   chase1    
+                                                                          
+**die1**     false                         10                   die2      
+**die2**     false                         10                   die3      
+**die3**     false                         10                   dead      
+**die4**     false                          0                   dead      
+**die5**     false                          0                   dead      
+**die6**     false                          0                   dead      
+**die7**     false                          0                   dead      
+**die8**     false                          0                   dead      
+**die9**     false                          0                   dead      
+                                                                          
+**dead**     false                          0                   dead      
+===========  ==========  ===========  =======  =======  ======  ==========
 
 
 Known bugs and limitations
 ==========================
 
 1. A map needs at least 1 enemy, 1 piece of treasure and 1 secret door, or else
-the game will crash. This is the result of the game trying to calculate the
-percentage the player has picked up and ending up dividing by zero.
+   the game will crash. This is the result of the game trying to calculate the
+   percentage the player has picked up and ending up dividing by zero.
 
 Distributions of the game and magic numbers
 -------------------------------------------
@@ -3632,7 +3666,7 @@ would map the macro to the correct number.
 
 The problem with this is that each build was only suitable for a particular
 distribution of the game, like shareware, registered, Japanese or Spear of
-Destiny. The simple solution is to use `#ifdef` directives and set the version
+Destiny. The simple solution is to use ``#ifdef`` directives and set the version
 at compile time, which is an acceptable solution when building for a particular
 release, but ill-suited for a source port that needs to be as compatible as
 possible. I propose the following solution that moves the version detection from
