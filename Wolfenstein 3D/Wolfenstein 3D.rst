@@ -1,11 +1,13 @@
 .. header:: Game Source Documentation project - Wolfenstein 3D
 
+.. See the very bottom of this docuent on format conventions used. If follows
+   the reStructuredText syntax.
+
 ===================================
 Wolfenstein 3D code design document
 ===================================
 
 Analysing and documenting the source code workings of Wolfenstein 3D for DOS.
-(This document follows the reStructuredText syntax.)
 
 .. contents:: Table of Contents
    :depth: 3
@@ -17,13 +19,17 @@ Conventions and nomenclature
 Decimal integer numbers are given as regular numbers, binary numbers are
 prefixed with *0b*, octal numbers with *0o* *o* and hexadecimal numbers are
 prefixed with *0x*. Example:
-.. code::
 
+.. math::
 	13 = 0b1011 = 0o15 = 0xD
 
 All continuous numbers are written in the standard big-endian notation used in
 the English language. This means the left-most digit is the most significant one
-and a number like 0b1011 is computed as (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0).
+and a number like 0b1011 is computed as
+
+.. math::
+    (1 * 2^3 + 0 * 2^2 + 1 * 2^1 + 1 * 2^0).
+
 Multibyte numbers are given in little-endian notation and the bytes are
 seperated by whitespace charakters, thus the multibyte number 0x1A 0x3C
 corresponds to the hexadecimal number 0x3C1A or decimal 15386. If the endianness
@@ -112,33 +118,43 @@ word)`` where ``tag`` is a constant word used to identify the triplet, ``count``
 is how many times to copy the word and ``word`` is the word to copy. Aside from
 these triplets there are also uncompressed words that are copied verbatim. Here
 is the pseudocode
-.. code::
 
-	Prerequisites: source      = pointer to the start of the compressed input stream
-	               destination = pointer to the start of the decompressed output stream
-	               tag         = a word used to identify a triplet
-	               length      = integer length of the decompressed data
-	               Must allocete enough memory to hold the decompressed sequence
-	
-	Side effects: The pre-allocated memory will be filled with decompressed data
-	
-	1) Make new pointers: `read` = `start`, `write` = `desination`
-	   These pointers will be moved forward while the original pointers remain fixed
-	2) While `length` > 0
-		2.1) Read `word` pointed at by `read`
-		2.2) If `word` is `tag`
-			2.2.1) Advance `read` by one word
-			2.2.2) Make new integer `count` from word pointed at by `read`
-			2.2.3) Advance `read` by one word
-			2.2.4) while `count` > 0
-				2.2.4.1) Copy word under `read` to `write`
-				2.2.4.2) Advance `write` by one word
-				2.2.4.3) Decrement `count` and `length` by one
-			2.2.5) Advance `read` by one word
-		2.3) Else
-			2.3.1) Copy word under `read` to `write`
-			2.3.2) Advance `read` and `write` by one word
-			2.3.3) Decrement `length` by one
+--------------------------------------------------------------------------------
+
+:Prerequisites:
+ - ``source``
+     pointer to the start of the compressed input stream
+ - ``destination``
+     pointer to the start of the decompressed output stream
+ - ``tag``
+     a word used to identify a triplet
+ - ``length``
+     integer length of the decompressed data
+ - Must allocate enough memory to hold the decompressed sequence
+
+:Side effects:
+ The pre-allocated memory will be filled with decompressed data
+
+:Code:
+ 1) Make new pointers: ``read`` = ``start``, ``write`` = ``desination``
+    These pointers will be moved forward while the original pointers remain fixed
+ 2) While ``length`` > 0
+ 	1) Read ``word`` pointed at by ``read``
+ 	2) If ``word`` is ``tag``
+ 		1) Advance ``read`` by one word
+ 		2) Make new integer ``count`` from word pointed at by ``read``
+ 		3) Advance ``read`` by one word
+ 		4) while ``count`` > 0
+ 			1) Copy word under ``read`` to ``write``
+ 			2) Advance ``write`` by one word
+ 			3) Decrement ``count`` and ``length`` by one
+ 		5) Advance ``read`` by one word
+ 	3) Else
+ 		1) Copy word under ``read`` to ``write``
+ 		2) Advance ``read`` and ``write`` by one word
+ 		3) Decrement ``length`` by one
+
+--------------------------------------------------------------------------------
 
 What about the word that's identical to ``tag``? It will be compressed as
 ``(tag, 0x01 0x00, tag)``, i.e. copy the word ``tag`` one time. This is actually
@@ -168,20 +184,19 @@ byte tells us how many words to copy, it is an usingned 8-bit integer. The
 second byte is the tag and always 0xA7, it is used to identify a near pointer.
 The third byte is the unsigned 8-bit integer offset relative from the last
 written word to the word to copy. Take the following example
-.. code::
 
-	// near pointer
-	02 A7 03
-	// already decompresssed data so far
-	0C 00 0A 00 CD AB 05 00 ??
++---------------------------+--------------------------------------------+
+| decompresssed data before | ``0C 00 0A 00 CD AB 05 00 ??``             |
++---------------------------+--------------------------------------------+
+| near pointer              | ``02 A7 03``                               |
++---------------------------+--------------------------------------------+
+| decompresssed data after  | ``0C 00 0A 00 CD AB 05 00 0A 00 CD AB ??`` |
++---------------------------+--------------------------------------------+
 
 The ``??`` is the current position of the destination pointer; it points at memory
 that has been allocated but not yet been written to, its content is at this
 point undefined. The near pointer tells us to copy two words (four bytes) from
 three words ago. The resulting output would then be
-.. code::
-
-	0C 00 0A 00 CD AB 05 00 0A 00 CD AB ??
 
 First a copy of the destination pointer (called *copy pointer*) is moved four
 words back, pointing at the byte ``0A``. The byte pointed at by the copy pointer
@@ -196,7 +211,7 @@ can only reach 255 words back. Far pointers ``(count 0xA8 low_offset
 high_offset)`` use a 16-bit offset, so they take up one more bytes in memory. The
 offset is given relative to the start of the decompressed sequence, i.e. the
 first destination pointer. Aside from the offset they work the same as near
-pointers, their tag is 0xA8.
+pointers, their tag is ``0xA8``.
 
 Exception
 ~~~~~~~~~
@@ -235,53 +250,64 @@ pointer by one byte and copy the reversed word.
 Pseudocode
 ~~~~~~~~~~
 This pseudocode operates on words.
-.. code::
 
-	Constants: zero = 0x00
-	           near = 0xA7
-	           far  = 0xA8
-	
-	Prerequisites: source      = pointer to the start of the compressed input stream
-	               destination = pointer to the start of the decompressed output stream
-	               length      = length of the decompressed data sequence in words
-	               Must allocete enough memory to hold the decompressed sequence
-	
-	Side effects: The pre-allocated memory will be filled with decompressed data
-	
-	1) Make new pointers: `read` = `start`, `write` = `desination`
-	   These pointers will be moved forward while the original pointers remain fixed
-	2) While `length` > 0
-		2.1) Read the word pointed at by `read`
-		2.2) Make new integer `count` the numeric value of its low byte
-		2.3) Make new integer `flag` the numeric value of its high byte
-		2.4) If `flag` is `near` and `count` is not `zero`
-			2.4.1) Advance `read` by one byte
-			2.4.2) Read the word under `read`
-			2.4.3) Make the new integer `offset` the numeric value of the word's high byte
-			2.4.4) Make the new pointer `copy` = `write` - `offset`
-			2.4.5) While `count` > 0
-				2.4.5.1) Copy word under `copy` to `write`
-				2.4.5.2) Advance `copy` and `write` by one word each
-				2.4.5.3) Decrement `count` and `length` by one each
-		2.5) Else if `flag` is `far` and `count` is not `zero`
-			2.5.1) Advance read by one word
-			2.5.2) Read the word under `read`
-			2.5.3) Make the new integer `offset` the numeric value of the word
-			2.5.4) Make the new pointer `copy` = `destination` + `offset`
-			2.5.5) While `count` > 0
-				2.5.5.1) Copy word under `copy` to `write`
-				2.5.5.2) Advance `copy` and `write` by one word each
-				2.5.5.3) Decrement `count` and `length` by one each
-		2.6) Else if `flag` is `near` or `far` and `count` is `zero`
-			2.6.1) Advance `read` by one byte
-			2.6.2) Copy word under `read` to `write`
-			2.6.3) Swap bytes of word under `write`
-			2.6.4) Advance `read` and `write` by one word each
-			2.6.5) Decrement `length` by one
-		2.7) Else
-			2.7.1) Copy word under `read` to `write`
-			2.7.2) Advance `read` and `write` by one word each
-			2.7.3) Decrement `length` by one
+--------------------------------------------------------------------------------
+
+**Constants:**
+
+- ``zero = 0x00``
+- ``near = 0xA7``
+- ``far  = 0xA8``
+
+**Prerequisites:**
+
+- ``source``
+    pointer to the start of the compressed input stream
+- ``destination``
+    pointer to the start of the decompressed output stream
+- ``length``
+    length of the decompressed data sequence in words
+- Must allocate enough memory to hold the decompressed sequence
+
+**Side effects:**
+The pre-allocated memory will be filled with decompressed data
+
+1) Make new pointers: `read` = `start`, `write` = `desination`. These pointers
+   will be moved forward while the original pointers remain fixed
+2) While `length` > 0
+	1) Read the word pointed at by `read`
+	2) Make new integer `count` the numeric value of its low byte
+	3) Make new integer `flag` the numeric value of its high byte
+	4) If `flag` is `near` and `count` is not `zero`
+		1) Advance `read` by one byte
+		2) Read the word under `read`
+		3) Make the new integer `offset` the numeric value of the word's high byte
+		4) Make the new pointer `copy` = `write` - `offset`
+		5) While `count` > 0
+			1) Copy word under `copy` to `write`
+			2) Advance `copy` and `write` by one word each
+			3) Decrement `count` and `length` by one each
+	5) Else if `flag` is `far` and `count` is not `zero`
+		1) Advance read by one word
+		2) Read the word under `read`
+		3) Make the new integer `offset` the numeric value of the word
+		4) Make the new pointer `copy` = `destination` + `offset`
+		5) While `count` > 0
+			1) Copy word under `copy` to `write`
+			2) Advance `copy` and `write` by one word each
+			3) Decrement `count` and `length` by one each
+	6) Else if `flag` is `near` or `far` and `count` is `zero`
+		1) Advance `read` by one byte
+		2) Copy word under `read` to `write`
+		3) Swap bytes of word under `write`
+		4) Advance `read` and `write` by one word each
+		5) Decrement `length` by one
+	7) Else
+		1) Copy word under `read` to `write`
+		2) Advance `read` and `write` by one word each
+		3) Decrement `length` by one
+
+--------------------------------------------------------------------------------
 
 Near- and far pointers are very similar, the only difference is in how the
 offset is computed and that near pointer have to advance by one byte while far
@@ -608,8 +634,6 @@ instruction offsets is a pixel sequence and the n-th sequence belongs to the
 n-th instruction. The extents of the instruction tell us how many pixels from
 that sequence to draw. After an instruction has been executed move on to the
 next pixel. Here is the pseudocode
-
-code
 .. code::
 
 	constants: transparency = 0xFF
@@ -688,16 +712,20 @@ are stored uncompressed in the *AUDIOT* file. method
 AUDIOHED
 ~~~~~~~~
 There are three types of sound effects: PC speaker, AdLib sound and digitised
-sound. Every sound effect exists in every format and they are stored in the same
-order, so the magic number of a sound effect needs to be mapped to the
-appropriate chunk. Given the number of sound effects, which is hard-coded, we
-can compute the starting offsets of a format the following way
-.. code::
+sound. Every sound effect exists in every format, although it may be defined
+just as empty data, and they are stored in the same order, so the magic number
+of a sound effect needs to be mapped to the appropriate chunk. Given the number
+of sound effects, which is hard-coded, we can compute the starting offsets of a
+format by multiplying a number with the total number of sound effects.
 
-	start_pc    = 0 * number_of_sounds
-	start_adlib = 1 * number_of_sounds
-	start_digi  = 2 * number_of_sounds
-	start_music = 3 * number_of_sounds
+==========  ======
+Type        Offset
+==========  ======
+PC-speaker      0
+AdLib           1
+Digitised       2
+Music           3
+==========  ======
 
 To get the AdLib version of sound ``n`` we can thus compute its index as ``1 *
 number_of_sounds + n``. We can also see that the music chunks follow the sound
@@ -718,7 +746,7 @@ offset of the next chunk; for the i-th chunk that would be
 It is possible that the size of some chunks is 0, in this case the chunk can be
 seen as non-existent and should be skipped. In fact, all the digitised sound
 effects are like this, they are actually stored in the *VSWAP* file instead,
-right afer the sprite chunks. method
+right after the sprite chunks. method
 
 AUDIOT
 ~~~~~~
@@ -760,7 +788,7 @@ number of the sound effect.
 
 Each byte (unsigned 8-bit integer) of the audio data sequence represents a
 certain sound frequency measured in *Hz*. The frequency can be computed this
-way
+way:
 .. code::
 	
 	frequency = 1193181 / (value * 60)    // for value != 0
@@ -777,7 +805,7 @@ Data type     Name        Description
 Uint32        length      Length of sound data, chunk length - 7
 Uint16        priority    Highter priority wins                 
 Byte[length]  data        Actual audio data                     
-Uint_8        terminator  Unused by the game                    
+Uint8         terminator  Unused by the game                    
 ============  ==========  ======================================
 
 Interpreting the data
@@ -1156,6 +1184,7 @@ rate of one ticks per frame or 70 frames per second.
 Mathematics
 ===========
 :TODO: This whole section might be superfluous
+
 To faithfully recreate the gameplay of Wolfenstein 3D one has to understand how
 the developers worked around the technical limitations of the original hardware.
 Even if we were to use proper modern techniques we should at least know under
@@ -1170,13 +1199,15 @@ arithmetic by using integers. That would give the programmers half the bits on
 both sides of the radix point. Truncating the fractional part of such a number
 can be done by right-shifting by half the type's size. Here is an example using
 a 32-bit integer
-.. code::
 
-	| 2^n | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | -1 | -2 | -3 | -4 | -5 | -6 | -7 | -8 |
-	|-----|---|---|---|---|---|---|---|---|----|----|----|----|----|----|----|----|
-	| bit | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |  0 |  0 |  1 |  0 |  0 |  0 |  1 |  0 |
-	
-	1*2^5 + 1*2^1 + 1*2^(-3) + 1*2^(-7) = 32 + 2 + 0.125 + 0.0078125 = 34.1328125
++------------+---+---+---+---+---+---+---+---+----+----+----+----+----+----+----+----+
+| **2^n**    | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | -1 | -2 | -3 | -4 | -5 | -6 | -7 | -8 |
++------------+---+---+---+---+---+---+---+---+----+----+----+----+----+----+----+----+
+| **bit**    | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |  0 |  0 |  1 |  0 |  0 |  0 |  1 |  0 |
++------------+---+---+---+---+---+---+---+---+----+----+----+----+----+----+----+----+
+
+.. math::
+    1*2^5 + 1*2^1 + 1*2^{-3} + 1*2^{-7} = 32 + 2 + 0.125 + 0.0078125 = 34.1328125
 
 The number can be treated like an integer for the most part. In this document I
 will treat these number as floating point anyway for the sake of simplicity. The
@@ -1219,24 +1250,25 @@ Random numbers
 Wolfenstein 3D does not have actual random numbers, instead it uses a table of
 256 of predefined numbers and picks one of them. The result is good enough to
 feel reasonably random to the player.
-.. code::
 
-	  0     8   109   220   222   241   149   107    75   248   254   140    16    66    74    21
- 	211    47    80   242   154    27   205   128   161    89    77    36	 95   110    85    48
-	212   140   211   249    22    79   200    50    28   188    52   140   202   120    68   145
-	 62    70   184   190    91   197   152   224   149   104    25   178   252   182   202   182
-	141   197     4    81   181   242   145    42    39   227   156   198   225   193   219    93
-	122   175   249     0   175   143    70   239    46   246   163    53   163   109   168   135
-	  2   235    25    92    20   145   138    77    69   166    78   176   173   212   166   113
-	 94   161    41    50   239    49   111   164    70    60     2    37   171    75   136   156
-	 11    56    42   146   138   229    73   146    77    61    98   196   135   106    63   197
-	195    86    96   203   113   101   170   247   181   113    80   250   108     7   255   237
-	129   226    79   107   112   166   103   241    24   223   239   120   198    58    60    82
-	128     3   184    66   143   224   145   224    81   206   163    45    63    90   168   114
-	 59    33   159    95    28   139   123    98   125   196    15    70   194   253    54    14
-	109   226    71    17   161    93   186    87   244   138    20    52   123   251    26    36
-	 17    46    52   231   232    76    31   221    84    37   216   165   212   106   197   242
-	 98    43    39   175   254   145   190    84   118   222   187   136   120   163   236   249
+===   ===   ===   ===   ===   ===   ===   ===   ===   ===   ===   ===	===   ===   ===   ===
+  0     8   109   220   222   241   149   107    75   248   254   140    16    66    74    21
+211    47    80   242   154    27   205   128   161    89    77    36	 95   110    85    48
+212   140   211   249    22    79   200    50    28   188    52   140   202   120    68   145
+ 62    70   184   190    91   197   152   224   149   104    25   178   252   182   202   182
+141   197     4    81   181   242   145    42    39   227   156   198   225   193   219    93
+122   175   249     0   175   143    70   239    46   246   163    53   163   109   168   135
+  2   235    25    92    20   145   138    77    69   166    78   176   173   212   166   113
+ 94   161    41    50   239    49   111   164    70    60     2    37   171    75   136   156
+ 11    56    42   146   138   229    73   146    77    61    98   196   135   106    63   197
+195    86    96   203   113   101   170   247   181   113    80   250   108     7   255   237
+129   226    79   107   112   166   103   241    24   223   239   120   198    58    60    82
+128     3   184    66   143   224   145   224    81   206   163    45    63    90   168   114
+ 59    33   159    95    28   139   123    98   125   196    15    70   194   253    54    14
+109   226    71    17   161    93   186    87   244   138    20    52   123   251    26    36
+ 17    46    52   231   232    76    31   221    84    37   216   165   212   106   197   242
+ 98    43    39   175   254   145   190    84   118   222   187   136   120   163   236   249
+===   ===   ===   ===   ===   ===   ===   ===   ===   ===   ===   ===	===   ===   ===   ===
 
 An usigned 32-bit integer is used as the index for for picking a number from the
 table. Initialising the table means setting the index to a number. It can be
@@ -1252,24 +1284,25 @@ Functions and macros
 --------------------
 There are a number of functions and macros defined. The first batch is standard
 stuff
-.. code::
 
-	max(x, y) : maximum of two numbers
-	abs(x)    : absolute value of a number
+=============  ==========================
+``max(x, y)``  Maximum of two numbers
+``abs(x)``     Absolute value of a number
+=============  ==========================
 
 The following are converting between world-space and tile-space; to understand
 them we need to know that positions are stored as 32-bit integers representing
 fixed-point decimals. Shifting a number by ``TILESHIFT`` (=16) left turns an
 integer into a decimal and shifting right turns a decimal into an integer.
-.. code::
 
-	tile_to_pos(a) : converters tile coordinate to world coordinate
-	                 Make `a` into fixed-point, add `HALFTILE`
-	pos_to_tile(a) : converts world coordinate to tile coordinate
-	                 Make `a` into an integer
-	
-	pos_to_tile_f(a) : Converts world coordinate to floating-point tile coordinate
-	                   divide `a` by `FLOATTILE`
+====================  ============================================================
+``tile_to_pos(a)``    Converters tile coordinate to world coordinate; make ``a``
+                      into fixed-point, add ``HALFTILE``.
+``pos_to_tile(a)``    Converts world coordinate to tile coordinate; make ``a``
+                      into an integer.
+``pos_to_tile_f(a)``  Converts world coordinate to floating-point tile coordinate;
+                      divide ``a`` by ``FLOATTILE``.
+====================  ============================================================
 
 Angles & trigonometry
 ---------------------
@@ -1307,7 +1340,7 @@ Degrees  Steps
 All of these numbers could be computed at runtime from one base value, but they
 were manually pre-computed and hard-coded. Conversion between steps and angles
 works as follows
-.. code::
+code::
 
 	step_to_radian(a) = (`a` * PI) / `angle_180`
 	radian_to_step(a) = (`a` * `angle_180`) / PI
@@ -1677,9 +1710,10 @@ Integer     Texture     Texture of the door
 
 Door textures are stored right after the regular wall textures. They are as
 follows in this order
-.. code::
 
-	regular_h, regular_v, plate_h, plate_v, elevator_h, elevator_v, locked_h, locked_v
+========== ========== ======== ======== =========== =========== ========= ========
+regular_h, regular_v, plate_h, plate_v, elevator_h, elevator_v, locked_h, locked_v
+========== ========== ======== ======== =========== =========== ========= ========
 
 Plate is the plate on the walls left and right of the sliding door. These two
 textures are applied on top of the existing wall texture, effectively hiding it
@@ -3688,7 +3722,19 @@ References
 The following sources were used for reference and to guide me in the right
 direction:
 
-- [Wolfenstein 3D source code][1](https://github.com/id-Software/wolf3d)
-- [Chocolate Wolfenstein 3D source code][2](https://github.com/fabiensanglard/Chocolate-Wolfenstein-3D)
-- [Wolfensein 3D on Modding Wiki][3](http://www.shikadi.net/moddingwiki/Wolfenstein_3-D)
-- [Some guy's abandoned attempt to understand the game data][4](http://devinsmith.net/backups/bruce/wolf3d.html)
+- `Wolfenstein 3D source code
+  <https://github.com/id-Software/wolf3d>`_
+- `Chocolate Wolfenstein 3D source code
+  <https://github.com/fabiensanglard/Chocolate-Wolfenstein-3D>`_
+- `Wolfensein 3D on Modding Wiki
+  <http://www.shikadi.net/moddingwiki/Wolfenstein_3-D>`_
+- `Some guy's abandoned attempt to understand the game data 
+  <http://devinsmith.net/backups/bruce/wolf3d.html>`_
+
+.. =============================================================================
+..
+.. Format used for this document
+   -----------------------------
+
+   This is a reStructuredText document, so it follows its format. There is a
+   number of additional conventions used. They will be added eventually...
