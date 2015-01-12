@@ -746,42 +746,120 @@ Centaur
 Centaurs are the only range strike creature available to the Warlock, and are
 valuable for that reason.
 
+:Attack:      3
+:Defense:     1
+:Damage:      1-2
+:Cost:        60 gold
+:Hit Points:  5
+:Speed:       Average
+
 Gargoyle
 ^^^^^^^^
 Due to their speed and toughness, Gargoyles are one of the most useful Warlock
 creatures.
 
+:Attack:      4
+:Defense:     7
+:Damage:      2-3
+:Cost:        200 gold
+:Hit Points:  15
+:Speed:       Very Fast
+:Special:     Flies
+
 Griffin
 ^^^^^^^
 Griffins are able to fight large numbers of creatures and prove victorious.
+
+:Attack:      6
+:Defense:     6
+:Damage:      3-5
+:Cost:        300 gold
+:Hit Points:  25
+:Speed:       Average
+:Special:     Flies
 
 Minotaur
 ^^^^^^^^
 Minotaurs are good offensive creatures, but are slow compared to the earlier
 Warlock creatures.
 
+:Attack:      9
+:Defense:     8
+:Damage:      5-10
+:Cost:        400 gold
+:Hit Points:  35
+:Speed:       Average
+
 Minotaur King
 ^^^^^^^^^^^^^
 The Minotaur upgrade saves the Warlock in the midgame because of the increased
 speed and toughness.
+
+:Attack:      9
+:Defense:     8
+:Damage:      5-10
+:Cost:        400 gold
+:Hit Points:  **35**
+:Speed:       **Very Fast**
 
 Hydra
 ^^^^^
 Though powerful, their slow speed makes the Hydra most useful as a garrison
 creature.
 
+:Attack:      8
+:Defense:     9
+:Damage:      6-12
+:Cost:        800 gold
+:Hit Points:  75
+:Speed:       Very Slow
+:Special:     Attacks all adjacen enemies.
+
 Green Dragon
 ^^^^^^^^^^^^
 The Dragon easily reigns as one of the best sixth level creature, and can fight
 small armies itself.
 
+:Attack:      12
+:Defense:     12
+:Damage:      25-50
+:Cost:        3000 gold,
+                 1 sulfur
+:Hit Points:  200
+:Speed:       Average
+:Special:     Flies,
+              Attack affects two hexes,
+              Immune to spells
+
 Red Dragon
 ^^^^^^^^^^
 The first upgrade to the Dragon improves in speed, thoughness and skill.
 
+:Attack:      **13**
+:Defense:     **13**
+:Damage:      25-50
+:Cost:        3500 gold,
+                 1 sulfur
+:Hit Points:  **250**
+:Speed:       **Fast**
+:Special:     Flies,
+              Attack affects two hexes,
+              Immune to spells
+
 Black Dragon
 ^^^^^^^^^^^^
 The second upgrade to the Dragon improves again in speed, thoughness and skill.
+
+:Attack:      **14**
+:Defense:     **14**
+:Damage:      25-50
+:Cost:        3500 gold,
+                 2 sulfur
+:Hit Points:  **300**
+:Speed:       **Very Fast**
+:Special:     Flies,
+              Attack affects two hexes,
+              Immune to spells
 
 Wizard
 ~~~~~~
@@ -795,40 +873,117 @@ Halfling
 ^^^^^^^^
 Halflings provide solid, early range strike ability for the Wizard.
 
+:Attack:      2
+:Defense:     1
+:Damage:      1-3
+:Cost:        50 gold
+:Hit Points:  3
+:Speed:       Slow
+:Shots:       12
+
 Boar
 ^^^^
 Boars are fast and strong, and make excellent units for exploring.
+
+:Attack:      5
+:Defense:     4
+:Damage:      2-3
+:Cost:        150 gold
+:Hit Points:  15
+:Speed:       Very Fast
 
 Iron Golem
 ^^^^^^^^^^
 The high defense, parial magic resistance, and slow speeed make Golems exellent
 garrison creatures.
 
+:Attack:      5
+:Defense:     10
+:Damage:      4-5
+:Cost:        300 gold
+:Hit Points:  30
+:Speed:       Very Slow
+:Special:     1/2 damage from elemental spells
+
 Steel Golem
 ^^^^^^^^^^^
 The Golem upgrade is faster, tougher, and stronger.
+
+:Attack:      **7**
+:Defense:     10
+:Damage:      4-5
+:Cost:        350 gold
+:Hit Points:  **35**
+:Speed:       **Slow**
+:Special:     1/2 damage from elemental spells
 
 Roc
 ^^^
 The only flying creature available to the Wizard, the Roc offers solid offense
 and defense.
 
+:Attack:      7
+:Defense:     7
+:Damage:      4-8
+:Cost:        400 gold
+:Hit Points:  40
+:Speed:       Average
+:Special:     Flies
+
 Mage
 ^^^^
 Though weak, Mages provide incredible offensive power.
 
+:Attack:      11
+:Defense:      7
+:Damage:      7-9
+:Cost:        600 gold
+:Hit Points:  30
+:Speed:       Fast
+:Shots:       12
+:Special:     No penalty for attacking adjacent units.
+
 Archmage
 ^^^^^^^^
 Archmages are second only to Titans in range strike ability.
+
+:Attack:      **12**
+:Defense:      **8**
+:Damage:      7-9
+:Cost:        700 gold
+:Hit Points:  **35**
+:Speed:       **Very Fast**
+:Shots:       24
+:Special:     No penalty for attacking adjacent units,
+              20% chance to dispel beneficial spells on their target
 
 Giant
 ^^^^^
 Giants do good damage and have enormous hit points, making them the scariest
 creature on the ground.
 
+:Attack:      13
+:Defense:     10
+:Damage:      20-30
+:Cost:        1250 gold,
+                 1 gems
+:Hit Points:  150
+:Speed:       Average
+:Special:     Immune to mind affecting spells
+
 Titan
 ^^^^^
 Titans are capable of defeating Dragons in one on one combat.
+
+:Attack:      **15**
+:Defense:     **15**
+:Damage:      20-30
+:Cost:        5000 gold,
+                 2 gems
+:Hit Points:  **300**
+:Speed:       **Very Fast**
+:Shots:       **16**
+:Special:     Immune to mind affecting spells
 
 Neutral
 ~~~~~~~
@@ -844,36 +999,114 @@ Rogue
 Rogues are useful early in the game, providing extra offense to any hero's
 army.
 
+:Attack:      6
+:Defense:     1
+:Damage:      1-2
+:Cost:        50 gold
+:Hit Points:  4
+:Speed:       Fast
+:Special:     Creatures attacked by Rogues cannot rataliate
+
+
 Nomad
 ^^^^^
 Nomads provide inexpensive fast creatures that can deal and take damage
 reasonably well.
 
+:Attack:      7
+:Defense:     6
+:Damage:      2-5
+:Cost:        200 gold
+:Hit Points:  20
+:Speed:       Very Fast
+
 Ghost
 ^^^^^
 Ghosts are fearsome opponents. Never attack ghosts with level one creatures!
+
+:Attack:      8
+:Defense:     7
+:Damage:      4-6
+:Hit Points:  20
+:Speed:       Fast
+:Special:     Flies,
+              Undead,
+              Creatures killed by ghosts become ghosts
 
 Genie
 ^^^^^
 Between Paladin and Phoenix in power, the Genies low cost and awesome special
 ability are always useful.
 
+:Attack:      10
+:Defense:      9
+:Damage:      20-30
+:Cost:        650 gold,
+                1 gems
+:Hit Points:  50
+:Speed:       Very Fast
+:Special:     Flies,
+              10% halve enemy unit
+
 Medusa
 ^^^^^^
 Medusas make a welcome addition to any army or garrison force.
 
+:Attack:      8
+:Defense:     9
+:Damage:      6-10
+:Cost:        500 gold,
+:Hit Points:  35
+:Speed:       Average
+:Special:     20% chance to turn victim to stone for the combat
+
 Air Elemental
 ^^^^^^^^^^^^^
-Immune to mind spells and Meteor Swarm. Storm and Lightning Bolt do x2 damage.
+
+:Attack:      7
+:Defense:     7
+:Damage:      2-8
+:Hit Points:  35
+:Speed:       Very Fast
+:Special:     Neutral morale,
+              Immune to mind spells and Meteor Swarm,
+              Storm and Lightning Bolt do x2 damage
 
 Earth Elemental
 ^^^^^^^^^^^^^^^
 
+:Attack:      8
+:Defense:     8
+:Damage:      4-5
+:Hit Points:  50
+:Speed:       Slow
+:Special:     Neutral morale;
+              Immune to mind spells, Lightning Bolt and Storm;
+              Meteor Swarm does x2 damage
+
 Fire Elemental
 ^^^^^^^^^^^^^^
 
+:Attack:      8
+:Defense:     6
+:Damage:      4-6
+:Hit Points:  40
+:Speed:       Fast
+:Special:     Neutral morale,
+              Immune to mind- and fire spells,
+              Fire spells do x2 damage
+
 Water Elemental
 ^^^^^^^^^^^^^^^
+
+:Attack:      6
+:Defense:     8
+:Damage:      3-7
+:Hit Points:  45
+:Speed:       Average
+:Special:     Neutral morale,
+              Immune to mind- and cold spells,
+              Fire spells do x2 damage
 
 Structures
 ==========
