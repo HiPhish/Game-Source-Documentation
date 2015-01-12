@@ -99,7 +99,7 @@ Level Five Spells
 -----------------
 asdf
 
-Heroes - Classes, Castles, Buildings and Units
+Heroes - Classes, Castles and Units
 ==============================================
 
 Classes of Heroes
@@ -107,25 +107,25 @@ Classes of Heroes
 Each hero will have a different attributes and skill. Heroes start with a few
 experience points, a small number of creatures, and the follwing statistics:
 
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| Class           | Attack | Defense | Spell Power | Knowledge | Spells    | Skill        |
-+=================+========+=========+=============+===========+===========+==============+
-| **Barbarian**   |      3 |       1 |           1 |         1 | None      | Pathfinding+ |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| **Knight**      |      2 |       2 |           1 |         1 | None      | Ballistics   |
-|                 |        |         |             |           |           | Leadership   |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| **Necromancer** |      1 |       0 |           2 |         2 | Haste     | Wisdom       |
-|                 |        |         |             |           |           | Necromancy   |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| **Sorceress**   |      0 |       0 |           2 |         3 | Bless     | Wisdom       |
-|                 |        |         |             |           |           | Navigation+  |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| **Warlock**     |      0 |       0 |           3 |         2 | Curse     | Wisdom       |
-|                 |        |         |             |           |           | Scouting+    |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
-| **Wizard**      |      0 |       1 |           2 |         2 | Stoneskin | Wisdom+      |
-+-----------------+--------+---------+-------------+-----------+-----------+--------------+
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| Class           | Attack | Defense | Spell Power | Knowledge | Spells    | Skill         |
++=================+========+=========+=============+===========+===========+===============+
+| **Barbarian**   |      3 |       1 |           1 |         1 | None      | Pathfinding+, |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| **Knight**      |      2 |       2 |           1 |         1 | None      | Ballistics,   |
+|                 |        |         |             |           |           | Leadership    |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| **Necromancer** |      1 |       0 |           2 |         2 | Haste     | Wisdom,       |
+|                 |        |         |             |           |           | Necromancy    |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| **Sorceress**   |      0 |       0 |           2 |         3 | Bless     | Wisdom,       |
+|                 |        |         |             |           |           | Navigation+   |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| **Warlock**     |      0 |       0 |           3 |         2 | Curse     | Wisdom,       |
+|                 |        |         |             |           |           | Scouting+     |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
+| **Wizard**      |      0 |       1 |           2 |         2 | Stoneskin | Wisdom+       |
++-----------------+--------+---------+-------------+-----------+-----------+---------------+
 
 A hero with no spells has no spell book either, but they can buy one from the
 mage's guild for 500 gold. A skill with a plus sign denotes an *advanced* skill
@@ -202,6 +202,7 @@ class.
 
 Creatures
 ---------
+Creatures with no *shots* have no ranged attacks.
 
 Barbarian
 ~~~~~~~~~
@@ -212,18 +213,20 @@ and medium maps.
 
 Goblin
 ^^^^^^
+A solid low level creature, pack of Goblins are a match for most level two
+creatures.
+
 :Attack:      3
 :Defense:     1
 :Damage:      1-2
 :Cost:        40 gold
 :Hit Points:  3
 :Speed:       Average
-:Shots:       0
-:Description: A solid low level creature, pack of Goblins are a match for most
-              level two creatures.
 
 Orc
 ^^^^
+Though slow, Orcs provide range attacks until Trolls can be recruited.
+
 :Attack:      3
 :Defense:     4
 :Damage:      2-3
@@ -231,11 +234,11 @@ Orc
 :Hit Points:  10
 :Speed:       Very Slow
 :Shots:       8
-:Description: Though slow, Orcs provide range attacks until Trolls can be
-              recruited.
 
 Orc Chieftan
 ^^^^^^^^^^^^
+The upgrade to the Orcs gives them longer durability in combat.
+
 :Attack:      3
 :Defense:     4
 :Damage:      **3-4**
@@ -243,82 +246,86 @@ Orc Chieftan
 :Hit Points:  **15**
 :Speed:       **Slow**
 :Shots:       **16**
-:Description: The upgrade to the Orcs gives them longer durability in combat.
 
 Wolf
 ^^^^
+Wolves are incredible offensive unints, but they need to be used carefully
+because they cannot take damage well.
+
 :Attack:      6
 :Defense:     2
 :Damage:      3-5
 :Cost:        200 gold
 :Hit Points:  20
 :Speed:       Very Fast
-:Shots:       0
-:Description: 2 Attacks. Wolves are incredible offensive unints, but they need
-              to be used carefully because they cannot take damage well.
+:Special:     2 Attacks
 
 Ogre
 ^^^^
+Ogres are the anchor of the Barbarian units. Though tough, Ogres are very slow
+on the battlefield, making it difficult tor them to attack.
+
 :Attack:      9
 :Defense:     5
 :Damage:      4-6
 :Cost:        300 gold
 :Hit Points:  40
 :Speed:       Very Slow
-:Shots:       0
-:Description: Ogres are the anchor of the Barbarian units. Though tough, Ogres
-              are very slow on the battlefield, making it difficult tor them to
-              attack.
 
 Ogre Lord
 ^^^^^^^^^
+The upgrade to the Ogre ont only adds speed, but a sizable increase in hit
+points.
+
 :Attack:      9
 :Defense:     5
 :Damage:      **5-7**
 :Cost:        500 gold
 :Hit Points:  **60**
 :Speed:       **Average**
-:Shots:       0
-:Description: The upgrade to the Ogre ont only adds speed, but a sizable
-              increase in hit points.
 
 Troll
 ^^^^^
+The ability to regenerate and strike at range make trolls incredibly useful in
+castle sieges.
+
 :Attack:      10
-:Defense:     5
+:Defense:      5
 :Damage:      5-7
 :Cost:        600 gold
 :Hit Points:  40
 :Speed:       Average
 :Shots:       8
-:Description: Regenerates. The ability to regenerate and strike at range make
-              trolls incredibly useful in castle sieges.
+:Special:     Regenerates
 
 War Troll
 ^^^^^^^^^
+The Troll upgrade increases in damage and speed, while keeping the ability to
+regenerate.
+
 :Attack:      10
-:Defense:     5
+:Defense:      5
 :Damage:      **7-9**
 :Cost:        700 gold
 :Hit Points:  40
 :Speed:       **Fast**
 :Shots:       **16**
-:Description: Regenerates. The Troll upgrade increases in damage and speed,
-              while keeping the ability to regenerate.
+:Special:     Regenerates
 
 Cyclops
 ^^^^^^^
+Cyclopes are poweful ground combatants.
+
 :Attack:      12
-:Defense:     9
+:Defense:      9
 :Damage:      12-24
-:Cost:        750 gold
+:Cost:        750 gold,
                 1 crystal
 :Hit Points:  80
 :Speed:       Fast
-:Shots:       0
-:Description: Attack affects 2 spaces, 20% chance to paralyze creatures.
-              Cyclopes are poweful ground combatants.
-
+:Description: Attack affects 2 spaces,
+              20% chance to paralyze creatures
+              
 Knight
 ~~~~~~
 Knight creatures have high defense skills, and at the upper levels are fairly
@@ -329,18 +336,21 @@ early game advantage.
 
 Peasant
 ^^^^^^^
+The weakest creature, their only redeeming quality is numbers- they are cheap
+and plentiful.
+
 :Attack:      1
 :Defense:     1
 :Damage:      1-1
 :Cost:        20 gold
 :Hit Points:  1
 :Speed:       Very Slow
-:Shots:       0
-:Description: The weakest creature, their only redeeming quality is numbers-
-              they are cheap and plentiful.
 
 Archer
 ^^^^^^
+The only range strike unit for the Knight, the slow speed of the Archers can be
+a setback.
+
 :Attack:      5
 :Defense:     3
 :Damage:      2-3
@@ -348,11 +358,12 @@ Archer
 :Hit Points:  10
 :Speed:       Very Slow
 :Shots:       12
-:Description: The only range strike unit for the Knight, the slow speed of the
-              Archers can be a setback.
 
 Ranger
 ^^^^^^
+The best low level upgrade available, the Ranger is almost twice as good as an
+Archer on offense.
+
 :Attack:      5
 :Defense:     3
 :Damage:      2-3
@@ -360,104 +371,104 @@ Ranger
 :Hit Points:  10
 :Speed:       **Average**
 :Shots:       **24**
-:Description: Fires 2 shots per turn. The best low level upgrade available, the
-              Ranger is almost twice as good as an Archer on offense.
+:Special:     Fires 2 shots per turn
 
 Pikeman
 ^^^^^^^
+Pikemen compose half of the standard units of the Knight. Though weak on
+offense, the Pikemen's *Defense* allows them to last in battle.
+
 :Attack:      5
 :Defense:     9
 :Damage:      3-4
 :Cost:        200 gold
 :Hit Points:  15
 :Speed:       Average
-:Shots:       0
-:Description: Pikemen compose half of the standard units of the Knight. Though
-              weak on offense, the Pikemen's *Defense* allows them to last in
-              battle.
 
 Veteran Pikeman
 ^^^^^^^^^^^^^^^
+The upgrade of the Pikemen gives increased speed and hit points.
+
 :Attack:      5
 :Defense:     9
 :Damage:      3-4
 :Cost:        250 gold
 :Hit Points:  **20**
 :Speed:       **Fast**
-:Shots:       0
-:Description: The upgrade of the Pikemen gives increased speed and hit points.
 
 Swordsman
 ^^^^^^^^^
+The other half of the standard Knight units, Swordsmen are tougher than the
+Pikemen, and do considerably more damage.
+
 :Attack:      7
 :Defense:     9
 :Damage:      4-6
 :Cost:        250 gold
 :Hit Points:  25
 :Speed:       Average
-:Shots:       0
-:Description: The other half of the standard Knight units, Swordsmen are
-              tougher than the Pikemen, and do considerably more damage.
 
 Master Swordsman
 ^^^^^^^^^^^^^^^^
+The Swordsman upgrade gives increased speed and hit points.
+
 :Attack:      7
 :Defense:     9
 :Damage:      4-6
 :Cost:        300 gold
 :Hit Points:  **30**
 :Speed:       **Fast**
-:Shots:       0
-:Description: The Swordsman upgrade gives increased speed and hit points.
 
 Cavalry
 ^^^^^^^
+Cavalry deal considerable damage, and their high speed allows them to manuever
+easily around the battlefield.
+
 :Attack:      10
 :Defense:      9
 :Damage:      5-10
 :Cost:        300 gold
 :Hit Points:  30
 :Speed:       Very Fast
-:Shots:       0
-:Description: Cavalry deal considerable damage, and their high speed allows
-              them to manuever easily around the battlefield.
 
 Champion
 ^^^^^^^^
+One of the fastest units, the Cavalry upgrade can move around almost at will on
+the battlefield.
+
 :Attack:      10
 :Defense:      9
 :Damage:      5-10
 :Cost:        375 gold
 :Hit Points:  **40**
 :Speed:       **Ultra Fast**
-:Shots:       0
-:Description: One of the fastest units, the Cavalry upgrade can move around
-              almost at will on the battlefield.
 
 Paladin
 ^^^^^^^
+Expert warriors, Paladins are best suited on offense, where their ability to
+strike twice gives them the biggest advantage.
+
 :Attack:      11
 :Defense:     12
 :Damage:      10-20
 :Cost:        600 gold
 :Hit Points:  50
 :Speed:       Fast
-:Shots:       0
-:Description: 2 attacks. Expert warriors, Paladins are best suited on offense,
-              where their ability to strike twice gives them the biggest
-              advantage.
+:Special:     2 attacks
 
 Crusader
 ^^^^^^^^
+The Paladin upgrade becomes a nightmare for the unwary Necromancer.
+
 :Attack:      11
 :Defense:     12
 :Damage:      10-20
 :Cost:        1000 gold
 :Hit Points:  **65**
 :Speed:       **Very Fast**
-:Shots:       0
-:Description: 2 attacks. Immune to curse. x2 damage vs. undead. The Paladin
-              upgrade becomes a nightmare for the unwary Necromancer.
+:Description: 2 attacks,
+              Immune to curse,
+              x2 damage vs. undead
 
 Necromancer
 ~~~~~~~~~~~
@@ -471,33 +482,128 @@ affecting spells, Bless and Curse, and are always at neutral morale.
 
 Skeleton
 ^^^^^^^^
+The best level one creature, Skeletons should be hoarded by Necormancers, as
+they provide easily available power early on.
+
+:Attack:      4
+:Defense:     3
+:Damage:      2-3
+:Cost:        75 gold
+:Hit Points:  4
+:Speed:       Average
 
 Zombie
 ^^^^^^
+Though havig more hits than Skeletons, Zombies have a low Defense and speed.
+
+:Attack:      5
+:Defense:     2
+:Damage:      2-3
+:Cost:        150 gold
+:Hit Points:  15
+:Speed:       Very Slow
 
 Mutant Zombie
 ^^^^^^^^^^^^^
+The Zombiew upgrade increases the speed of the Zombies. Mutant Zombies are
+worthwhile additions to any fledgling undead army.
+
+:Attack:      5
+:Defense:     2
+:Damage:      2-3
+:Cost:        200 gold
+:Hit Points:  **20**
+:Speed:       **Average**
 
 Mummy
 ^^^^^
+The best ground creature available for the Necromancer.
+
+:Attack:      6
+:Defense:     6
+:Damage:      3-4
+:Cost:        250 gold
+:Hit Points:  25
+:Speed:       Average
+:Special:     20% chance to curse enemy creatures
 
 Royal Mummy
 ^^^^^^^^^^^
+The upgrade of the Mummy has improved speed and toughness.
+
+:Attack:      6
+:Defense:     6
+:Damage:      3-4
+:Cost:        300 gold
+:Hit Points:  **30**
+:Speed:       **Fast**
+:Special:     30% chance to curse enemy creatures
 
 Vampire
 ^^^^^^^
+Vampires are necessary for the success of the Necromancer.
+
+:Attack:      8
+:Defense:     6
+:Damage:      5-7
+:Cost:        500 gold
+:Hit Points:  30
+:Speed:       Average
+:Special:     Flies,
+              Creatures attacked by Vampires cannot retaliate
 
 Vampire Lord
 ^^^^^^^^^^^^
 
+:Attack:      8
+:Defense:     6
+:Damage:      5-7
+:Cost:        500 gold
+:Hit Points:  **40**
+:Speed:       **Fast**
+:Special:     Flies,
+              Creatures attacked by Vampire Lords cannot retaliate,
+              Vampire Lords gain back some of the damage they do as hit points
+
 Lich
 ^^^^
+Liches are the only range strike unit available to the Necromancer.
+
+:Attack:      7
+:Defense:     12
+:Damage:      8-10
+:Cost:        900 gold
+:Hit Points:  25
+:Speed:       Fast
+:Shots:       12
+:Special:     Range attack affects adfacent hexes
 
 Power Lich
 ^^^^^^^^^^
+This upgrade of the Lich improves the durability of the Lich in combat.
+
+:Attack:      7
+:Defense:     **13**
+:Damage:      8-10
+:Cost:        900 gold
+:Hit Points:  **25**
+:Speed:       **Very Fast**
+:Shots:       **24**
+:Special:     Range attack affects adfacent hexes
 
 Bone Dragon
 ^^^^^^^^^^^
+Bone Dragons are fierce creatures, second only to the Warlock Dragons in raw
+damage.
+
+:Attack:      11
+:Defense:      9
+:Damage:      25-45
+:Cost:        1500 gold
+:Hit Points:  150
+:Speed:       Average
+:Special:     Flies,
+              Lowers the morale of opposing creatures
 
 Sorceress
 ~~~~~~~~~
@@ -509,39 +615,122 @@ creatures.
 
 Sprite
 ^^^^^^
-asdf
+Sprites are powerful in large numbers.
+
+:Attack:      4
+:Defense:     2
+:Damage:      1-2
+:Cost:        50 gold
+:Hit Points:  2
+:Speed:       Average
+:Special:     Flies,
+              Creatures attacked by Sprites cannot retaliate
 
 Dwarf
 ^^^^^
-asdf
+Dwarves make excellent garrison units bcause of their toughness and magic
+resistance.
+
+:Attack:      6
+:Defense:     5
+:Damage:      2-4
+:Cost:        200 gold
+:Hit Points:  20
+:Speed:       Very Slow
+:Special:     25% Magic resistance
 
 Battle Dwarf
 ^^^^^^^^^^^^
-asdf
+The upgrade of the Dwarf is faster and tougher.
+
+:Attack:      6
+:Defense:     **6**
+:Damage:      2-4
+:Cost:        250 gold
+:Hit Points:  20
+:Speed:       **Average**
+:Special:     25% Magic resistance
 
 Elf
 ^^^
-asdf
+Elves are incedible offensive units, able to deal large amounts of damage at
+range.
+
+:Attack:      4
+:Defense:     3
+:Damage:      2-3
+:Cost:        250 gold
+:Hit Points:  15
+:Speed:       Average
+:Shots:       24
+:Special:     Fires 2 shots per turn
 
 Grand Elf
 ^^^^^^^^^
-asdf
+The Elf upgrade becomes faster and more skilled. Grand Elves are able to
+whittle down enemy foces quickly.
+
+:Attack:      **5**
+:Defense:     **5**
+:Damage:      2-3
+:Cost:        300 gold
+:Hit Points:  15
+:Speed:       **Very Fast**
+:Shots:       24
+:Special:     Fires 2 shots per turn
 
 Druid
 ^^^^^
-asdf
+Druids are one of the best range strike units available. Though weak, few units
+can close to melee range on the Druid without dying.
+
+:Attack:      7
+:Defense:     5
+:Damage:      5-8
+:Cost:        350 gold
+:Hit Points:  25
+:Speed:       Fast
+:Shots:       8
 
 Grater Druid
 ^^^^^^^^^^^^
-asdf
+The Druid upgrade is faster and tougher. Greater Druids and Grand Elves
+complement each other well.
+
+:Attack:      7
+:Defense:     **7**
+:Damage:      5-8
+:Cost:        400 gold
+:Hit Points:  25
+:Speed:       **Very Fast**
+:Shots:       **16**
 
 Unicorn
 ^^^^^^^
-asdf
+Unicorns are solid ground creatures. They are tough, fast, and deal good
+damage.
+
+:Attack:      10
+:Defense:      9
+:Damage:      7-14
+:Cost:        500 gold
+:Hit Points:  40
+:Speed:       Fast
+:Special:     20% chance to Blind enemy creature.
 
 Phoenix
 ^^^^^^^
-asdf
+Extremely fast and powerful, Phoenixes can be formidable oppeonents.
+
+:Attack:      10
+:Defense:      9
+:Damage:      7-14
+:Cost:        500 gold
+:Hit Points:  40
+:Speed:       Fast
+:Special:     Flies,
+              Attack affects two hexes,
+              Immune to elemental spells.
 
 
 Warlock
@@ -554,30 +743,45 @@ generally so better on larger maps where they have time do develop Dragons.
 
 Centaur
 ^^^^^^^
+Centaurs are the only range strike creature available to the Warlock, and are
+valuable for that reason.
 
 Gargoyle
 ^^^^^^^^
+Due to their speed and toughness, Gargoyles are one of the most useful Warlock
+creatures.
 
 Griffin
 ^^^^^^^
+Griffins are able to fight large numbers of creatures and prove victorious.
 
 Minotaur
 ^^^^^^^^
+Minotaurs are good offensive creatures, but are slow compared to the earlier
+Warlock creatures.
 
 Minotaur King
 ^^^^^^^^^^^^^
+The Minotaur upgrade saves the Warlock in the midgame because of the increased
+speed and toughness.
 
 Hydra
 ^^^^^
+Though powerful, their slow speed makes the Hydra most useful as a garrison
+creature.
 
 Green Dragon
 ^^^^^^^^^^^^
+The Dragon easily reigns as one of the best sixth level creature, and can fight
+small armies itself.
 
 Red Dragon
 ^^^^^^^^^^
+The first upgrade to the Dragon improves in speed, thoughness and skill.
 
 Black Dragon
 ^^^^^^^^^^^^
+The second upgrade to the Dragon improves again in speed, thoughness and skill.
 
 Wizard
 ~~~~~~
@@ -589,30 +793,42 @@ match up to Dragons in power.
 
 Halfling
 ^^^^^^^^
+Halflings provide solid, early range strike ability for the Wizard.
 
 Boar
 ^^^^
+Boars are fast and strong, and make excellent units for exploring.
 
 Iron Golem
 ^^^^^^^^^^
+The high defense, parial magic resistance, and slow speeed make Golems exellent
+garrison creatures.
 
 Steel Golem
 ^^^^^^^^^^^
+The Golem upgrade is faster, tougher, and stronger.
 
 Roc
 ^^^
+The only flying creature available to the Wizard, the Roc offers solid offense
+and defense.
 
 Mage
 ^^^^
+Though weak, Mages provide incredible offensive power.
 
 Archmage
 ^^^^^^^^
+Archmages are second only to Titans in range strike ability.
 
-Giand
+Giant
 ^^^^^
+Giants do good damage and have enormous hit points, making them the scariest
+creature on the ground.
 
 Titan
 ^^^^^
+Titans are capable of defeating Dragons in one on one combat.
 
 Neutral
 ~~~~~~~
@@ -625,21 +841,30 @@ find, but on the lower difficulties they are more of a bonus.
 
 Rogue
 ^^^^^
+Rogues are useful early in the game, providing extra offense to any hero's
+army.
 
 Nomad
 ^^^^^
+Nomads provide inexpensive fast creatures that can deal and take damage
+reasonably well.
 
 Ghost
 ^^^^^
+Ghosts are fearsome opponents. Never attack ghosts with level one creatures!
 
 Genie
 ^^^^^
+Between Paladin and Phoenix in power, the Genies low cost and awesome special
+ability are always useful.
 
 Medusa
 ^^^^^^
+Medusas make a welcome addition to any army or garrison force.
 
 Air Elemental
 ^^^^^^^^^^^^^
+Immune to mind spells and Meteor Swarm. Storm and Lightning Bolt do x2 damage.
 
 Earth Elemental
 ^^^^^^^^^^^^^^^
@@ -660,75 +885,85 @@ The following structures are available in all towns.
 
 Mage Guild
 ~~~~~~~~~~
-:Cost:     2000 gold
-              5 wood
-              5 ore
-:Effect:   Allows spellbook purchase and teaches spells. Additional levels
-           become increasingly more expensive.
+Allows spellbook purchase and teaches spells. Additional levels become
+increasingly more expensive.
+
+:Cost:  2000 gold,
+           5 wood,
+           5 ore
 
 Tavern
 ~~~~~~
-:Cost:     500 gold
-             5 wood
-:Effect:   Gives defenders a bonus to morale and offers rumors. Not available
-           in Necromancer towns.
+Gives defenders a bonus to morale and offers rumors. Not available in
+Necromancer towns.
+
+:Cost:  500 gold,
+          5 wood
 
 Thieves' Guild
 ~~~~~~~~~~~~~~
-:Cost:     750 gold
-             5 wood
-:Effect:   Gives information comparing the players. Additional Guilds give more
-           information.
+Gives information comparing the players. Additional Guilds give more
+information.
+
+:Cost:  750 gold,
+          5 wood
 
 Shipyard
 ~~~~~~~~
-:Cost:     2000 gold
-             20 wood
-:Effect:   Allows construction of ships.
-:Unit:     1000 gold
-             10 wood
+Allows construction of ships.
+
+:Cost:  2000 gold,
+          20 wood
+:Unit:  1000 gold,
+          10 wood
 
 Statue
 ~~~~~~
-:Cost:     1250 gold
-              5 ore
-:Effect:   Increases income of town by 250 gold.
+Increases income of town by 250 gold.
+
+:Cost:  1250 gold
+           5 ore
 
 Marketplace
 ~~~~~~~~~~~
-:Cost:     500 gold
-             5 wood
-:Effect:   Allows trading of resources. Additions Marketplaces give a better
-           exchange rate.
+Allows trading of resources. Additions Marketplaces give a better exchange
+rate.
+
+:Cost:  500 gold,
+          5 wood
 
 Well
 ~~~~
-:Cost:     500 gold
-:Effect:   Increases creature production of each dwelling by two per week.
+Increases creature production of each dwelling by two per week.
+
+:Cost:  500 gold
 
 Horde Building
 ~~~~~~~~~~~~~~
-:Cost:     1000 gold
-:Effect:   Increases creature production of the lowest dwelling by eight per
-           week.
+Increases creature production of the lowest dwelling by eight per week.
+
+:Cost:  1000 gold
 
 Left Turret
 ~~~~~~~~~~~
-:Cost:     1500 gold
-              5 ore
-:Effect:   Adds a smaller ballista in the castle walls.
+Adds a smaller ballista in the castle walls.
+
+:Cost:  1500 gold,
+           5 ore
 
 Right Turret
 ~~~~~~~~~~~~
-:Cost:     1500 gold
-              5 ore
-:Effect:   Adds a smaller ballista in the castle walls.
+Adds a smaller ballista in the castle walls.
+
+:Cost:  1500 gold,
+           5 ore
 
 Moat
 ~~~~
-:Cost:     750 gold
-:Effect:   Entering moat stops ground movement, and units have -3 Defense while
-           in the moat.
+Entering moat stops ground movement, and units have -3 Defense while in the
+moat.
+
+:Cost:  750 gold
 
 Barbarian
 ---------
@@ -750,16 +985,18 @@ Wizard
 
 New Structure (PoL)
 -------------------
-The Necomancer castle has a new building in the Price of Loyalty expansion. Where the other castles have a tavern, the Necromancer castle now has an Evil Shrine.
+The Necomancer castle has a new building in the Price of Loyalty expansion.
+Where the other castles have a tavern, the Necromancer castle now has an Evil
+Shrine.
 
 Evil Shrine
 ~~~~~~~~~~~
-:Cost:     4000 gold
-             10 wood
-             10 crystal
-:Requires: Nothing
-:Effect:   Increases the number of skeletons resurrected after a battle by 10%,
-           to a maximum of 60%.
+Increases the number of skeletons resurrected after a battle by 10%, to a
+maximum of 60%.
+
+:Cost:  4000 gold,
+          10 wood,
+          10 crystal
 
 ========
 Appendix
