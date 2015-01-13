@@ -656,7 +656,6 @@ instruction offsets is a pixel sequence and the n-th sequence belongs to the
 n-th instruction. The extents of the instruction tell us how many pixels from
 that sequence to draw. After an instruction has been executed move on to the
 next pixel. Here is the pseudocode
-.. code::
 
 --------------------------------------------------------------------------------
 
@@ -1412,8 +1411,8 @@ Degrees  Steps
 
 All of these numbers could be computed at runtime from one base value, but they
 were manually pre-computed and hard-coded. Conversion between steps and angles
-works as follows
-code::
+works as follows:
+.. code::
 
 	step_to_radian(a) = (``a`` * PI) / ``angle_180``
 	radian_to_step(a) = (``a`` * ``angle_180``) / PI
@@ -1894,7 +1893,6 @@ Changing the door state
 ^^^^^^^^^^^^^^^^^^^^^^^
 A door can be opened at any time unless it is already open, but a door can only
 close if it isn't blocked
-.. code::
 
 --------------------------------------------------------------------------------
 
@@ -2048,7 +2046,6 @@ Doors are processed during every frame. We look at the state of each door and
 decide what to do. Doors are driven by time: unless the door is closed each time
 the ``ticcount`` is incremented until it has reached a certain point, and then the
 door does things on its own without outside input.
-.. code::
 
 --------------------------------------------------------------------------------
 
@@ -2581,7 +2578,6 @@ prerequisites: - ``class`` = actor class of the new actor
 Spawning patrolling actor
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 This function spawns a patrolling actor, dogs always patrol. Pseudocode
-.. code::
 
 --------------------------------------------------------------------------------
 
@@ -2667,7 +2663,6 @@ The direction of bosses depend on the particular boss. Pseudocode
 Spawning ghost actor
 ^^^^^^^^^^^^^^^^^^^^
 This function spawns Pac-Man ghosts. Pseudocode
-.. code::
 
 --------------------------------------------------------------------------------
 
@@ -2706,7 +2701,6 @@ Check Sight
 ^^^^^^^^^^^
 This routine scans the line of sight of the actor for the presence of the
 player. Pseudocode
-.. code::
 
 --------------------------------------------------------------------------------
 
