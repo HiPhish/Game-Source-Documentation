@@ -1200,9 +1200,82 @@ moat.
 
 Barbarian
 ---------
+The total cost for all Barbarian structures is the least of all hero types, but
+they require an enormous amount of ore. A small amout of wood is needed, and
+crystals only at the highest level.
+
+Hut
+~~~~
+Creates 10 Goblins per week.
+
+:Cost:  300 gold
+
+Stick Hut
+~~~~~~~~~
+Generates 8 Orcs per week.
+
+:Cost:      800 gold,
+              5 wood
+:Requires:  Hut
+
+Stick Hut Upgrade
+~~~~~~~~~~~~~~~~~
+Upgrades Orc to Orc Chieftans.
+
+:Cost:      1200 gold, 5 wood
+:Requires:  Adobe, Den, Stick Hut
+
+Den
+~~~~
+Generates 5 Wolves per week.
+
+:Cost:      2000 gold, 10 wood, 10 ore
+:Requires:  Hut
+
+Adobe
+~~~~~
+Generates 4 Ogres per week.
+
+:Cost:      2000 gold, 10 wood, 10 ore
+:Requires:  Hut
+
+Adobe Upgrade
+~~~~~~~~~~~~~
+Upgrade Ogres to Ogre Lords.
+
+:Cost:      3000 gold, 5 wood, 5 ore
+:Requires:  Adobe, Den, Stick Hut
+
+Bridge
+~~~~~~
+Generates 3 Trolls per week.
+
+:Cost:      4000 gold, 20 ore
+:Requires:  Adobe
+
+Bridge Upgrade
+~~~~~~~~~~~~~~
+Upgrades Trolls to War Trolls.
+
+:Cost:      2000 gold, 10 ore
+:Requires:  Bridge 
+
+Pyramid
+~~~~~~~
+Generates 2 Cyclops per week.
+
+:Cost:      6000 gold, 20 ore, 20 crystals
+:Requires:  Bridge 
+
+Coliseum
+~~~~~~~~
+Gives defenders +2 Morale
+
+:Cost:      2000 gold, 10 wood, 20 ore
 
 Knight
 ------
+The Knight castle has the most structures, and requires vast amounts of wood. A small amount of ore is necessary as well, and crystals only at the highest level.
 
 Necromancer
 -----------
