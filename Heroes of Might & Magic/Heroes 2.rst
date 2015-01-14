@@ -77,11 +77,60 @@ skills on a map with large areas of rough terrain.
 
 Spells
 ======
-asdf
+Spells, and a particular hero's ability to cast them, are a major part of Heroes
+II. Before you can cast any spell, your hero needs a spellbook and a Mage Guild
+to learn to spells from (he may need the Mage Guild to get a spellbook). To
+learn spells above 2nd level, the hero must also possess the Wisdom skill.
+
+Casting spells costs spell points - the cost of each spell is listed below the
+spell in you spellbook. To cast a spell, click on the spell you wish to cast
+from the spellbook. R-clicking gives quick information on the spell. to turn the
+pages, click on the upper right and left corners of the book. The exit bookmark
+will exit you from the spellbook. The Horse and Sword boodmarks show you the
+Adventure and Combat spells you know, respectively.
+
+Combat spells may only be cast in combat, and Adventure spells may only be cast
+from the Adventure Window. You can determine how many spell points a hero has
+remaining by looking at the green bar to the right of the hero's portrait in the
+Hero Locator Buttons, from the Hero Screen, or by the bookmark on the lower left
+of the spellbook. Spell points are regained by starting a turn in a castle with
+a Mage Guild, or slowly over time (at the rato of one per day).
 
 Level One Spells
 ----------------
-asdf
+
+==============  ==== =========  ==========  ===========  ============================
+Spell           Cost Type       Target      Duration     Effect
+==============  ==== =========  ==========  ===========  ============================
+Bless              3 Combat     1 ally      1 rnd/Power  Blessed creatures inflict
+                                                         maximum damage.
+Bloodlust          3 Combat     1 ally      1 rnd/Power  Adds +3 to the creature's
+                                                         Attack skill.
+Cure               6 Combat     1 ally      Instant      Removes all negative spells
+                                                         and heals 5x Power in hit
+                                                         points.
+Curse              3 Combat     1 enemy     1 rnd/Power  Cursed creates inflict
+                                                         minimum damage.
+Dispel Magic       5 Combat     1 creature  Instant      Removes all negative spells
+                                                         on a creature
+Haste              3 Combat     1 ally      1 rnd/Power  Adds +2 to the creature's
+                                                         Speed.
+Magic Arrow        3 Combat     1 enemy     Instant      Inflicts 10x power in damage
+                                                         to single enemy creature.
+Shield             3 Combat     1 ally      1 rnd/Power  Shielded creatures take
+                                                         half the damage from range
+                                                         strike attacks.
+Slow               3 Combat     1 enemy     1 rnd/Power  Slowed creatures are reduced
+                                                         to half their normal speeds.
+Stoneskin          3 Combat     1 ally      1 rnd/Power  Adds +3 to the creature's
+                                                         Defense skill.
+View Mines         1 Adventure                           Show the location of all
+                                                         mines, and their
+                                                         controllers, on World View.
+View Resources     1 Adventure                           Shows the location of all
+                                                         remaining resources on the
+                                                         map in World View.
+==============  ==== =========  ==========  ===========  ============================
 
 Level Two Spells
 ----------------
@@ -1275,19 +1324,395 @@ Gives defenders +2 Morale
 
 Knight
 ------
-The Knight castle has the most structures, and requires vast amounts of wood. A small amount of ore is necessary as well, and crystals only at the highest level.
+The Knight castle has the most structures, and requires vast amounts of wood. A
+small amount of ore is necessary as well, and crystals only at the highest
+level.
+
+Thatched Hut
+~~~~~~~~~~~~
+Generates 12 Peasants per week.
+
+:Cost: 200 gold
+
+Archery Range
+~~~~~~~~~~~~~
+Generates 8 Archers per week.
+
+:Cost: 1000 gold
+:Requires: Thatched Hut
+
+Archery Range Upgrade
+~~~~~~~~~~~~~~~~~~~~~
+Upgrades Archers to Rangers.
+
+:Cost: 1500 gold, 5 wood
+:Requires: Armory, Blacksmith, Archery Range
+
+Blacksmith
+~~~~~~~~~~
+Generates 5 Pikemen per week.
+:Requires: Well, Thatched Hut
+
+:Cost: 1000 gold, 5 ore
+
+Blacksmith Upgrade
+~~~~~~~~~~~~~~~~~~
+Upgrades Pikemen to Veteran Pikemen.
+
+:Cost: 1500 gold, 5 ore
+:Requires: Blacksmith, Armory
+
+Armory
+~~~~~~
+Generates 4 Swordsmen per week.
+
+:Cost: 2000 gold, 10 wood, 10 ore
+:Requires: Tavern, Thatched Hut
+
+Armory Upgrade
+~~~~~~~~~~~~~~
+Upgrades Swordsmen to Master Swordsmen
+
+:Cost: 2000 gold, 10 wood, 10 ore
+:Requires: Armory, Blacksmith 
+
+Jousting Arena
+~~~~~~~~~~~~~~
+Generates 3 Cavalry per week.
+
+:Cost: 3000 gold, 20 wood
+:Requires: Blacksmith, Armory
+
+Jousting Arena Upgrade
+~~~~~~~~~~~~~~~~~~~~~~
+Upgrades Cavalry to Champions.
+
+:Cost: 3000 gold, 10 wood
+:Requires: Jousting Arena
+
+Cathedral
+~~~~~~~~~
+Generates 2 Paladins per week.
+
+:Cost: 5000 gold, 20 wood, 20 Crystals
+:Requires: Blacksmith, Armory
+
+Cathedral Upgrade
+~~~~~~~~~~~~~~~~~
+Upgrades Paladins to Crusaders.
+
+:Cost: 5000 gold, 10 wood, 10 Crystals
+:Requires: Cathedral
+
+Fortifications
+~~~~~~~~~~~~~~
+Thoughens castle walls.
+
+:Cost: 1500 gold, 5 wood, 15 ore
 
 Necromancer
 -----------
+Necromancer structures have some of the highest total resource costs. Few
+resources are required at the low levels, but many are required at the high
+levels. The top level structures also have a high gold cost.
+
+Archeological Dig
+~~~~~~~~~~~~~~~~~
+Generates 8 Skeletons per week.
+
+:Cost: 400 gold
+
+Graveyard
+~~~~~~~~~
+Generates 6 Zombies per week.
+
+:Cost: 1000 gold
+:Requires: Archeological Dig
+
+Graveyard Upgrade
+~~~~~~~~~~~~~~~~~
+Upgrades Zombies to Mutant Zombies.
+
+:Cost: 1000 gold
+:Requires: Graveyard, Mage Guild
+
+Pyramid
+~~~~~~~
+Generates 4 Mummies per week.
+
+:Cost: 1500 gold, 10 ore
+:Requires: Archeological Dig
+
+Pyramid Upgrade
+~~~~~~~~~~~~~~~
+Upgrades Mummies to Royal Mummies.
+
+:Cost: 1500 gold, 5 ore
+:Requires: Pyramid
+
+Mansion
+~~~~~~~
+Generates 3 Vampires per week.
+
+:Cost: 3000 gold, 10 wood
+:Requires: Pyramid, Thieves' Guild
+
+Mansion Upgrade
+~~~~~~~~~~~~~~~
+Upgrades Vampires to Vampire Lords.
+
+:Cost: 4000 gold, 5 wood, 10 gems, 10 crystals
+:Requires: Mansion
+
+Mausoleum
+~~~~~~~~~
+Generates 2 Liches per week.
+
+:Cost: 4000 gold, 10 ore, 10 sulfur
+:Requires: Mage Guild, Pyramid, Graveyard
+
+Mausoleum Upgrade
+~~~~~~~~~~~~~~~~~
+Upgrades Liches to Power Liches.
+
+:Cost: 3000 gold, 5 ore, 5 sulfur
+:Requires: Mausoleum, 2nd Level Mage Guild
+
+Laboratory
+~~~~~~~~~~
+Generates 1 Bone Dragon per week.
+
+:Cost: 10000 gold, 10 wood, 10 ore, 5 gems, 5 crystals, 5 mercury, 5 sulfur
+:Requires: Mausoleum
+
+Perpetual Storm
+~~~~~~~~~~~~~~~
++2 Spell Power to defending hero captain.
+
+:Cost: 1000 gold, 10 mercury, 10 sulfur
 
 Sorceress
 ---------
+Sorceress structures require small amounts of wood and ore at the early levels,
+but gems and mercury are required for the highest level structures. In total
+cost, the Sorceress falls between the Knight and Necromancer.
+
+Treehouse
+~~~~~~~~~
+Generates 6 Sprites per week.
+
+:Cost: 500 gold, 5 wood
+
+Cottage
+~~~~~~~
+Generates 8 Dwarves per week.
+
+:Cost: 1500 gold, 10 crystals.
+:Requires: Treehouse, Tavern
+
+Cottage Upgrade
+~~~~~~~~~~~~~~~
+Upgrades Dwarves to Battle Dwarves.
+
+:Cost: 1000 gold, 5 wood
+:Requires: Cottage, Well
+
+Archery Range
+~~~~~~~~~~~~~
+Generates 4 Elves per week.
+
+:Cost: 1500 gold
+:Requires: Treehouse
+
+Archery Range Upgrade
+~~~~~~~~~~~~~~~~~~~~~
+Upgrades Elves to Grand Elves.
+
+:Cost: 1500 gold, 5 wood
+:Requires: Archery Range, Stonehenge
+
+Stonehenge
+~~~~~~~~~~
+Generates 3 Druids per week.
+:Requires: Archery Range, Mage Guild
+
+:Cost: 2500 gold, 10 ore
+
+Stonehenge Upgrade
+~~~~~~~~~~~~~~~~~~
+Upgrades Druids to Grand Druids.
+
+:Cost: 1500 gold, 5 mercury
+:Requires: Stonehenge
+
+Fenced Meadow
+~~~~~~~~~~~~~
+Generates 2 Unicorns per week.
+
+:Cost: 1500 gold, 10 wood, 10 gems
+:Requires: Stonehenge
+
+Red Tower
+~~~~~~~~~
+Generates 1 Phoenix per week.
+
+:Cost: 10000 gold, 30 ore, 20 mercury
+:Requires: Fenced Meadow
+
+Rainbow
+~~~~~~~
+Gives +2 luck to defenders.
+
+:Cost: 1500 gold, 10 crystals.
 
 Warlock
 -------
+The incredible gold cost for the Warlock structures is offset by the reasonable
+resource cost - ore, a few gems, and a lot of sulfur. Most of the Warlock's
+high price comes from the final few structures, especially the Dragon Tower and
+its upgrades.
+
+Cave
+~~~~
+Generates 8 Centaurs per week.
+
+:Cost: 500 gold
+
+Crypt
+~~~~~
+Generates 6 Gargoyles per week.
+
+:Cost: 1000 gold, 10 ore
+:Requires: Cave
+
+Nest
+~~~~
+Generates 4 Griffins per week.
+
+:Cost: 2000 gold
+:Requires: Cave
+
+Maze
+~~~~
+Generates 3 Minotaurs per week.
+
+:Cost: 3000 gold, 10 gems
+:Requires: Nest
+
+Maze Upgrade
+~~~~~~~~~~~~
+Upgrades Minotaurs to Minotaur Kings.
+
+:Cost: 2000 gold, 5 gems
+:Requires: Maze
+
+Swamp
+~~~~~
+Generates 2 Hydras per week.
+
+:Cost: 4000 gold, 10 sulfur
+:Requires: Crypt
+
+Black Tower
+~~~~~~~~~~~
+Generates 1 Green Dragon per week.
+
+:Cost: 15000 gold, 30 ore, 20 sulfur
+:Requires: Maze, Swamp
+
+Black Tower Upgrade
+~~~~~~~~~~~~~~~~~~~
+Upgrades Gree Dragons to Red Dragons.
+
+:Cost: 5000 gold, 5 ore, 10 sulfur
+:Requires: Black Tower
+
+Black Tower Upgrade 2
+~~~~~~~~~~~~~~~~~~~~~
+Upgrades Red Dragons to Black Dragons.
+
+:Cost: 5000 gold, 5 ore, 10 sulfur
+:Requires: Black Tower Upgrade
+
+Dungeon
+~~~~~~~
+Increases income by 500 gold
+
+:Cost: 3000 gold, 5 wood, 10 ore
 
 Wizard
 ------
+Wizard structures have the highest resource cost of any town, and the second
+highest gold cost (second only to the Warlock). The higher level structures bear
+most of the cost, the Ivory Tower plus upgrade and the Cloud Castle plus
+upgrade.
+
+Habitat
+~~~~~~~
+Generates 8 Halflings per week.
+
+:Cost: 400 gold
+
+Boar Pen
+~~~~~~~~
+Generates 6 Boars per week.
+
+:Cost: 800 gold
+:Requires: Habitat
+
+Foundry
+~~~~~~~
+Generates 4 Iron Golems per week.
+
+:Cost: 1500 gold, 5 wood, 5 ore
+
+Foundry Upgrade
+~~~~~~~~~~~~~~~
+Upgrades Iron Golems to Steel Golems.
+
+:Cost: 1500 gold, 5 mercury
+:Requires: Foundry, Well
+
+Cliff Nest
+~~~~~~~~~~
+Generates 3 Rocs per week.
+
+:Cost: 3000 gold, 5 wood
+:Requires: Boar Pen
+
+Ivory Tower
+~~~~~~~~~~~
+Generates 2 Mages per week.
+
+:Cost: 3500 gold, 5 wood, 5 ore, 5 crystals, 5 gems, 5 mercury, 5 sulfur
+:Requires: Foundry, Mage Guild
+
+Ivory Tower Upgrade
+~~~~~~~~~~~~~~~~~~~
+Upgrades Mages to Archmages.
+
+:Cost: 4000 gold, 5 wood, 5 ore
+:Requires: Ivory Tower, Library
+
+Cloud Castle
+~~~~~~~~~~~~
+Generates 1 Giant per week.
+
+:Cost: 12500 gold, 5 wood, 5 ore, 20 gems
+:Requires: Cliff Nest, Mage Guild
+
+Cloud Castle Upgrade
+~~~~~~~~~~~~~~~~~~~~
+Upgrades Giants to Titans.
+
+:Cost: 12500 gold, 5 wood, 5 ore, 20 gems
+:Requires: Cloud Castle
+
+Library
+~~~~~~~
+Adds 1 spell each level in Mage Guild.
+
+:Cost: 1500 gold, 5 wood, 5 ore, 5 crystals, 5 gems, 5 mercury, 5 sulfur
 
 New Structure (PoL)
 -------------------
