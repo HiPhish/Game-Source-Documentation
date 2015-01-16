@@ -75,6 +75,59 @@ on a road is faster than moving on grass or dirt, and the roads make the travel
 over rough terrains very easy. *Pathfinding* becomes one of the most useful
 skills on a map with large areas of rough terrain.
 
+Skills
+======
+
+Primary Skills
+--------------
+
+Secondary Skills
+----------------
+Besides the four basic hero statistics, a hero can learn and advance in a
+secondary skill. These skills give the hero abilities like farther movement
+over land or sea, learning high level spells, or improving his skills with the
+catapult in castle sieges. A hero can learn at maximum eight secondary skills
+and all skills are knows at three levels - Basic (level 1), Advanced (level 2),
+and Expert (level 3).
+
+===========  =========  =========  =========  ==================================
+Skill        Basic      Advanced   Expert     Description
+===========  =========  =========  =========  ==================================
+Archery      +10% dmg   +20% dmg   +30% dmg   Increases the damage done by
+                                              the hero's range strike units.
+Ballistics   1 shot     2 shot     2 shot +   In a siege, the catapult's shots,
+             extra dmg  extra dmg  max. dmg   damage, and accuracy are
+                                              increased.
+Diplomacy    25% join   50% join   100% join  Allows the hero to bribe army
+                                              camps. The higher the skill, the
+                                              more that join.
+Eagle Eye    20% 2nd    30% 3nd    40% 4nd    Gives the hero a chance to learn
+             level max  level max  level max  spell cast by an enemy 
+                                              spellcaster.
+Estates      100 gold   100 gold   100 gold   The hero begins to generate money
+             per day    per day    per day    as if he were a small town.
+Leadership   +1 morale  +2 morale  +3 morale  Grant's the hero a bonus to
+                                              morale. Necromancers cannot learn
+                                              Leadership.
+Logistics    10%        20%        30%        Gives the hero extra land
+             movement   movement   movement   movement.
+Luck         +1 luck    +2 luck    +3 luck    Grants the hero's army a bonus
+                                              to luck in combat.
+Mysticism    2 spell    3 spell    4 spell    Increases the rato per turn that
+             pts/turn   pts/turn   pts/turn   a hero regains spell points.
+Navigation   50%        100%       150%       Increases the hero's movement on
+             movement   movement   movement   water.
+Necromancy   10% of     20% of     30% of     Animates a portion of the units
+             killed     killed     killed     killed in battle into skeletons
+                                              when you win.
+Pathfinding  reduces    reduces    reduces    Reduces the movement penalty of
+             by 100     by 100     by 100     the hero over rough terrain.
+Scouting     +1 square  +2 square  +3 square  Increases the visibility radius of
+                                              the hero in the Adventure Window.
+Wisdom       3rd level  4rd level  5rd level  Allows the hero to learn higher
+             spells     spells     spells     then 2nd level spells.
+===========  =========  =========  =========  ==================================
+
 Spells
 ======
 Spells, and a particular hero's ability to cast them, are a major part of Heroes
@@ -99,54 +152,588 @@ a Mage Guild, or slowly over time (at the rato of one per day).
 Level One Spells
 ----------------
 
-==============  ==== =========  ==========  ===========  ============================
-Spell           Cost Type       Target      Duration     Effect
-==============  ==== =========  ==========  ===========  ============================
-Bless              3 Combat     1 ally      1 rnd/Power  Blessed creatures inflict
-                                                         maximum damage.
-Bloodlust          3 Combat     1 ally      1 rnd/Power  Adds +3 to the creature's
-                                                         Attack skill.
-Cure               6 Combat     1 ally      Instant      Removes all negative spells
-                                                         and heals 5x Power in hit
-                                                         points.
-Curse              3 Combat     1 enemy     1 rnd/Power  Cursed creates inflict
-                                                         minimum damage.
-Dispel Magic       5 Combat     1 creature  Instant      Removes all negative spells
-                                                         on a creature
-Haste              3 Combat     1 ally      1 rnd/Power  Adds +2 to the creature's
-                                                         Speed.
-Magic Arrow        3 Combat     1 enemy     Instant      Inflicts 10x power in damage
-                                                         to single enemy creature.
-Shield             3 Combat     1 ally      1 rnd/Power  Shielded creatures take
-                                                         half the damage from range
-                                                         strike attacks.
-Slow               3 Combat     1 enemy     1 rnd/Power  Slowed creatures are reduced
-                                                         to half their normal speeds.
-Stoneskin          3 Combat     1 ally      1 rnd/Power  Adds +3 to the creature's
-                                                         Defense skill.
-View Mines         1 Adventure                           Show the location of all
-                                                         mines, and their
-                                                         controllers, on World View.
-View Resources     1 Adventure                           Shows the location of all
-                                                         remaining resources on the
-                                                         map in World View.
-==============  ==== =========  ==========  ===========  ============================
+Bless
+~~~~~
+Blessed creatures inflict maximum damage.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Bloodlust
+~~~~~~~~~
+Adds +3 to the creature's Attack skill.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Cure
+~~~~
+Removes all negative spells and heals 5x Power in hit points.
+
+:Cost:     6
+:Type:     Combat
+:Target:   1 ally
+:Duration: Instant
+
+Curse
+~~~~~
+Cursed creates inflict minimum damage.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round / Power
+
+Dispel Magic
+~~~~~~~~~~~~
+Removes all negative spells on a creature.
+
+:Cost:     5
+:Type:     Combat
+:Target:   1 creature
+:Duration: Instant
+
+Haste
+~~~~~
+Adds +2 to the creature's Speed.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Magic Arrow
+~~~~~~~~~~~
+Inflicts 10x power in damage to single enemy creature.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 enemy
+:Duration: Instant
+
+Shield
+~~~~~~
+Shielded creatures take half the damage from range Strike attacks.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Slow
+~~~~
+Slowed creatures are reduced to half their normal speeds.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round / Power
+
+Stoneskin
+~~~~~~~~~
+Adds +3 to the creature's Defense skill.
+
+:Cost:     3
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+View Mines
+~~~~~~~~~~
+Show the location of all mines, and their controllers, on World View.
+
+:Cost:     3
+:Type:     Combat
+
+View Resources
+~~~~~~~~~~~~~~
+Shows the location of all remaining resources on the map in World View.
+
+:Cost:     3
+:Type:     Combat
 
 Level Two Spells
 ----------------
-asdf
+
+Blind
+~~~~~
+Blind creatures cannot take action until attacked and retaliate with half
+strength.
+
+:Cost:     6 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round / Power
+
+Cold Ray
+~~~~~~~~
+Inflicts 20x Power in cold damage to a single enemy creature.
+
+:Cost:     6 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: Instant
+
+Death Ripple
+~~~~~~~~~~~~
+Inflicts 5x Power in death magic to all non-undead creatures.
+
+:Cost:     6 gold
+:Type:     Combat
+:Target:   All living creatures
+:Duration: Instant
+
+Disrupting Ray
+~~~~~~~~~~~~~~
+Reduces Defense of target by 3. A creature can be affected multiple times by
+this spell.
+
+:Cost:     7 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: Duration
+
+Dragon Slayer
+~~~~~~~~~~~~~
+Creature gains +5 Attack akill against Dragons.
+
+:Cost:     6 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round / Power
+
+Haunt
+~~~~~
+Deflags a mine and sets 4x Power ghosts to guard it.
+
+:Cost:     8 gold
+:Type:     Adventure
+:Target:   1 mine
+:Duration: Until defeated
+
+Lightning Bolt
+~~~~~~~~~~~~~~
+Inflicts 25x Power in electricity damage to a single enemy creature.
+
+:Cost:     7 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: Instant
+
+Steelskin
+~~~~~~~~~
+Adds +5 to the creature's Defense skill.
+
+:Cost:     6 gold
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Summon Boat
+~~~~~~~~~~~
+Summons nearest friendly, empty boat to the caster's location.
+
+:Cost:     5 gold
+:Type:     Adventure
+
+View Artifacts
+~~~~~~~~~~~~~~
+Shows the location of all remaining artifacts on the World View.
+
+:Cost:     2 gold
+:Type:     Adventure
+
+Visions
+~~~~~~~
+Gives relative strength of an army camp, and whether that camp will offer to
+joing the hero.
+
+:Cost:     6 gold
+:Type:     Adventure
+:Target:   1 army camp
+:Duration: Instant
 
 Level Three Spells
 ------------------
-asdf
+
+Animate Dead
+~~~~~~~~~~~~
+Regrows 50x Spell Power in hit points of killed undead.
+
+:Cost:     10 gold
+:Type:     Combat
+:Target:   Killed undead
+:Duration: Permanent
+
+Anti-Magic
+~~~~~~~~~~
+Creature gains immunity to all magic.
+
+:Cost:     7 gold
+:Type:     Combat
+:Target:   1 ally
+:Duration: 1 round / Power
+
+Cold Ring
+~~~~~~~~~
+Inflicts 10x Power in cold damage to the adjacent hexes of the target hex.
+
+:Cost:     9 gold
+:Type:     Combat
+:Target:   6 hexes
+:Duration: Instant
+
+Death Wave
+~~~~~~~~~~
+Inflicts 10x Power in death magic to all non-undead creatures.
+
+:Cost:     10 gold
+:Type:     Combat
+:Target:   All living creatures
+:Duration: Instant
+
+Earthquake
+~~~~~~~~~~
+Damages all castle walls during siege cambat.
+
+:Cost:     15 gold
+:Type:     Combat
+:Duration: Instant
+
+Fireball
+~~~~~~~~
+Inflicts 10x Power in fire damage to the target hex and each adjacent hex.
+
+:Cost:     9 gold
+:Type:     Adventure
+:Target:   1 army camp
+:Duration: Instant
+
+Holy Word
+~~~~~~~~~
+Inflicts 10x Power in holy damage to all undead creatures.
+
+:Cost:     9 gold
+:Type:     Combat
+:Target:   All undead creatures
+:Duration: Instant
+
+Identify Hero
+~~~~~~~~~~~~~
+Allows you to view an enemy hero's statistics and army size.
+
+:Cost:     3 gold
+:Type:     Adventure
+:Target:   1 enemy hero
+:Duration: 1 day
+
+Mass Bless
+~~~~~~~~~~
+Blessed creatures inflict maximum damage.
+
+:Cost:     12 gold
+:Type:     Combat
+:Target:   All allies
+:Duration: 1 round / Power
+
+Mass Curse
+~~~~~~~~~~
+Cursed creatures inflict minimum damage in combat.
+
+:Cost:     12 gold
+:Type:     Combat
+:Target:   All enemies
+:Duration: 1 round / Level
+
+Mass Dispel
+~~~~~~~~~~~
+Removes all spells from all creatures.
+
+:Cost:     12 gold
+:Type:     Combat
+:Target:   All creatures
+:Duration: Instant
+
+Mass Haste
+~~~~~~~~~~
+Adds +2 to creatures's Speed.
+
+:Cost:     10 gold
+:Type:     Combat
+:Target:   All allies
+:Duration: 1 round / level
+
+Paralyze
+~~~~~~~~
+Paralyzed creatures cannot take action until attacked, and cannot retaliate.
+
+:Cost:     9 gold
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round / level
+
+Teleport
+~~~~~~~~
+Instantly moves and friendly creature to any unoccupied hex.
+
+:Cost:     9 gold
+:Type:     Combat
+:Target:   1 ally
+:Duration: Instant
+
+View Heroes
+~~~~~~~~~~~
+Shows the lication and color of all heroes in the World View.
+
+:Cost:     2 gold
+:Type:     Adventure
+
+View Towns
+~~~~~~~~~~
+Shows the location and color of all towns in the World View.
+
+:Cost:     2 gold
+:Type:     Adventure
 
 Level Four Spells
 -----------------
-asdf
+
+Berserk
+~~~~~~~
+Berserk creatures will randomly attack the nearest stack.
+
+:Cost:     12
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 attack
+
+Chain Lightning
+~~~~~~~~~~~~~~~
+Inflicts 40x Power in electricity damage, then half that damage to nearest
+creature, until four creatures are hit.
+
+:Cost:     15
+:Type:     Combat
+:Target:   Special
+:Duration: Instant
+
+Fireblast
+~~~~~~~~~
+Inflicts 10x Power in fire damage to the target hex, and to the 18 adjacent
+hexes.
+
+:Cost:     15
+:Type:     Combat
+:Target:   19 hexes
+:Duration: Instant
+
+Holy Shout
+~~~~~~~~~~
+Inflicts 20x Power in holy damage to all undead creatures.
+
+:Cost:     12
+:Type:     Combat
+:Target:   All undead creatures
+:Duration: Instant
+
+Mass Cure
+~~~~~~~~~
+Removes all negative spells and heals 5x Power in hit points.
+
+:Cost:     15
+:Type:     Combat
+:Target:   All allies
+:Duration: Instant
+
+Mass Shield
+~~~~~~~~~~~
+Shielded creatures take half damage from range strike attacks.
+
+:Cost:     7
+:Type:     Combat
+:Target:   All allies
+:Duration: 1 round / level
+
+Mass Slow
+~~~~~~~~~
+Slowed creatures are reduced to half their normal Speed.
+
+:Cost:     15
+:Type:     Combat
+:Target:   All enemies
+:Duration: 1 round / level
+
+Meteor Shower
+~~~~~~~~~~~~~
+Inflicts 25x Power in damage to the terget hex, and each adjacent hex.
+
+:Cost:     15
+:Type:     Combat
+:Target:   7 hexes
+:Duration: Instant
+
+Resurrection
+~~~~~~~~~~~~
+Regrows 50x Power in hit points of killed units.
+
+:Cost:     12
+:Type:     Combat
+:Target:   Killed creature
+:Duration: Combat
+
+Set Air Guardian
+~~~~~~~~~~~~~~~~
+Sets 4x Power in Air Elementals to guard the mine.
+
+:Cost:     15
+:Type:     Adventure
+:Target:   1 mine
+:Duration: Until defeated
+
+Set Earth Guardian
+~~~~~~~~~~~~~~~~~~
+Sets 4x Power in Earth Elementals to guard the mine.
+
+:Cost:     15
+:Type:     Adventure
+:Target:   1 mine
+:Duration: Until defeated
+
+Set Fire Guardian
+~~~~~~~~~~~~~~~~~
+Sets 4x Power in Fire Elementals to guard the mine.
+
+:Cost:     15
+:Type:     Adventure
+:Target:   1 mine
+:Duration: Until defeated
+
+Set Water Guardian
+~~~~~~~~~~~~~~~~~~
+Sets 4x Power in Water Elementals to guard the mine.
+
+:Cost:     15
+:Type:     Adventure
+:Target:   1 mine
+:Duration: Until defeated
+
+Storm
+~~~~~
+Inflicts 25x Power in damage to all creatures.
+
+:Cost:     15
+:Type:     Combat
+:Target:   All creatures
+:Duration: Instant
+
+Town Gate
+~~~~~~~~~
+Teleports hearo to nearest friendly town.
+
+:Cost:     10
+:Type:     Adventure
+:Target:   Hero
+:Duration: Instant
+
+View All
+~~~~~~~~
+Combines all the previous View spells, and shows the entire map in the World
+View.
+
+:Cost:     3
+:Type:     Adventure
 
 Level Five Spells
 -----------------
-asdf
+
+Armageddon
+~~~~~~~~~~
+Inflicts 50x Power in damage to all creatures.
+
+:Cost:     20
+:Type:     Combat
+:Target:   All creatures
+:Duration: Instant
+
+Dimension Door
+~~~~~~~~~~~~~~
+Teleports the hero to an unoccupied visible location.
+
+:Cost:     10
+:Type:     Adventure
+
+Hypnotize
+~~~~~~~~~
+Takes control of the creature if the hit points of the stack are less than 25x
+Power.
+
+:Cost:     15
+:Type:     Combat
+:Target:   1 enemy
+:Duration: 1 round
+
+Mirror Image
+~~~~~~~~~~~~
+Duplicates one of your creature stacks. The image is dispelled if it takes any
+damage.
+
+:Cost:     25
+:Type:     Combat
+:Target:   1 ally
+:Duration: Combat
+
+Resurrection True
+~~~~~~~~~~~~~~~~~
+Regrows 50x Power in hit points of killed units.
+
+:Cost:     15
+:Type:     Combat
+:Target:   Killed creature
+:Duration: Permanent
+
+Summon Air Elemental
+~~~~~~~~~~~~~~~~~~~~
+Summons 3x Power in Air Elementals.
+
+:Cost:     30
+:Type:     Combat
+:Duration: Combat
+
+Summon Earth Elemental
+~~~~~~~~~~~~~~~~~~~~~~
+Summons 3x Power in Earth Elementals.
+
+:Cost:     30
+:Type:     Combat
+:Duration: Combat
+
+Summon Fire Elemental
+~~~~~~~~~~~~~~~~~~~~~
+Summons 3x Power in Fire Elementals.
+
+:Cost:     30
+:Type:     Combat
+:Duration: Combat
+
+Summon Water Elemental
+~~~~~~~~~~~~~~~~~~~~~~
+Summons 3x Power in Water Elementals.
+
+:Cost:     30
+:Type:     Combat
+:Duration: Combat
+
+Town Portal
+~~~~~~~~~~~
+Teleports the hero to any friendly town.
+
+:Cost:     20
+:Type:     Adventure
+:Target:   Hero
 
 Heroes - Classes, Castles and Units
 ==============================================
