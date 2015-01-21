@@ -156,29 +156,29 @@ Level One Spells
 Name            Cost  Type       Target      Duration  Description
 ==============  ====  =========  ==========  ========  =========================
 Bless              3  Combat     1 ally      1 round   Blessed creatures inflict
-                                             / power   maximum damage.
+                                             per power maximum damage.
 Bloodlust          3  Combat     1 ally      1 round   Adds +3 to the creature's
-                                             / power   Attack skill.
+                                             per power Attack skill.
 Cure               6  Combat     1 ally      Combat    Removes all negative
                                                        spells and heals 5x Power
                                                        in hit points.
 Curse              3  Combat     1 enemy     1 round   Cursed creates inflict
-                                             / power   minimum damage.
+                                             per power minimum damage.
 Dispel Magic       5  Combat     1 creature  Instant   Removes all negative
                                                        spells on a creature.
 Haste              3  Combat     1 ally      1 round   Adds +2 to the creature's
-                                             / power   Speed.
+                                             per power Speed.
 Magic Arrow        3  Combat     1 enemy     Instant   Inflicts 10x power in
                                                        damage to single enemy
                                                        creature.
 Shield             3  Combat     1 ally      1 round   Shielded creatures take
-                                             / power   half the damage from
+                                             per power half the damage from
                                                        range Strike attacks.
 Slow               3  Combat     1 enemy     1 round   Slowed creatures are
-                                             / power   reduced to half their
+                                             per power reduced to half their
                                                        normal speeds.
 Stoneskin          3  Combat     1 ally      1 round   Adds +3 to the creature's
-                                             / power   Defense skill.
+                                             per power Defense skill.
 View Mines         3  Adventure                        Show the location of all
                                                        mines, and their
                                                        controllers, on World
@@ -195,7 +195,7 @@ Level Two Spells
 Name            Cost  Type       Target      Duration  Description
 ==============  ====  =========  ==========  ========  =========================
 Blind              6  Combat     1 enemy     1 round   Blind creatures cannot
-                                             / power   take action until
+                                             per power take action until
                                                        attacked and retaliate
                                                        with half strength.
 Cold Ray           6  Combat     1 enemy     Instant   Inflicts 20x Power in
@@ -209,7 +209,7 @@ Disrupting Ray     7  Combat     1 enemy     Combat    Reduces Defense of target
                                                        affected multiple times
                                                        by this spell.
 Dragon Slayer      6  Combat     1 ally      1 round   Creature gains +5 Attack
-                                             / power   skill against Dragons.
+                                             per power skill against Dragons.
 Haunt              8  Adventure  1 mine      Until     Deflags a mine and sets
                                              defeated  4x Power ghosts to guard
                                                        it.
@@ -217,7 +217,7 @@ Lightning Bolt     7  Combat     1 enemy     Instant   Inflics 25x Power in
                                                        electricity damage to a
                                                        single enemy creature.
 Steelskin          6  Combat     1 ally      1 round   Adds +5 to the creature's
-                                             / power   Defense skill.
+                                             per power Defense skill.
 Summon Boat        5  Adventure                        Summons nearest friendly,
                                                        empty boat to caster's
                                                        location.
@@ -503,41 +503,23 @@ points. While excellent in the early and midgame, the Barbarian creatures begin
 to falter towards the endgame. The early game advantage is accented in small
 and medium maps.
 
-Goblin
-^^^^^^
-A solid low level creature, pack of Goblins are a match for most level two
-creatures.
-
-:Attack:      3
-:Defense:     1
-:Damage:      1-2
-:Cost:        40 gold
-:Hit Points:  3
-:Speed:       Average
-
-Orc
-^^^^
-Though slow, Orcs provide range attacks until Trolls can be recruited.
-
-:Attack:      3
-:Defense:     4
-:Damage:      2-3
-:Cost:        140 gold
-:Hit Points:  10
-:Speed:       Very Slow
-:Shots:       8
-
-Orc Chieftan
-^^^^^^^^^^^^
-The upgrade to the Orcs gives them longer durability in combat.
-
-:Attack:      3
-:Defense:     4
-:Damage:      **3-4**
-:Cost:        175 gold
-:Hit Points:  **15**
-:Speed:       **Slow**
-:Shots:       **16**
+========  ===  ===  ===  ========  ====  =======  =====  =======  ===========================
+Creature  Atk  Def  Dmg  Cost      Hits  Speed    Shots  Special  Description
+========  ===  ===  ===  ========  ====  =======  =====  =======  ===========================
+Goblin      3    1  1-2  40 gold      3  Average                  A solid low level, creature
+                                                                  creature pack of Goblins
+                                                                  are a match for most level
+                                                                  two creatures.
+Orc         3    4  2-3  140 gold    10  Very         8           Though slow, Orcs
+                                         Slow                     provide range attacks
+                                                                  until Trolls can be
+                                                                  recruited.
+Orc         3    4  3-4  175 gold    15  Slow        16           The upgrade to the Orcs
+Chieftan                                                          gives them longer
+                                                                  durability in combat.
+Wolf        6    2  3-5  200 gold    20  Very
+                                         Fast
+========  ===  ===  ===  ========  ====  =======  =====  ====================================
 
 Wolf
 ^^^^
