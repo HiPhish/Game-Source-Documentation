@@ -66,7 +66,7 @@ Default Initial Race Relations
 (These can vary due to different scenario settings)
 
 =========  =====  =====  ======  =====  ======  ========  =====  =====  =======  =====  ======  ======
-..         Human  Azrac  Lizard  Frost    Elf   Halfling  Dwarf  High   D. Elf    Orc   Goblin  Undead
+..         Human  Azrac  Lizard  Frost    Elf   Halfling  Dwarf  High   D\. Elf   Orc   Goblin  Undead
 =========  =====  =====  ======  =====  ======  ========  =====  =====  =======  =====  ======  ======
 Human       *F*     P       P      P       N        N       N      P       N       N       N       W  
 Azrac        P     *F*      N      N       N        N       N      W       N       N       P       W  
@@ -82,6 +82,9 @@ Goblin       N      P       N      N     **H**    **H**   **H**  **H**     P    
 Undead       W      W       W      W     **H**    **H**   **H**  **H**     P       P       P      *F* 
 =========  =====  =====  ======  =====  ======  ========  =====  =====  =======  =====  ======  ======
 
+.. Comment: the slash in front of the *D* for the Dark Elves escapes it,
+   otherwise the *D.* will be treated like the fourth item in a numbered list.
+
 :F: Friendly
 :P: Polite
 :N: Neutral
@@ -95,11 +98,11 @@ Each race relation type has a point range assigned to it:
 =============  =========================
 Race Relation  Race Relation Point Range
 =============  =========================
-Friendly                        80 - 100
-Polite                          60 -  79
-Neutral                         40 -  59
-Wary                            20 -  39
-Hate                             0 -  19
+Friendly               80 - 100
+Polite                 60 -  79
+Neutral                40 -  59
+Wary                   20 -  39
+Hate                    0 -  19
 =============  =========================
 
 The following actions will either improve or worsen your race relationships:
@@ -107,23 +110,26 @@ The following actions will either improve or worsen your race relationships:
 ==============================================  ============================
 Action Towards Race                             Race Realtion Point Modifier
 ==============================================  ============================
-Raze city of race                                            -30
-Loot city of race                                            -30
-Migrate from race                                            -15
-Migrate to race                                              +10
-Upgrade city of race                                         +5
-Upgrade walls of race's city                                 +5
-Cancel looting of race's city                                +20
-New game turn (until default relation reached)             +1 or -1
+Raze city of race                                           \- 30
+Loot city of race                                           \- 30
+Migrate from race                                           \- 15
+Migrate to race                                             \+ 10
+Upgrade city of race                                        \+  5
+Upgrade walls of race's city                                \+  5
+Cancel looting of race's city                               \+ 20
+New game turn (until default relation reached)            \+ 1 or - 1
 ==============================================  ============================
+
+.. Comment: The slash in front of the plus and minus signs is to escape them,
+   otherwise they will be interpreted as bullets for an unnumbered list.
 
 ==============================  ============================
 Diplomatic Action Towards Race  Race Realtion Point Modifier
 ==============================  ============================
-Making Alliance                            +20
-Breaking Alliance                          +20
-Making Peace                               +20
-Breaking Peace/Declaring War               +20
+Making Alliance                            \+ 20
+Breaking Alliance                          \+ 20
+Making Peace                               \+ 20
+Breaking Peace/Declaring War               \+ 20
 ==============================  ============================
 
 Diplomatic actions can affects your race relationship with races not directly
@@ -696,12 +702,12 @@ Spell Spheres and Mana Node Generation
 ======================  ========================================
 Number of Sphere Picks  Mana Generation per Matching Sphere Node
 ======================  ========================================
-       0                                 0
-       1                                15
-       2                                20
-       3                                25
-       4                                30
-**Power Node**             **10 [Regardless of Sphere Picks]**
+          0                                 0
+          1                                15
+          2                                20
+          3                                25
+          4                                30
+    **Power Node**        **10 [Regardless of Sphere Picks]**
 ======================  ========================================
 
 Spell Reference Lists
@@ -718,13 +724,13 @@ Life Spells
 ==============  =====  ======  ======  ==========  ======  ====
 Name            Range  Attack  Damage  Repetition  Radius  Type
 ==============  =====  ======  ======  ==========  ======  ====
-Rejuvenate      \-\      \-\     \-\       \-\          2  \-\
-Solar Flare     Long        8       4           1       0  Holy
-Holy Woods      \-\      \-\     \-\       \-\          1  Holy
-Turn Undead     Long        6       5           1       0  \-\
-Recall Spirits  \-\      \-\     \-\       \-\          1  \-\
-Sacred Wrath    \-\         5       5           1    \-\   Holy
-Divine Storm    \-\      \-\     \-\       \-\          4  Holy
+Rejuvenate       \-\     \-\     \-\       \-\        2     \-\
+Solar Flare     Long      8       4         1         0    Holy
+Holy Woods       \-\     \-\     \-\       \-\        1    Holy
+Turn Undead     Long      6       5         1         0     \-\
+Recall Spirits   \-\     \-\     \-\       \-\        1     \-\
+Sacred Wrath     \-\      5       5         1        \-\   Holy
+Divine Storm     \-\     \-\     \-\       \-\        4    Holy
 ==============  =====  ======  ======  ==========  ======  ====
 
 Death Spells
@@ -733,14 +739,14 @@ Death Spells
 ================  =====  ======  ======  ==========  ======  =======
 Name              Range  Attack  Damage  Repetition  Radius  Type
 ================  =====  ======  ======  ==========  ======  =======
-Death Ray         Long        8       4           1       0  Death
-Disease Cloud     Long        8       3           1       1  Death
-Evil Woods        \-\      \-\     \-\         \-\        1  Death
-Animate Dead      \-\      \-\     \-\         \-\        1  \-\
-Terror            \-\         5    \-\            1    \-\   Special
-Pestilence Cloud  \-\      \-\     \-\         \-\        2  Poison
-Mind Decay        Long        5    \-\            1       1  Special
-Death Storm       \-\      \-\     \-\         \-\        4  Death
+Death Ray         Long      8       4         1        0     Death
+Disease Cloud     Long      8       3         1        1     Death
+Evil Woods        \-\      \-\     \-\       \-\       1     Death
+Animate Dead      \-\      \-\     \-\       \-\       1      \-\
+Terror            \-\       5      \-\        1       \-\    Special
+Pestilence Cloud  \-\      \-\     \-\       \-\       2     Poison
+Mind Decay        Long      5      \-\        1        1     Special
+Death Storm       \-\      \-\     \-\       \-\       4     Death
 ================  =====  ======  ======  ==========  ======  =======
 
 Air Spells
@@ -749,14 +755,14 @@ Air Spells
 ===============  =====  ======  ======  ==========  ======  =========
 Name             Range  Attack  Damage  Repetition  Radius  Type
 ===============  =====  ======  ======  ==========  ======  =========
-Vaporize         Long       7        5           1       0  Physical
-Chain Lightning  Long       6        5  Special          0  Lightning
-Winds of Fury    Long    8(10)       5           1       0  Physical
-Freeze Water     \-\     \-\      \-\   \-\              1  \-\
-Cold Breath      Short      6        5           1  Cone    Cold
-Shockwave        0          8        5           1       3  Physical,
+Vaporize         Long      7       5        1          0    Physical
+Chain Lightning  Long      6       5    Special        0    Lightning
+Winds of Fury    Long    8(10)     5        1          0    Physical
+Freeze Water     \-\      \-\     \-\      \-\         1      \-\
+Cold Breath      Short     6       5        1        Cone   Cold
+Shockwave        0         8       5        1          3    Physical,
                                                             Wall
-Lightning Storm  \-\     \-\      \-\   \-\              1  Lightning
+Lightning Storm   \-\    \-\     \-\       \-\         1    Lightning
 ===============  =====  ======  ======  ==========  ======  =========
 
 Earth Spells
@@ -765,14 +771,14 @@ Earth Spells
 =============  ======  ======  ======  ==========  =======  =========
 Name           Range   Attack  Damage  Repetition  Radius   Type
 =============  ======  ======  ======  ==========  =======  =========
-Entangle       Long         7    \-\            1     \-\   Entagle
-Slow           \-\          9    \-\            1     \-\   Special
-Poison Woods   \-\       \-\     \-\         \-\         1  Poison
-Stoning        Long         5       2           6        0  Physical
-Level Terrain  \-\       \-\     \-\         \-\         1  \-\
-Tremors        \-\          5       5           1     \-\   Physical,
+Entangle       Long       7      \-\        1        \-\    Entagle
+Slow           \-\        9      \-\        1        \-\    Special
+Poison Woods   \-\       \-\     \-\       \-\        1     Poison
+Stoning        Long       5       2         6         0     Physical
+Level Terrain  \-\       \-\     \-\       \-\        1       \-\
+Tremors        \-\        5       5         1        \-\    Physical,
                                                             Wall
-Raise Terrain  \-\       \-\     \-\         \-\         1  \-\
+Raise Terrain  \-\       \-\     \-\       \-\        1       \-\
 =============  ======  ======  ======  ==========  =======  =========
 
 Fire Spells
@@ -781,15 +787,15 @@ Fire Spells
 =================  ======  ======  ======  ==========  =======  ==============
 Name               Range   Attack  Damage  Repetition  Radius   Type
 =================  ======  ======  ======  ==========  =======  ==============
-Flame Arrow        Long         8       4           1        0  Fire, Physical
-Call Flames        Medium       9       3           1        0  Fire
-Cloud of Ashes     \-\       \-\     \-\         \-\         3  \-\
-Fire Breath        Short        6       5           1  Cone     Fire
-Swarm              Long         6       1  Special     Special  Fire
-Fire Barrier       \-\       \-\     \-\         \-\         1  Fire
-Fireball           Long         8       6           1        1  Fire, Wall
-Sacrificial Flame  Long         8       5           1        2  Fire
-Fire Storm         \-\       \-\     \-\         \-\         1  Fire
+Flame Arrow        Long       8       4         1        0      Fire, Physical
+Call Flames        Medium     9       3         1        0      Fire
+Cloud of Ashes      \-\      \-\     \-\       \-\       3            \-\
+Fire Breath        Short      6       5         1       Cone    Fire
+Swarm              Long       6       1      Special   Special  Fire
+Fire Barrier        \-\      \-\     \-\       \-\       1      Fire
+Fireball           Long       8       6         1        1      Fire, Wall
+Sacrificial Flame  Long       8       5         1        2      Fire
+Fire Storm          \-\      \-\     \-\       \-\       1      Fire
 =================  ======  ======  ======  ==========  =======  ==============
 
 Water Spells
@@ -798,14 +804,14 @@ Water Spells
 ===============  ======  ======  ======  ==========  ======  ==============
 Name             Range   Attack  Damage  Repetition  Radius  Type
 ===============  ======  ======  ======  ==========  ======  ==============
-Ice Shards       Long         6       5           3       0  Physical
-Ooze             Medium    \-\     \-\         \-\        2  \-\
-Vortex           \-\       \-\     \-\            1       0  Physical
-Geyser           Long         9       5           1       0  Physical
-Frost Beam       Long         9       3           1       1  Cold
-Great Hail       Long         5       5           3       1  Physical, Wall
-Healing Showers  \-\       \-\     \-\         \-\        1  \-\
-Ice Showers      \-\       \-\     \-\         \-\        4  Cold
+Ice Shards       Long       6       5        3          0    Physical
+Ooze             Medium    \-\     \-\      \-\         2         \-\
+Vortex            \-\      \-\     \-\       1          0    Physical
+Geyser           Long       9       5        1          0    Physical
+Frost Beam       Long       9       3        1          1    Cold
+Great Hail       Long       5       5        3          1    Physical, Wall
+Healing Showers   \-\      \-\     \-\      \-\         1         \-\
+Ice Showers       \-\      \-\     \-\      \-\         4    Cold
 ===============  ======  ======  ======  ==========  ======  ==============
 
 All global, terrain altering spells without an upkeep cost last for three turns.
