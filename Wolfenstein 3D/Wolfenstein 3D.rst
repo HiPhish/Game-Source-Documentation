@@ -620,17 +620,17 @@ sprite can thus be found as follows
 Here is a schematic of a sprite chunk
 .. code::
 
-	W- first_column
+	Word = first_column
 	|
-	W- last_column
+	Word = last_column
 	|
-	W- offset[0] -> |W|W|W| ... |W|W|W|
+	Word = offset[0] -> |W|W|W| ... |W|W|W|
 	:
-	W- offset[n] -> |W|W|W| ... |W|W|W|
+	Word = offset[n] -> |W|W|W| ... |W|W|W|
 	|
-	B- data
+	Byte = data
 	:
-	B- data
+	Byte = data
 
 A ``W`` means ``word``, a ``B`` means ``byte``, a ``- `` means "is" and a ``->``
 means "points to" or "is an offset to", offsets are relative to the beginnig of
